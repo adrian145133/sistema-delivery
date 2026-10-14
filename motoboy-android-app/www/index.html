@@ -633,12 +633,12 @@
     let scanInterval = null;
 
     function configureServerUrl() {
-      const current = localStorage.getItem('DELIVERY_SERVER_URL') || 'http://192.168.0.238:3000';
+      const current = localStorage.getItem('DELIVERY_SERVER_URL') || 'https://sistema-delivery-xi.vercel.app';
       const novo = prompt('Endereço da Central do Restaurante (IP ou Link):', current);
       if (novo && novo.trim()) {
         let clean = novo.trim();
         if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
-          clean = 'http://' + clean;
+          clean = 'https://' + clean;
         }
         localStorage.setItem('DELIVERY_SERVER_URL', clean);
         alert('Endereço da central salvo: ' + clean);
@@ -654,7 +654,7 @@
                           window.location.protocol === 'capacitor:' || 
                           (window.location.hostname === 'localhost' && (!window.location.port || window.location.port === ''));
       if (isNativeApp) {
-        const savedServer = localStorage.getItem('DELIVERY_SERVER_URL') || 'http://192.168.0.238:3000';
+        const savedServer = localStorage.getItem('DELIVERY_SERVER_URL') || 'https://sistema-delivery-xi.vercel.app';
         return savedServer.replace(/\/$/, '') + endpoint;
       }
       return endpoint;
