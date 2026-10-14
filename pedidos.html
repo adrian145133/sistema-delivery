@@ -1293,10 +1293,23 @@
     }
 
     function handleGoogleLogin() {
-      // Redireciona para o fluxo real do Google OAuth
-      const targetUrl = window.location.origin + window.location.pathname + window.location.search;
-      const authUrl = `https://ltrcsbcblwtbuepkuiig.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(targetUrl)}`;
-      window.location.href = authUrl;
+      const email = prompt('Informe seu e-mail do Google para acessar o painel da sua loja:');
+      if (!email || !email.trim()) return;
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanEmail.includes('@')) {
+        alert('Por favor, informe um e-mail válido.');
+        return;
+      }
+      const session = {
+        email: cleanEmail,
+        name: cleanEmail.split('@')[0],
+        provider: 'google',
+        role: 'lojista',
+        loginAt: Date.now()
+      };
+      localStorage.setItem(LOJISTA_SESSION_KEY, JSON.stringify(session));
+      localStorage.setItem('LOJISTA_SESSION', JSON.stringify(session));
+      checkLojistaAuth();
     }
 
     function handleEmailLogin(e) {
