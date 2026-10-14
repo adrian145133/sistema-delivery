@@ -4,6 +4,22 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
+    },
+    {
+      "source": "/loja/:slug",
+      "destination": "/index.html?loja=:slug"
+    },
+    {
+      "source": "/loja/:slug/",
+      "destination": "/index.html?loja=:slug"
+    },
+    {
+      "source": "/pedidos/:slug",
+      "destination": "/pedidos.html?loja=:slug"
+    },
+    {
+      "source": "/painel/:slug",
+      "destination": "/pedidos.html?loja=:slug"
     }
   ]
 }

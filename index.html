@@ -76,9 +76,14 @@
         <i class="fa-solid fa-lock-open text-base animate-bounce"></i>
         <span><strong>Modo Edição do Lojista Ativo:</strong> Clique nos títulos, nas descrições de até 5 linhas, preços ou suba fotos do seu computador. Todas as alterações salvam na hora.</span>
       </div>
-      <button onclick="toggleMenuEditLock()" class="w-fit rounded-lg bg-slate-950 px-3 py-1 text-xs font-bold text-white hover:bg-slate-800 shadow-sm">
-        <i class="fa-solid fa-lock mr-1"></i> Trancar Cardápio (Concluir)
-      </button>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button onclick="copyStoreMenuShareLink()" class="w-fit rounded-lg bg-emerald-950 border border-emerald-400 text-emerald-300 hover:bg-emerald-900 px-3 py-1 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-share-nodes"></i> Copiar Link do Cardápio
+        </button>
+        <button onclick="toggleMenuEditLock()" class="w-fit rounded-lg bg-slate-950 px-3 py-1 text-xs font-bold text-white hover:bg-slate-800 shadow-sm">
+          <i class="fa-solid fa-lock mr-1"></i> Trancar Cardápio (Concluir)
+        </button>
+      </div>
     </div>
   </div>
 
@@ -400,6 +405,104 @@
     let gpsCoords = null;
     let pendingOrderPayload = null;
 
+    // ========================================================
+    // MULTI-TENANCY ESTILO YOOGA (SLUG E LINK DA LOJA)
+    // ========================================================
+    function getStoreSlug() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const q = urlParams.get('loja') || urlParams.get('store');
+      if (q) return q.trim().toLowerCase();
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      if (pathParts.length >= 2 && pathParts[0] === 'loja') {
+        return pathParts[1].trim().toLowerCase();
+      }
+      return 'default_store';
+    }
+
+    function copyStoreMenuShareLink() {
+      const slug = getStoreSlug();
+      const base = window.location.origin;
+      const link = slug === 'default_store' ? `${base}/` : `${base}/loja/${slug}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(() => {
+          alert(`🔗 LINK DO SEU CARDÁPIO COPIADO!\n\n${link}\n\nEnvie aos seus clientes no WhatsApp ou cole na Bio do seu Instagram!`);
+        }).catch(() => {
+          prompt('Copie o link do seu cardápio abaixo:', link);
+        });
+      } else {
+        prompt('Copie o link do seu cardápio abaixo:', link);
+      }
+    }
+
+    async function syncStoreDataFromCloud() {
+      const slug = getStoreSlug();
+      const storageCfgKey = `DELIVERY_CONFIG_${slug}`;
+      const storageProdKey = `DELIVERY_PRODUCTS_${slug}`;
+
+      // 1. Carrega do cache local desta loja se existir
+      try {
+        const cachedCfg = localStorage.getItem(storageCfgKey);
+        if (cachedCfg) {
+          config = { ...config, ...JSON.parse(cachedCfg) };
+        }
+        const cachedProds = localStorage.getItem(storageProdKey);
+        if (cachedProds) {
+          products = JSON.parse(cachedProds);
+        }
+      } catch (e) {}
+
+      // 2. Busca do Supabase na nuvem via /api/store?loja=slug
+      try {
+        const res = await fetch(`/api/store?loja=${encodeURIComponent(slug)}`);
+        if (res.ok) {
+          const store = await res.json();
+          if (store) {
+            if (store.name) config.storeName = store.name;
+            if (store.phone) config.storePhone = store.phone;
+            if (store.settings) {
+              if (store.settings.pixKey) config.pixKey = store.settings.pixKey;
+              if (store.settings.deliveryFee !== undefined) config.deliveryFee = Number(store.settings.deliveryFee);
+              if (store.settings.merchantName) config.merchantName = store.settings.merchantName;
+              if (store.settings.merchantCity) config.merchantCity = store.settings.merchantCity;
+              if (Array.isArray(store.settings.products) && store.settings.products.length > 0) {
+                products = store.settings.products;
+                localStorage.setItem(storageProdKey, JSON.stringify(products));
+              }
+            }
+            localStorage.setItem(storageCfgKey, JSON.stringify(config));
+            
+            // Re-renderiza a tela com os dados atualizados da loja
+            renderMenuHeader();
+            renderCategories();
+            renderProducts();
+            document.getElementById('headerStoreName').textContent = config.storeName || 'Delivery Express';
+            document.getElementById('headerStoreInfo').innerHTML = `<i class="fa-solid fa-phone"></i> ${config.storePhone || ''} • Entrega R$ ${(config.deliveryFee || 5).toFixed(2).replace('.', ',')}`;
+            checkPixStatus();
+          }
+        }
+      } catch (err) {}
+    }
+
+    function syncStoreToCloud() {
+      const slug = getStoreSlug();
+      fetch(`/api/store?loja=${encodeURIComponent(slug)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: slug,
+          name: config.storeName,
+          phone: config.storePhone,
+          settings: {
+            pixKey: config.pixKey,
+            deliveryFee: config.deliveryFee,
+            merchantName: config.merchantName,
+            merchantCity: config.merchantCity,
+            products: products
+          }
+        })
+      }).catch(() => {});
+    }
+
     // CONTROLE DE MODO LOJISTA & CADEADO
     let isMenuUnlocked = false;
     function isLojista() {
@@ -413,6 +516,9 @@
     function initLojistaControls() {
       const lockBtn = document.getElementById('lojistaLockBtn');
       const panelBtn = document.getElementById('btnGoToPanel');
+      if (panelBtn) {
+        panelBtn.href = `pedidos.html?loja=${encodeURIComponent(getStoreSlug())}`;
+      }
       if (isLojista()) {
         if (lockBtn) {
           lockBtn.classList.remove('hidden');
@@ -507,8 +613,11 @@
 
     function updateMenuHeaderField(field, value) {
       config[field] = value;
+      const slug = getStoreSlug();
+      localStorage.setItem(`DELIVERY_CONFIG_${slug}`, JSON.stringify(config));
       localStorage.setItem('DELIVERY_CONFIG', JSON.stringify(config));
       window.dispatchEvent(new Event('storage'));
+      syncStoreToCloud();
     }
 
     function updateLockUI() {
@@ -549,10 +658,11 @@
 
     function init() {
       // Recarrega produtos e configuração
+      const slug = getStoreSlug();
       try {
-        const storedProducts = localStorage.getItem('DELIVERY_PRODUCTS');
+        const storedProducts = localStorage.getItem(`DELIVERY_PRODUCTS_${slug}`) || localStorage.getItem('DELIVERY_PRODUCTS');
         if (storedProducts) products = JSON.parse(storedProducts);
-        const storedConfig = localStorage.getItem('DELIVERY_CONFIG');
+        const storedConfig = localStorage.getItem(`DELIVERY_CONFIG_${slug}`) || localStorage.getItem('DELIVERY_CONFIG');
         if (storedConfig) config = JSON.parse(storedConfig);
       } catch (e) {}
 
@@ -572,6 +682,9 @@
 
       document.getElementById('headerStoreName').textContent = config.storeName || 'Fast Delivery Express';
       document.getElementById('headerStoreInfo').innerHTML = `<i class="fa-solid fa-phone"></i> ${config.storePhone || ''} • Entrega R$ ${(config.deliveryFee || 5).toFixed(2).replace('.', ',')}`;
+
+      // Sincroniza em segundo plano com a nuvem Supabase (Estilo Yooga)
+      syncStoreDataFromCloud();
     }
 
     function checkPixStatus() {
@@ -968,8 +1081,11 @@
     }
 
     function saveProductsAndSync() {
+      const slug = getStoreSlug();
+      localStorage.setItem(`DELIVERY_PRODUCTS_${slug}`, JSON.stringify(products));
       localStorage.setItem('DELIVERY_PRODUCTS', JSON.stringify(products));
       window.dispatchEvent(new Event('storage'));
+      syncStoreToCloud();
     }
 
     function escapeHtml(str) {
@@ -1284,6 +1400,7 @@
       pendingOrderPayload = {
         id: 'ord-' + Date.now(),
         orderNumber: `#${orderNumber}`,
+        store_id: getStoreSlug(),
         createdAt: new Date().toISOString(),
         items: cart.map(it => ({ id: it.id, title: it.name, price: it.price, quantity: it.quantity })),
         subtotal: subtotal,
@@ -1339,18 +1456,22 @@
     function confirmPaymentCompleted() {
       if (!pendingOrderPayload) return;
 
+      const slug = getStoreSlug();
+
       // Incrementa número do pedido
-      let lastNum = parseInt(localStorage.getItem('DELIVERY_LAST_NUM') || '1000', 10);
+      let lastNum = parseInt(localStorage.getItem(`DELIVERY_LAST_NUM_${slug}`) || localStorage.getItem('DELIVERY_LAST_NUM') || '1000', 10);
+      localStorage.setItem(`DELIVERY_LAST_NUM_${slug}`, (lastNum + 1).toString());
       localStorage.setItem('DELIVERY_LAST_NUM', (lastNum + 1).toString());
 
       // Salva no banco de pedidos da loja (delivery_orders_v1)
-      const orders = JSON.parse(localStorage.getItem('delivery_orders_v1') || '[]');
+      const orders = JSON.parse(localStorage.getItem(`delivery_orders_v1_${slug}`) || localStorage.getItem('delivery_orders_v1') || '[]');
       orders.unshift(pendingOrderPayload); // Novo pedido sempre em primeiro
+      localStorage.setItem(`delivery_orders_v1_${slug}`, JSON.stringify(orders));
       localStorage.setItem('delivery_orders_v1', JSON.stringify(orders));
 
       // Sincroniza com o servidor local /api/orders
       try {
-        fetch('/api/orders', {
+        fetch(`/api/orders?loja=${encodeURIComponent(slug)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(pendingOrderPayload)

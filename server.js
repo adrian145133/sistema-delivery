@@ -164,9 +164,37 @@ async function handleRequest(req, res) {
     return;
   }
 
+  const storeId = (queryParams.get('loja') || queryParams.get('storeId') || queryParams.get('store') || 'default_store').toLowerCase().trim();
+
+  // API: Dados e Cardápio da Loja (Multi-tenancy Estilo Yooga)
+  if (pathname === '/api/store') {
+    if (req.method === 'GET') {
+      const store = await db.getStore(storeId);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(store));
+      return;
+    }
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const payload = JSON.parse(body || '{}');
+          const saved = await db.saveStore({ ...payload, id: payload.id || storeId });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(saved));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
+    }
+  }
+
   // API: Listar Motoboys Cadastrados no Restaurante
   if (req.method === 'GET' && pathname === '/api/drivers') {
-    const list = getDriversData();
+    const list = await db.getDrivers(storeId);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(list));
     return;
@@ -176,7 +204,7 @@ async function handleRequest(req, res) {
   if (req.method === 'POST' && pathname === '/api/drivers') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const payload = JSON.parse(body || '{}');
         if (!payload.name) {
@@ -184,16 +212,9 @@ async function handleRequest(req, res) {
           res.end(JSON.stringify({ error: 'Nome do motoboy é obrigatório' }));
           return;
         }
-        let list = getDriversData();
-        const existingIdx = list.findIndex(d => d.id === payload.id);
-        if (existingIdx >= 0) {
-          list[existingIdx] = { ...list[existingIdx], ...payload };
-        } else {
-          list.push(payload);
-        }
-        saveDriversData(list);
+        const saved = await db.upsertDriver(payload, storeId);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, driver: payload }));
+        res.end(JSON.stringify({ success: true, driver: saved }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
@@ -206,13 +227,11 @@ async function handleRequest(req, res) {
   if (req.method === 'DELETE' && pathname === '/api/drivers') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const payload = JSON.parse(body || '{}');
         const driverId = payload.id || queryParams.get('id');
-        let list = getDriversData();
-        list = list.filter(d => d.id !== driverId);
-        saveDriversData(list);
+        await db.deleteDriver(driverId, storeId);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, deletedId: driverId }));
       } catch (err) {
@@ -504,7 +523,7 @@ async function handleRequest(req, res) {
 
   // API: Listar Pedidos da Loja (sincronizados com o celular do motoboy)
   if (req.method === 'GET' && pathname === '/api/orders') {
-    const list = getOrdersData();
+    const list = await db.getOrders(storeId);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(list));
     return;
@@ -514,21 +533,14 @@ async function handleRequest(req, res) {
   if (req.method === 'POST' && pathname === '/api/orders') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const payload = JSON.parse(body || '{}');
-        let list = getOrdersData();
         if (Array.isArray(payload)) {
-          list = payload;
+          await db.saveOrders(payload, storeId);
         } else if (payload.id) {
-          const idx = list.findIndex(o => o.id === payload.id);
-          if (idx >= 0) {
-            list[idx] = { ...list[idx], ...payload };
-          } else {
-            list.unshift(payload);
-          }
+          await db.upsertOrder(payload, storeId);
         }
-        saveOrdersData(list);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
       } catch (err) {
@@ -906,6 +918,10 @@ async function handleRequest(req, res) {
   let parsedUrl = pathname;
   if (parsedUrl === '/' || parsedUrl === '') {
     parsedUrl = '/index.html';
+  } else if (parsedUrl.startsWith('/loja/')) {
+    parsedUrl = '/index.html';
+  } else if (parsedUrl.startsWith('/pedidos/') || parsedUrl.startsWith('/painel/')) {
+    parsedUrl = '/pedidos.html';
   }
 
   const filePath = path.join(PUBLIC_DIR, decodeURIComponent(parsedUrl));

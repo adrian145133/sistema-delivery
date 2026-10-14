@@ -337,9 +337,13 @@
       btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Concluindo Cadastro...';
 
       try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const storeSlug = (urlParams.get('loja') || urlParams.get('store') || 'default_store').trim().toLowerCase();
+
         const driverId = 'drv_' + Date.now();
         const newDriver = {
           id: driverId,
+          store_id: storeSlug,
           name,
           phone: cleanPhone,
           vehicle,
@@ -349,7 +353,7 @@
         };
 
         // Salva no servidor
-        await fetch('/api/drivers', {
+        await fetch(`/api/drivers?loja=${encodeURIComponent(storeSlug)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newDriver)

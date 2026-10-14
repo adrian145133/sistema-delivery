@@ -349,8 +349,58 @@ async function saveDriverPhoneCodes(codes) {
   return true;
 }
 
+// ======================================================================
+// LOJAS (STORES / MULTI-TENANCY ESTILO YOOGA)
+// ======================================================================
+async function getStore(storeId = 'default_store') {
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('stores')
+        .select('*')
+        .eq('id', storeId)
+        .single();
+      if (!error && data) {
+        return data;
+      }
+    } catch (e) {}
+  }
+  const localFile = path.join(__dirname, 'store_config.json');
+  const localConfig = readLocalJson(localFile, {});
+  return localConfig[storeId] || {
+    id: storeId,
+    name: storeId === 'default_store' ? 'Delivery Express' : storeId.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    settings: {}
+  };
+}
+
+async function saveStore(storeData) {
+  const storeId = storeData.id || 'default_store';
+  if (supabaseClient) {
+    try {
+      await supabaseClient.from('stores').upsert({
+        id: storeId,
+        name: storeData.name || 'Restaurante',
+        phone: storeData.phone || null,
+        cnpj_cpf: storeData.cnpj_cpf || null,
+        address: storeData.address || null,
+        settings: storeData.settings || {}
+      });
+    } catch (e) {
+      console.warn('[Supabase] Erro ao salvar loja:', e.message);
+    }
+  }
+  const localFile = path.join(__dirname, 'store_config.json');
+  const localConfig = readLocalJson(localFile, {});
+  localConfig[storeId] = storeData;
+  writeLocalJson(localFile, localConfig);
+  return storeData;
+}
+
 module.exports = {
   isSupabaseActive,
+  getStore,
+  saveStore,
   getDrivers,
   saveDrivers,
   upsertDriver,

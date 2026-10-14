@@ -50,13 +50,28 @@ module.exports = async (req, res) => {
 
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname;
-  const searchParams = url.searchParams;
-
   try {
+    const searchParams = url.searchParams;
+    const storeId = (searchParams.get('loja') || searchParams.get('storeId') || searchParams.get('store') || 'default_store').toLowerCase().trim();
+
+    // 0. GET & POST /api/store (Dados e Cardápio da Loja Estilo Yooga)
+    if (pathname === '/api/store' || pathname.endsWith('/store')) {
+      if (req.method === 'GET') {
+        const store = await db.getStore(storeId);
+        return sendJson(res, 200, store);
+      }
+      if (req.method === 'POST') {
+        const payload = await parseBody(req);
+        const toSave = { ...payload, id: payload.id || storeId };
+        const saved = await db.saveStore(toSave);
+        return sendJson(res, 200, saved);
+      }
+    }
+
     // 1. GET & POST & DELETE /api/drivers
     if (pathname === '/api/drivers' || pathname.endsWith('/drivers')) {
       if (req.method === 'GET') {
-        const drivers = await db.getDrivers();
+        const drivers = await db.getDrivers(storeId);
         return sendJson(res, 200, drivers);
       }
       if (req.method === 'POST') {
@@ -73,7 +88,7 @@ module.exports = async (req, res) => {
           shiftActive: Boolean(payload.shiftActive),
           createdAt: payload.createdAt || new Date().toISOString()
         };
-        await db.upsertDriver(driver);
+        await db.upsertDriver(driver, storeId);
         return sendJson(res, 200, driver);
       }
       if (req.method === 'DELETE') {
@@ -82,7 +97,7 @@ module.exports = async (req, res) => {
         if (!driverId) {
           return sendJson(res, 400, { error: 'ID do motoboy é obrigatório' });
         }
-        await db.deleteDriver(driverId);
+        await db.deleteDriver(driverId, storeId);
         return sendJson(res, 200, { success: true });
       }
     }
@@ -90,16 +105,16 @@ module.exports = async (req, res) => {
     // 2. GET & POST /api/orders
     if (pathname === '/api/orders' || pathname.endsWith('/orders')) {
       if (req.method === 'GET') {
-        const orders = await db.getOrders();
+        const orders = await db.getOrders(storeId);
         return sendJson(res, 200, orders);
       }
       if (req.method === 'POST') {
         const payload = await parseBody(req);
         if (Array.isArray(payload)) {
-          await db.saveOrders(payload);
+          await db.saveOrders(payload, storeId);
           return sendJson(res, 200, payload);
         } else if (payload && payload.id) {
-          await db.upsertOrder(payload);
+          await db.upsertOrder({ ...payload, store_id: payload.store_id || storeId }, storeId);
           return sendJson(res, 200, payload);
         }
         return sendJson(res, 400, { error: 'Formato de pedido inválido' });
