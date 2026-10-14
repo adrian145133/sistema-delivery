@@ -37,7 +37,7 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 id="headerStoreName" class="text-lg md:text-xl font-bold tracking-tight text-white">Fast Delivery Express</h1>
-            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
+            <span id="headerStoreStatusBadge" class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
               <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               Aberto
             </span>
@@ -55,9 +55,9 @@
           <span id="lojistaLockText">Cardápio Trancado</span>
         </button>
 
-        <a id="btnGoToPanel" href="pedidos.html" class="hidden w-fit items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+        <a id="btnGoToPanel" href="pedidos.html" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
           <i class="fa-solid fa-store text-emerald-400"></i>
-          Painel do Lojista (Pedidos)
+          Painel do Lojista
         </a>
 
         <button id="btnHeaderCart" onclick="openCheckoutModal()" disabled class="w-fit relative inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all bg-slate-800 text-slate-500 cursor-not-allowed opacity-60">
@@ -87,106 +87,189 @@
     </div>
   </div>
 
-  <!-- BANNER E BUSCA -->
-  <section class="bg-gradient-to-b from-slate-900 to-slate-950 px-4 pt-6 pb-4 border-b border-slate-800/60">
-    <div class="mx-auto max-w-6xl">
-      <div class="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="flex-1 min-w-0 pr-4">
-          <div id="menuTitleContainer">
-            <h2 class="text-2xl md:text-3xl font-extrabold text-white">Cardápio & Pedidos Online</h2>
+  <!-- ==================================================== -->
+  <!-- PORTAL PRINCIPAL / ONBOARDING DO LOJISTA            -->
+  <!-- (Exibido quando não há loja definida na URL)        -->
+  <!-- ==================================================== -->
+  <section id="portalLandingSection" class="hidden flex-1 flex flex-col items-center justify-center px-4 py-12 md:py-20">
+    <div class="mx-auto max-w-4xl text-center space-y-6">
+      
+      <!-- BADGE -->
+      <div class="w-fit mx-auto inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-4 py-1.5 text-xs font-bold text-emerald-400 shadow-sm">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Plataforma de Cardápio Digital & Delivery Exclusivo</span>
+      </div>
+
+      <!-- TÍTULO PRINCIPAL -->
+      <h2 class="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+        Crie o Cardápio Digital <br class="hidden sm:inline">
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500">
+          Exclusivo do seu Estabelecimento
+        </span>
+      </h2>
+
+      <!-- SUBTÍTULO -->
+      <p class="text-sm md:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+        Cada estabelecimento possui um link único e exclusivo. Configure o nome do seu negócio em menos de 1 minuto, receba pedidos em tempo real no WhatsApp e pagamentos via PIX direto na sua conta bancária sem intermediários!
+      </p>
+
+      <!-- BOTÕES CTA PRINCIPAIS -->
+      <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <button type="button" id="btnPortalGoogleLogin" onclick="handlePortalGoogleLogin()" class="w-fit inline-flex items-center justify-center gap-2.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 px-6 py-3.5 text-sm font-bold shadow-lg shadow-emerald-500/10 transition-all hover:scale-105 active:scale-95 border border-slate-200">
+          <svg class="h-5 w-5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <span id="portalGoogleBtnText">Entrar com Google e Criar Meu Cardápio</span>
+        </button>
+
+        <a href="pedidos.html" class="w-fit inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-200 px-6 py-3.5 text-sm font-semibold transition-all">
+          <i class="fa-solid fa-store text-emerald-400"></i>
+          <span>Acessar Painel de Pedidos</span>
+        </a>
+      </div>
+
+      <!-- CARDS DE RECURSOS -->
+      <div class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-5 text-left pt-6">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 backdrop-blur-sm space-y-2 hover:border-emerald-500/40 transition-all">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-lg">
+            <i class="fa-solid fa-link"></i>
           </div>
-          <div id="menuSubtitleContainer">
-            <p class="text-sm text-slate-400 mt-1">Escolha os itens, veja a soma automática e pague via PIX direto para o restaurante!</p>
-          </div>
+          <h4 class="font-bold text-white text-sm">Link Exclusivo</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Seu link único no formato <code class="text-emerald-400 font-mono">/loja/seu-nome</code> para colocar na bio do Instagram e WhatsApp.
+          </p>
         </div>
-        <div class="relative w-full md:w-72">
-          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-          <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Buscar produto..." class="w-full rounded-xl border border-slate-800 bg-slate-900/90 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none">
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 backdrop-blur-sm space-y-2 hover:border-emerald-500/40 transition-all">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-lg">
+            <i class="fa-solid fa-qrcode"></i>
+          </div>
+          <h4 class="font-bold text-white text-sm">PIX Direto na Sua Conta</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            O cliente escaneia o QR Code dinâmico do Banco Central e o dinheiro cai na hora na sua conta sem retenção de taxas.
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 backdrop-blur-sm space-y-2 hover:border-emerald-500/40 transition-all">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-lg">
+            <i class="fa-solid fa-location-dot"></i>
+          </div>
+          <h4 class="font-bold text-white text-sm">GPS do Cliente & Impressão</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Comanda de separação impressa com a localização exata no Google Maps para seu motoboy entregar sem errar o endereço.
+          </p>
         </div>
       </div>
 
-      <!-- CATEGORIAS (SEM ABA 'TODOS' - ATÉ 2 LINHAS DE CATEGORIAS) -->
-      <div id="categoryContainer" class="flex flex-wrap items-center gap-2 overflow-y-auto max-h-[88px] pb-1">
-        <!-- Renderizado dinamicamente via JS (apenas categorias cadastradas) -->
-      </div>
     </div>
   </section>
 
-  <!-- CORPO PRINCIPAL: PRODUTOS E CARRINHO -->
-  <main class="mx-auto max-w-6xl flex-1 px-4 py-6 w-full">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-      
-      <!-- VITRINE DE PRODUTOS DA CATEGORIA SELECIONADA -->
-      <div class="lg:col-span-8">
-        <div class="flex items-center justify-between mb-4">
-          <h3 id="currentCategoryTitle" class="text-lg font-bold text-white flex items-center gap-2">
-            <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
-            Lanches
-          </h3>
-          <span id="categoryCountLabel" class="text-xs text-slate-400">0 itens disponíveis</span>
-        </div>
-        <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Renderizado via JS -->
-        </div>
-      </div>
-
-      <!-- CARRINHO LATERAL COM SOMA EM TEMPO REAL -->
-      <div class="hidden lg:block lg:col-span-4 sticky top-20">
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div class="flex items-center gap-2">
-              <i class="fa-solid fa-bag-shopping text-emerald-400"></i>
-              <h3 class="font-bold text-white text-base">Seu Pedido</h3>
+  <!-- ÁREA EXCLUSIVA DO CARDÁPIO (EXIBIDA QUANDO HÁ LOJA SELECIONADA) -->
+  <div id="menuMainArea">
+    <!-- BANNER E BUSCA -->
+    <section class="bg-gradient-to-b from-slate-900 to-slate-950 px-4 pt-6 pb-4 border-b border-slate-800/60">
+      <div class="mx-auto max-w-6xl">
+        <div class="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex-1 min-w-0 pr-4">
+            <div id="menuTitleContainer">
+              <h2 class="text-2xl md:text-3xl font-extrabold text-white">Cardápio & Pedidos Online</h2>
             </div>
-            <span id="cartCountLabel" class="text-xs font-semibold text-slate-400">0 itens</span>
-          </div>
-
-          <div id="cartItemsList" class="mt-4 max-h-72 overflow-y-auto space-y-3 pr-1">
-            <p class="text-center text-xs text-slate-500 py-10">Carrinho vazio.<br>Adicione itens do cardápio.</p>
-          </div>
-
-          <div class="mt-4 pt-3 border-t border-slate-800 space-y-1.5 text-xs">
-            <div class="flex justify-between text-slate-400">
-              <span>Subtotal</span>
-              <span id="cartSubtotalText">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between text-slate-400">
-              <span>Taxa de Entrega</span>
-              <span id="cartDeliveryText">R$ 5,00</span>
-            </div>
-            <div class="flex justify-between text-base font-extrabold text-white pt-2 border-t border-slate-800/60">
-              <span>Total Geral</span>
-              <span id="cartGrandTotalText" class="text-emerald-400">R$ 5,00</span>
+            <div id="menuSubtitleContainer">
+              <p class="text-sm text-slate-400 mt-1">Escolha os itens, veja a soma automática e pague via PIX direto para o restaurante!</p>
             </div>
           </div>
-
-          <button id="btnGoToCheckout" onclick="openCheckoutModal()" disabled class="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-slate-800 text-slate-500 py-3 text-sm font-bold cursor-not-allowed opacity-60 transition-all">
-            Ir para o Pagamento
-            <i class="fa-solid fa-arrow-right"></i>
-          </button>
-          
-          <div id="checkoutNoticePixBlock" class="hidden mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
-            <p class="text-[11px] text-amber-300 font-semibold">
-              <i class="fa-solid fa-lock mr-1"></i> Pagamento pausado: O lojista precisa cadastrar a Chave PIX no painel.
-            </p>
+          <div class="relative w-full md:w-72">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Buscar produto..." class="w-full rounded-xl border border-slate-800 bg-slate-900/90 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none">
           </div>
         </div>
-      </div>
 
-    </div>
-  </main>
-
-  <!-- BARRA FIXA MOBILE QUANDO HÁ ITENS -->
-  <div id="mobileCartBar" class="hidden lg:hidden sticky bottom-0 z-20 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md p-3">
-    <div class="flex items-center justify-between gap-3">
-      <div>
-        <span id="mobileCartCount" class="text-xs text-slate-400">0 itens</span>
-        <div id="mobileCartTotal" class="text-base font-extrabold text-emerald-400">R$ 0,00</div>
+        <!-- CATEGORIAS (SEM ABA 'TODOS' - ATÉ 2 LINHAS DE CATEGORIAS) -->
+        <div id="categoryContainer" class="flex flex-wrap items-center gap-2 overflow-y-auto max-h-[88px] pb-1">
+          <!-- Renderizado dinamicamente via JS (apenas categorias cadastradas) -->
+        </div>
       </div>
-      <button onclick="openCheckoutModal()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-md shadow-emerald-500/20">
-        Ir para o Pagamento
-        <i class="fa-solid fa-arrow-right"></i>
-      </button>
+    </section>
+
+    <!-- CORPO PRINCIPAL: PRODUTOS E CARRINHO -->
+    <main class="mx-auto max-w-6xl flex-1 px-4 py-6 w-full">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- VITRINE DE PRODUTOS DA CATEGORIA SELECIONADA -->
+        <div class="lg:col-span-8">
+          <div class="flex items-center justify-between mb-4">
+            <h3 id="currentCategoryTitle" class="text-lg font-bold text-white flex items-center gap-2">
+              <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+              Lanches
+            </h3>
+            <span id="categoryCountLabel" class="text-xs text-slate-400">0 itens disponíveis</span>
+          </div>
+          <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Renderizado via JS -->
+          </div>
+        </div>
+
+        <!-- CARRINHO LATERAL COM SOMA EM TEMPO REAL -->
+        <div class="hidden lg:block lg:col-span-4 sticky top-20">
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-bag-shopping text-emerald-400"></i>
+                <h3 class="font-bold text-white text-base">Seu Pedido</h3>
+              </div>
+              <span id="cartCountLabel" class="text-xs font-semibold text-slate-400">0 itens</span>
+            </div>
+
+            <div id="cartItemsList" class="mt-4 max-h-72 overflow-y-auto space-y-3 pr-1">
+              <p class="text-center text-xs text-slate-500 py-10">Carrinho vazio.<br>Adicione itens do cardápio.</p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 space-y-1.5 text-xs">
+              <div class="flex justify-between text-slate-400">
+                <span>Subtotal</span>
+                <span id="cartSubtotalText">R$ 0,00</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>Taxa de Entrega</span>
+                <span id="cartDeliveryText">R$ 5,00</span>
+              </div>
+              <div class="flex justify-between text-base font-extrabold text-white pt-2 border-t border-slate-800/60">
+                <span>Total Geral</span>
+                <span id="cartGrandTotalText" class="text-emerald-400">R$ 5,00</span>
+              </div>
+            </div>
+
+            <button id="btnGoToCheckout" onclick="openCheckoutModal()" disabled class="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-slate-800 text-slate-500 py-3 text-sm font-bold cursor-not-allowed opacity-60 transition-all">
+              Ir para o Pagamento
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            
+            <div id="checkoutNoticePixBlock" class="hidden mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+              <p class="text-[11px] text-amber-300 font-semibold">
+                <i class="fa-solid fa-lock mr-1"></i> Pagamento pausado: O lojista precisa cadastrar a Chave PIX no painel.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- BARRA FIXA MOBILE QUANDO HÁ ITENS -->
+    <div id="mobileCartBar" class="hidden lg:hidden sticky bottom-0 z-20 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md p-3">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <span id="mobileCartCount" class="text-xs text-slate-400">0 itens</span>
+          <div id="mobileCartTotal" class="text-base font-extrabold text-emerald-400">R$ 0,00</div>
+        </div>
+        <button onclick="openCheckoutModal()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-md shadow-emerald-500/20">
+          Ir para o Pagamento
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -390,14 +473,14 @@
       { id: 'p8', name: 'Água Mineral com Gás 500ml', description: 'Garrafa bem gelada.', price: 4.50, category: 'Bebidas', imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80' }
     ];
 
-    let products = JSON.parse(localStorage.getItem('DELIVERY_PRODUCTS')) || DEFAULT_PRODUCTS;
-    let config = JSON.parse(localStorage.getItem('DELIVERY_CONFIG')) || {
-      storeName: 'Fast Delivery Express',
-      storePhone: '(11) 99999-8888',
+    let products = [];
+    let config = {
+      storeName: '',
+      storePhone: '',
       deliveryFee: 5.00,
-      pixKey: 'loja.express@pix.com.br',
-      merchantName: 'FAST DELIVERY',
-      merchantCity: 'SAO PAULO'
+      pixKey: '',
+      merchantName: '',
+      merchantCity: ''
     };
 
     let cart = [];
@@ -416,13 +499,13 @@
       if (pathParts.length >= 2 && pathParts[0] === 'loja') {
         return pathParts[1].trim().toLowerCase();
       }
-      return 'default_store';
+      return null;
     }
 
     function copyStoreMenuShareLink() {
       const slug = getStoreSlug();
       const base = window.location.origin;
-      const link = slug === 'default_store' ? `${base}/` : `${base}/loja/${slug}`;
+      const link = slug ? `${base}/loja/${slug}` : `${base}/`;
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(link).then(() => {
           alert(`🔗 LINK DO SEU CARDÁPIO COPIADO!\n\n${link}\n\nEnvie aos seus clientes no WhatsApp ou cole na Bio do seu Instagram!`);
@@ -434,8 +517,39 @@
       }
     }
 
+    function handlePortalGoogleLogin() {
+      const targetUrl = window.location.origin + '/pedidos.html';
+      const authUrl = `https://ltrcsbcblwtbuepkuiig.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(targetUrl)}`;
+      window.location.href = authUrl;
+    }
+
+    function checkLoggedInLojistaOnPortal() {
+      try {
+        const raw = localStorage.getItem('LOJISTA_SESSION');
+        if (raw) {
+          const session = JSON.parse(raw);
+          if (session && session.email) {
+            const btnText = document.getElementById('portalGoogleBtnText');
+            if (btnText) btnText.textContent = `Acessar Painel (${session.name || session.email})`;
+            fetch(`/api/store?ownerEmail=${encodeURIComponent(session.email)}`)
+              .then(r => r.json())
+              .then(data => {
+                if (data && data.id && !data.notFound && data.id !== 'default_store') {
+                  const btn = document.getElementById('btnPortalGoogleLogin');
+                  if (btn) {
+                    btn.onclick = () => window.location.href = `/loja/${data.id}`;
+                    if (btnText) btnText.textContent = `Ver Meu Cardápio (${data.name || data.id})`;
+                  }
+                }
+              }).catch(() => {});
+          }
+        }
+      } catch (e) {}
+    }
+
     async function syncStoreDataFromCloud() {
       const slug = getStoreSlug();
+      if (!slug) return;
       const storageCfgKey = `DELIVERY_CONFIG_${slug}`;
       const storageProdKey = `DELIVERY_PRODUCTS_${slug}`;
 
@@ -456,7 +570,7 @@
         const res = await fetch(`/api/store?loja=${encodeURIComponent(slug)}`);
         if (res.ok) {
           const store = await res.json();
-          if (store) {
+          if (store && !store.notFound) {
             if (store.name) config.storeName = store.name;
             if (store.phone) config.storePhone = store.phone;
             if (store.settings) {
@@ -464,7 +578,7 @@
               if (store.settings.deliveryFee !== undefined) config.deliveryFee = Number(store.settings.deliveryFee);
               if (store.settings.merchantName) config.merchantName = store.settings.merchantName;
               if (store.settings.merchantCity) config.merchantCity = store.settings.merchantCity;
-              if (Array.isArray(store.settings.products) && store.settings.products.length > 0) {
+              if (Array.isArray(store.settings.products)) {
                 products = store.settings.products;
                 localStorage.setItem(storageProdKey, JSON.stringify(products));
               }
@@ -475,9 +589,25 @@
             renderMenuHeader();
             renderCategories();
             renderProducts();
-            document.getElementById('headerStoreName').textContent = config.storeName || 'Delivery Express';
+            document.getElementById('headerStoreName').textContent = config.storeName || slug;
             document.getElementById('headerStoreInfo').innerHTML = `<i class="fa-solid fa-phone"></i> ${config.storePhone || ''} • Entrega R$ ${(config.deliveryFee || 5).toFixed(2).replace('.', ',')}`;
             checkPixStatus();
+          } else if (store && store.notFound && !isLojista()) {
+            const grid = document.getElementById('productsGrid');
+            if (grid) {
+              grid.innerHTML = `
+                <div class="col-span-1 sm:col-span-2 py-16 text-center">
+                  <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-3 text-2xl shadow-sm">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                  </div>
+                  <h4 class="text-base font-bold text-white">Estabelecimento não Encontrado</h4>
+                  <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">O link que você acessou ainda não foi cadastrado ou está digitado incorretamente.</p>
+                  <a href="/" class="w-fit mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 text-xs font-bold transition-all shadow-sm">
+                    Ir para o Início / Criar Cardápio
+                  </a>
+                </div>
+              `;
+            }
           }
         }
       } catch (err) {}
@@ -485,6 +615,7 @@
 
     function syncStoreToCloud() {
       const slug = getStoreSlug();
+      if (!slug) return;
       fetch(`/api/store?loja=${encodeURIComponent(slug)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -516,8 +647,9 @@
     function initLojistaControls() {
       const lockBtn = document.getElementById('lojistaLockBtn');
       const panelBtn = document.getElementById('btnGoToPanel');
+      const slug = getStoreSlug();
       if (panelBtn) {
-        panelBtn.href = `pedidos.html?loja=${encodeURIComponent(getStoreSlug())}`;
+        panelBtn.href = slug ? `pedidos.html?loja=${encodeURIComponent(slug)}` : 'pedidos.html';
       }
       if (isLojista()) {
         if (lockBtn) {
@@ -537,8 +669,13 @@
           lockBtn.classList.remove('inline-flex');
         }
         if (panelBtn) {
-          panelBtn.classList.add('hidden');
-          panelBtn.classList.remove('inline-flex');
+          if (slug) {
+            panelBtn.classList.add('hidden');
+            panelBtn.classList.remove('inline-flex');
+          } else {
+            panelBtn.classList.remove('hidden');
+            panelBtn.classList.add('inline-flex');
+          }
         }
         isMenuUnlocked = false;
       }
@@ -614,7 +751,9 @@
     function updateMenuHeaderField(field, value) {
       config[field] = value;
       const slug = getStoreSlug();
-      localStorage.setItem(`DELIVERY_CONFIG_${slug}`, JSON.stringify(config));
+      if (slug) {
+        localStorage.setItem(`DELIVERY_CONFIG_${slug}`, JSON.stringify(config));
+      }
       localStorage.setItem('DELIVERY_CONFIG', JSON.stringify(config));
       window.dispatchEvent(new Event('storage'));
       syncStoreToCloud();
@@ -657,21 +796,57 @@
     }
 
     function init() {
-      // Recarrega produtos e configuração
       const slug = getStoreSlug();
+      const portalLanding = document.getElementById('portalLandingSection');
+      const menuMainArea = document.getElementById('menuMainArea');
+      const cartBtn = document.getElementById('btnHeaderCart');
+      const storeStatusBadge = document.getElementById('headerStoreStatusBadge');
+
+      if (!slug) {
+        // Modo Portal: Não há loja definida na URL
+        if (portalLanding) portalLanding.classList.remove('hidden');
+        if (menuMainArea) menuMainArea.classList.add('hidden');
+        if (cartBtn) cartBtn.classList.add('hidden');
+        if (storeStatusBadge) storeStatusBadge.classList.add('hidden');
+        
+        document.getElementById('headerStoreName').textContent = 'Cardápio Fácil & Delivery';
+        document.getElementById('headerStoreInfo').innerHTML = `<i class="fa-solid fa-store"></i> Plataforma de Cardápio Digital Multi-Lojas`;
+
+        initLojistaControls();
+        checkLoggedInLojistaOnPortal();
+        return;
+      }
+
+      // Modo Cardápio Exclusivo da Loja
+      if (portalLanding) portalLanding.classList.add('hidden');
+      if (menuMainArea) menuMainArea.classList.remove('hidden');
+      if (cartBtn) cartBtn.classList.remove('hidden');
+      if (storeStatusBadge) storeStatusBadge.classList.remove('hidden');
+
+      // Recarrega produtos e configuração exclusivos desta loja
+      products = [];
+      config = {
+        storeName: slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        storePhone: '',
+        deliveryFee: 5.00,
+        pixKey: '',
+        merchantName: '',
+        merchantCity: ''
+      };
+
       try {
-        const storedProducts = localStorage.getItem(`DELIVERY_PRODUCTS_${slug}`) || localStorage.getItem('DELIVERY_PRODUCTS');
+        const storedProducts = localStorage.getItem(`DELIVERY_PRODUCTS_${slug}`);
         if (storedProducts) products = JSON.parse(storedProducts);
-        const storedConfig = localStorage.getItem(`DELIVERY_CONFIG_${slug}`) || localStorage.getItem('DELIVERY_CONFIG');
+        const storedConfig = localStorage.getItem(`DELIVERY_CONFIG_${slug}`);
         if (storedConfig) config = JSON.parse(storedConfig);
       } catch (e) {}
 
       initLojistaControls();
 
       // Obter categorias únicas (SEM a aba "Todos")
-      const availableCategories = [...new Set(products.map(p => p.category))];
+      const availableCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
       if (!selectedCategory || !availableCategories.includes(selectedCategory)) {
-        selectedCategory = availableCategories[0] || 'Lanches';
+        selectedCategory = availableCategories[0] || (isLojista() ? 'Geral' : '');
       }
 
       renderMenuHeader();
@@ -680,7 +855,7 @@
       updateCartUI();
       checkPixStatus();
 
-      document.getElementById('headerStoreName').textContent = config.storeName || 'Fast Delivery Express';
+      document.getElementById('headerStoreName').textContent = config.storeName || slug;
       document.getElementById('headerStoreInfo').innerHTML = `<i class="fa-solid fa-phone"></i> ${config.storePhone || ''} • Entrega R$ ${(config.deliveryFee || 5).toFixed(2).replace('.', ',')}`;
 
       // Sincroniza em segundo plano com a nuvem Supabase (Estilo Yooga)
@@ -903,7 +1078,19 @@
 
       // MODO NORMAL DE COMPRA DO CLIENTE (OU LOJISTA COM CADEADO TRANCADO)
       if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-2 py-12 text-center text-slate-500 text-sm">Nenhum produto cadastrado nesta categoria.</div>`;
+        if (products.length === 0) {
+          grid.innerHTML = `
+            <div class="col-span-1 sm:col-span-2 py-16 text-center">
+              <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-3 text-2xl shadow-sm">
+                <i class="fa-solid fa-utensils"></i>
+              </div>
+              <h4 class="text-base font-bold text-white">Cardápio em Preparação</h4>
+              <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">Este restaurante está preparando seus deliciosos itens e em breve estará aberto para pedidos!</p>
+            </div>
+          `;
+          return;
+        }
+        grid.innerHTML = `<div class="col-span-1 sm:col-span-2 py-12 text-center text-slate-500 text-sm">Nenhum produto cadastrado nesta categoria.</div>`;
         return;
       }
 
@@ -941,17 +1128,20 @@
 
     // AÇÕES DO MODO EDIÇÃO DO CARDÁPIO (LOJISTA)
     function addNewBlankProduct(cat) {
+      const actualCat = cat || selectedCategory || 'Lanches';
       const newId = 'p_' + Date.now();
       const blankItem = {
         id: newId,
         name: 'Novo Item do Cardápio',
         description: 'Clique aqui para adicionar a descrição deste item (até 5 linhas)...',
         price: 15.00,
-        category: cat,
+        category: actualCat,
         imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80'
       };
       products.push(blankItem);
+      selectedCategory = actualCat;
       saveProductsAndSync();
+      renderCategories();
       renderProducts();
     }
 
@@ -1082,7 +1272,9 @@
 
     function saveProductsAndSync() {
       const slug = getStoreSlug();
-      localStorage.setItem(`DELIVERY_PRODUCTS_${slug}`, JSON.stringify(products));
+      if (slug) {
+        localStorage.setItem(`DELIVERY_PRODUCTS_${slug}`, JSON.stringify(products));
+      }
       localStorage.setItem('DELIVERY_PRODUCTS', JSON.stringify(products));
       window.dispatchEvent(new Event('storage'));
       syncStoreToCloud();

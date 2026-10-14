@@ -397,9 +397,37 @@ async function saveStore(storeData) {
   return storeData;
 }
 
+async function getStoreByEmail(email) {
+  if (!email) return null;
+  const cleanEmail = email.toLowerCase().trim();
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('stores')
+        .select('*')
+        .eq('settings->>ownerEmail', cleanEmail)
+        .limit(1)
+        .maybeSingle();
+      if (!error && data) {
+        return data;
+      }
+    } catch (e) {}
+  }
+  const localFile = path.join(__dirname, 'store_config.json');
+  const localConfig = readLocalJson(localFile, {});
+  for (const slug of Object.keys(localConfig)) {
+    const s = localConfig[slug];
+    if (s && s.settings && s.settings.ownerEmail && s.settings.ownerEmail.toLowerCase() === cleanEmail) {
+      return s;
+    }
+  }
+  return null;
+}
+
 module.exports = {
   isSupabaseActive,
   getStore,
+  getStoreByEmail,
   saveStore,
   getDrivers,
   saveDrivers,

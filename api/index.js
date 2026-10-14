@@ -57,6 +57,11 @@ module.exports = async (req, res) => {
     // 0. GET & POST /api/store (Dados e Cardápio da Loja Estilo Yooga)
     if (pathname === '/api/store' || pathname.endsWith('/store')) {
       if (req.method === 'GET') {
+        const ownerEmail = searchParams.get('ownerEmail');
+        if (ownerEmail) {
+          const store = await db.getStoreByEmail(ownerEmail);
+          return sendJson(res, 200, store || { notFound: true });
+        }
         const store = await db.getStore(storeId);
         return sendJson(res, 200, store);
       }

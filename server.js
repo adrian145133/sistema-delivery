@@ -169,6 +169,13 @@ async function handleRequest(req, res) {
   // API: Dados e Cardápio da Loja (Multi-tenancy Estilo Yooga)
   if (pathname === '/api/store') {
     if (req.method === 'GET') {
+      const ownerEmail = queryParams.get('ownerEmail');
+      if (ownerEmail) {
+        const store = await db.getStoreByEmail(ownerEmail);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(store || { notFound: true }));
+        return;
+      }
       const store = await db.getStore(storeId);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(store));
