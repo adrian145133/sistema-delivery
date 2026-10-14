@@ -134,11 +134,12 @@
             Simular Pedido de Teste
           </button>
 
-          <!-- SESSÃO DO LOJISTA (PADRÃO PROJETO CURRÍCULO) -->
-          <div id="lojistaAuthHeader" class="flex items-center gap-2 border-l border-slate-200 pl-2">
+          <!-- SESSÃO DO LOJISTA (REAL GOOGLE AUTH) -->
+          <div id="lojistaAuthHeader" class="hidden flex items-center gap-2 border-l border-slate-200 pl-2">
             <div class="flex items-center gap-1.5 text-xs text-slate-700 font-semibold">
-              <i class="fa-solid fa-circle-user text-emerald-600 text-base"></i>
-              <span id="lojistaLoggedEmail">loja@delivery.com</span>
+              <img id="lojistaLoggedAvatar" src="" alt="Foto" class="hidden h-5 w-5 rounded-full object-cover border border-slate-300">
+              <i id="lojistaDefaultUserIcon" class="fa-solid fa-circle-user text-emerald-600 text-base"></i>
+              <span id="lojistaLoggedEmail">...</span>
             </div>
             <button onclick="handleLojistaLogout()" class="w-fit text-xs text-rose-600 hover:text-rose-700 border border-rose-200 bg-rose-50 px-2 py-0.5 rounded-md font-semibold transition-colors">
               Sair
@@ -1050,7 +1051,7 @@
     const TRIAL_START_KEY = `SAAS_TRIAL_START_${currentStoreSlug}`;
     const PAID_EXPIRES_KEY = `SAAS_PAID_EXPIRES_${currentStoreSlug}`;
     const TRIAL_DURATION_MS = 2 * 24 * 60 * 60 * 1000; // 2 dias (48 horas de teste)
-    const LOJISTA_SESSION_KEY = 'LOJISTA_SESSION';
+    const LOJISTA_SESSION_KEY = `LOJISTA_SESSION_${currentStoreSlug}`;
     const STORE_OWNER_PIN_KEY = `STORE_OWNER_PIN_${currentStoreSlug}`;
     const PIN_RECOVERY_KEY = `DELIVERY_PIN_RECOVERY_DATA_${currentStoreSlug}`;
     const PAIRING_STORAGE_KEY = `DELIVERY_PAIRING_CODE_${currentStoreSlug}`;
@@ -1067,12 +1068,64 @@
     let driverPairingTimerInterval = null;
 
     // ========================================================
-    // AUTENTICAÇÃO DO LOJISTA (PADRÃO PROJETO CURRÍCULO)
+    // AUTENTICAÇÃO REAL DO LOJISTA COM GOOGLE OAUTH
     // ========================================================
+    function handleOAuthCallbackOnLoad() {
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token=')) {
+        try {
+          const params = new URLSearchParams(hash.substring(1));
+          const accessToken = params.get('access_token');
+          if (accessToken) {
+            const base64Url = accessToken.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+              atob(base64)
+                .split('')
+                .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join('')
+            );
+            const userObj = JSON.parse(jsonPayload);
+            const realEmail = userObj.email || (userObj.user_metadata && userObj.user_metadata.email);
+            const realName = (userObj.user_metadata && (userObj.user_metadata.full_name || userObj.user_metadata.name)) || (realEmail ? realEmail.split('@')[0] : 'Lojista');
+            const realAvatar = (userObj.user_metadata && (userObj.user_metadata.avatar_url || userObj.user_metadata.picture)) || null;
+
+            if (realEmail) {
+              const session = {
+                email: realEmail,
+                name: realName,
+                avatar: realAvatar,
+                provider: 'google',
+                role: 'lojista',
+                loginAt: Date.now()
+              };
+              localStorage.setItem(LOJISTA_SESSION_KEY, JSON.stringify(session));
+              localStorage.setItem('LOJISTA_SESSION', JSON.stringify(session));
+              // Limpa os tokens da URL mantendo o endereço bonito
+              history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
+          }
+        } catch (err) {
+          console.error('Erro ao processar token do Google OAuth:', err);
+        }
+      }
+    }
+
+    // Processa token do Google imediatamente se retornou de autenticação
+    handleOAuthCallbackOnLoad();
+
     function getLojistaSession() {
       try {
-        const raw = localStorage.getItem(LOJISTA_SESSION_KEY);
-        return raw ? JSON.parse(raw) : null;
+        const raw = localStorage.getItem(LOJISTA_SESSION_KEY) || localStorage.getItem('LOJISTA_SESSION');
+        if (!raw) return null;
+        const session = JSON.parse(raw);
+        // Descarta e expurga qualquer sessão antiga com e-mail mock/fake
+        if (session && (session.email === 'lojista.delivery@gmail.com' || session.email === 'loja@delivery.com')) {
+          localStorage.removeItem(LOJISTA_SESSION_KEY);
+          localStorage.removeItem('LOJISTA_SESSION');
+          return null;
+        }
+        return session;
       } catch (e) {
         return null;
       }
@@ -1082,26 +1135,33 @@
       const session = getLojistaSession();
       const loginModal = document.getElementById('lojistaLoginModal');
       const emailBadge = document.getElementById('lojistaLoggedEmail');
+      const authHeader = document.getElementById('lojistaAuthHeader');
+      const avatarEl = document.getElementById('lojistaLoggedAvatar');
+      const defaultIcon = document.getElementById('lojistaDefaultUserIcon');
 
-      if (!session) {
+      if (!session || !session.email) {
         if (loginModal) loginModal.classList.remove('hidden');
+        if (authHeader) authHeader.classList.add('hidden');
       } else {
         if (loginModal) loginModal.classList.add('hidden');
-        if (emailBadge) emailBadge.textContent = session.email || 'loja@delivery.com';
+        if (authHeader) authHeader.classList.remove('hidden');
+        if (emailBadge) emailBadge.textContent = session.email;
+        if (avatarEl && session.avatar) {
+          avatarEl.src = session.avatar;
+          avatarEl.classList.remove('hidden');
+          if (defaultIcon) defaultIcon.classList.add('hidden');
+        } else if (avatarEl) {
+          avatarEl.classList.add('hidden');
+          if (defaultIcon) defaultIcon.classList.remove('hidden');
+        }
       }
     }
 
     function handleGoogleLogin() {
-      const session = {
-        email: 'lojista.delivery@gmail.com',
-        name: 'Proprietário Delivery',
-        provider: 'google',
-        role: 'lojista',
-        loginAt: Date.now()
-      };
-      localStorage.setItem(LOJISTA_SESSION_KEY, JSON.stringify(session));
-      checkLojistaAuth();
-      alert('🎉 Bem-vindo! Login com Google efetuado com sucesso.');
+      // Redireciona para o fluxo real do Google OAuth
+      const targetUrl = window.location.origin + window.location.pathname + window.location.search;
+      const authUrl = `https://ltrcsbcblwtbuepkuiig.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(targetUrl)}`;
+      window.location.href = authUrl;
     }
 
     function handleEmailLogin(e) {
@@ -1118,6 +1178,7 @@
         loginAt: Date.now()
       };
       localStorage.setItem(LOJISTA_SESSION_KEY, JSON.stringify(session));
+      localStorage.setItem('LOJISTA_SESSION', JSON.stringify(session));
       checkLojistaAuth();
       alert('🎉 Login efetuado com sucesso! Acesso liberado ao painel.');
     }
@@ -1125,6 +1186,7 @@
     function handleLojistaLogout() {
       if (!confirm('Deseja realmente sair da conta do lojista?')) return;
       localStorage.removeItem(LOJISTA_SESSION_KEY);
+      localStorage.removeItem('LOJISTA_SESSION');
       checkLojistaAuth();
     }
 
@@ -1140,7 +1202,7 @@
       const session = getLojistaSession();
       if (session && session.email) return session.email;
       if (storeConfig && storeConfig.email) return storeConfig.email;
-      return 'lojista.delivery@gmail.com';
+      return '';
     }
 
     function maskPixKey(key) {
