@@ -1,4 +1,10 @@
 {
+  "name": "sistema-delivery",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
     "selfsigned": "^5.5.0"
