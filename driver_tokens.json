@@ -1,0 +1,489 @@
+{
+  "tok_e7q46gkfy9l": {
+    "token": "tok_e7q46gkfy9l",
+    "code": "658-631",
+    "expiresAt": 1791838907673,
+    "used": false,
+    "createdAt": 1791838607676
+  },
+  "tok_node_test": {
+    "token": "tok_node_test",
+    "code": "456-789",
+    "expiresAt": 1791839587003,
+    "used": true,
+    "createdAt": 1791839287066,
+    "usedAt": 1791839292931,
+    "driverName": "Roberto"
+  },
+  "tok_jpmw7qo5f6x": {
+    "token": "tok_jpmw7qo5f6x",
+    "code": "421-835",
+    "expiresAt": 1791840096009,
+    "used": false,
+    "createdAt": 1791839796016
+  },
+  "tok_wejquo6kuw8": {
+    "token": "tok_wejquo6kuw8",
+    "code": "313-543",
+    "expiresAt": 1791840816200,
+    "used": false,
+    "createdAt": 1791840516206
+  },
+  "tok_2424qn1rcm0": {
+    "token": "tok_2424qn1rcm0",
+    "code": "353-969",
+    "expiresAt": 1791841119096,
+    "used": false,
+    "createdAt": 1791840819118
+  },
+  "tok_d65mbruy9x4": {
+    "token": "tok_d65mbruy9x4",
+    "code": "886-318",
+    "expiresAt": 1791841442200,
+    "used": false,
+    "createdAt": 1791841142206
+  },
+  "tok_1r3i1oj4rcw": {
+    "token": "tok_1r3i1oj4rcw",
+    "code": "637-376",
+    "expiresAt": 1791841744736,
+    "used": false,
+    "createdAt": 1791841444753
+  },
+  "tok_6489erfad4g": {
+    "token": "tok_6489erfad4g",
+    "code": "930-125",
+    "expiresAt": 1791843685840,
+    "used": false,
+    "createdAt": 1791843385844
+  },
+  "tok_abflsaym2ve": {
+    "token": "tok_abflsaym2ve",
+    "code": "202-657",
+    "expiresAt": 1791844232426,
+    "used": false,
+    "createdAt": 1791843932427
+  },
+  "tok_mhd3sed3c55": {
+    "token": "tok_mhd3sed3c55",
+    "code": "177-536",
+    "expiresAt": 1791845037593,
+    "used": true,
+    "createdAt": 1791844737597,
+    "usedAt": 1791844771600,
+    "driverName": "Adrian David da Silva Rodrigues"
+  },
+  "tok_4hhbws3xujk": {
+    "token": "tok_4hhbws3xujk",
+    "code": "156-436",
+    "expiresAt": 1791846461120,
+    "used": false,
+    "createdAt": 1791846161127
+  },
+  "tok_pz45znvif41": {
+    "token": "tok_pz45znvif41",
+    "code": "338-775",
+    "expiresAt": 1791847420897,
+    "used": false,
+    "createdAt": 1791847120914
+  },
+  "tok_cqe2to10qe0": {
+    "token": "tok_cqe2to10qe0",
+    "code": "350-221",
+    "expiresAt": 1791848275320,
+    "used": false,
+    "createdAt": 1791847975324
+  },
+  "tok_whf4s3elsjc": {
+    "token": "tok_whf4s3elsjc",
+    "code": "179-579",
+    "expiresAt": 1791849257880,
+    "used": false,
+    "createdAt": 1791848957888
+  },
+  "tok_l5omo8cbhn5": {
+    "token": "tok_l5omo8cbhn5",
+    "code": "697-939",
+    "expiresAt": 1791850456817,
+    "used": false,
+    "createdAt": 1791850156818
+  },
+  "tok_qocrucx2ppc": {
+    "token": "tok_qocrucx2ppc",
+    "code": "220-123",
+    "expiresAt": 1791851726976,
+    "used": false,
+    "createdAt": 1791851426981
+  },
+  "tok_fig2d83sbqy": {
+    "token": "tok_fig2d83sbqy",
+    "code": "108-469",
+    "expiresAt": 1791856281178,
+    "used": true,
+    "createdAt": 1791855981181,
+    "usedAt": 1791856027636,
+    "claimedBy": "Novo Motoboy"
+  },
+  "tok_c8jsp0mzd48": {
+    "token": "tok_c8jsp0mzd48",
+    "code": "580-346",
+    "expiresAt": 1791858289160,
+    "used": false,
+    "createdAt": 1791857989170
+  },
+  "tok_bn23s911fls": {
+    "token": "tok_bn23s911fls",
+    "code": "476-223",
+    "expiresAt": 1791858385696,
+    "used": false,
+    "createdAt": 1791858085700
+  },
+  "tok_hig7h0c1g6g": {
+    "token": "tok_hig7h0c1g6g",
+    "code": "947-392",
+    "expiresAt": 1791858386440,
+    "used": false,
+    "createdAt": 1791858086446
+  },
+  "tok_0ptyj1g1ywo": {
+    "token": "tok_0ptyj1g1ywo",
+    "code": "742-190",
+    "expiresAt": 1791858410712,
+    "used": false,
+    "createdAt": 1791858110717
+  },
+  "tok_st3v3i21zdd": {
+    "token": "tok_st3v3i21zdd",
+    "code": "344-412",
+    "expiresAt": 1791858411313,
+    "used": false,
+    "createdAt": 1791858111317
+  },
+  "tok_wsmu9ro1zr5": {
+    "token": "tok_wsmu9ro1zr5",
+    "code": "400-255",
+    "expiresAt": 1791858411809,
+    "used": false,
+    "createdAt": 1791858111813
+  },
+  "tok_8f1z8er2060": {
+    "token": "tok_8f1z8er2060",
+    "code": "933-571",
+    "expiresAt": 1791858412344,
+    "used": false,
+    "createdAt": 1791858112349
+  },
+  "tok_kqjiguj3b5c": {
+    "token": "tok_kqjiguj3b5c",
+    "code": "286-745",
+    "expiresAt": 1791858473232,
+    "used": false,
+    "createdAt": 1791858173235
+  },
+  "tok_pea38eta1jl": {
+    "token": "tok_pea38eta1jl",
+    "code": "356-162",
+    "expiresAt": 1791858787377,
+    "used": false,
+    "createdAt": 1791858487382
+  },
+  "tok_c0pdqlia2ww": {
+    "token": "tok_c0pdqlia2ww",
+    "code": "297-483",
+    "expiresAt": 1791858789152,
+    "used": false,
+    "createdAt": 1791858489154
+  },
+  "tok_1z6ct6ma7xn": {
+    "token": "tok_1z6ct6ma7xn",
+    "code": "563-982",
+    "expiresAt": 1791858795659,
+    "used": false,
+    "createdAt": 1791858495662
+  },
+  "tok_9q9ofklx1yh": {
+    "token": "tok_9q9ofklx1yh",
+    "code": "387-927",
+    "expiresAt": 1791859861001,
+    "used": false,
+    "createdAt": 1791859561006
+  },
+  "tok_nm4iptix3pc": {
+    "token": "tok_nm4iptix3pc",
+    "code": "275-197",
+    "expiresAt": 1791859863264,
+    "used": false,
+    "createdAt": 1791859563270
+  },
+  "tok_enzl09tx435": {
+    "token": "tok_enzl09tx435",
+    "code": "171-207",
+    "expiresAt": 1791859863761,
+    "used": false,
+    "createdAt": 1791859563765
+  },
+  "tok_sqlgumwh948": {
+    "token": "tok_sqlgumwh948",
+    "code": "210-830",
+    "expiresAt": 1791860803400,
+    "used": false,
+    "createdAt": 1791860503406
+  },
+  "tok_rh83oznwhzs": {
+    "token": "tok_rh83oznwhzs",
+    "code": "481-429",
+    "expiresAt": 1791864873976,
+    "used": true,
+    "createdAt": 1791864573978,
+    "usedAt": 1791864604988,
+    "claimedBy": "Novo Motoboy"
+  },
+  "tok_dk4jbmp38bt": {
+    "token": "tok_dk4jbmp38bt",
+    "code": "306-154",
+    "expiresAt": 1791865188041,
+    "used": false,
+    "createdAt": 1791864888046
+  },
+  "tok_5k24ktd3qm8": {
+    "token": "tok_5k24ktd3qm8",
+    "code": "207-724",
+    "expiresAt": 1791865211744,
+    "used": false,
+    "createdAt": 1791864911750
+  },
+  "tok_yj3jc3e531t": {
+    "token": "tok_yj3jc3e531t",
+    "code": "913-113",
+    "expiresAt": 1791865274513,
+    "used": false,
+    "createdAt": 1791864974516
+  },
+  "test_1791865503919": {
+    "token": "test_1791865503919",
+    "code": "789-123",
+    "expiresAt": 1791865803919,
+    "used": true,
+    "createdAt": 1791865503988,
+    "usedAt": 1791865504000,
+    "claimedBy": "Novo Motoboy"
+  },
+  "tok_1lyeaj3hrrc": {
+    "token": "tok_1lyeaj3hrrc",
+    "code": "691-318",
+    "expiresAt": 1791865866408,
+    "used": false,
+    "createdAt": 1791865566413
+  },
+  "tok_t5l26m82kv4": {
+    "token": "tok_t5l26m82kv4",
+    "code": "904-182",
+    "expiresAt": 1791866837248,
+    "used": false,
+    "createdAt": 1791866537253
+  },
+  "tok_3fuxkna34ng": {
+    "token": "tok_3fuxkna34ng",
+    "code": "567-221",
+    "expiresAt": 1791866862892,
+    "used": true,
+    "createdAt": 1791866562895,
+    "usedAt": 1791866571448,
+    "claimedBy": "Novo Motoboy"
+  },
+  "tok_mr11fesekub": {
+    "token": "tok_mr11fesekub",
+    "code": "690-316",
+    "expiresAt": 1791937940963,
+    "used": false,
+    "createdAt": 1791937640969
+  },
+  "tok_test_valid": {
+    "token": "tok_test_valid",
+    "code": "111-222",
+    "expiresAt": 1791938325702,
+    "used": true,
+    "createdAt": 1791938028041,
+    "usedAt": 1791938037535
+  },
+  "tok_kjfv3zroazv": {
+    "token": "tok_kjfv3zroazv",
+    "code": "435-643",
+    "expiresAt": 1791938394763,
+    "used": true,
+    "createdAt": 1791938094769,
+    "usedAt": 1791938299756
+  },
+  "tok_8nijlf2afn8": {
+    "token": "tok_8nijlf2afn8",
+    "code": "955-345",
+    "expiresAt": 1791939427220,
+    "used": false,
+    "createdAt": 1791939127231
+  },
+  "tok_test123": {
+    "token": "tok_test123",
+    "code": "",
+    "expiresAt": 1791940760068,
+    "used": true,
+    "createdAt": 1791940460068,
+    "usedAt": 1791940468399,
+    "driverName": "Teste"
+  },
+  "tok_2tb2ae95n3y": {
+    "token": "tok_2tb2ae95n3y",
+    "code": "",
+    "expiresAt": 1791940883230,
+    "used": false,
+    "createdAt": 1791940583233
+  },
+  "tok_0m3wx165qda": {
+    "token": "tok_0m3wx165qda",
+    "code": "",
+    "expiresAt": 1791940887454,
+    "used": false,
+    "createdAt": 1791940587457
+  },
+  "tok_jxbx6hr5r5b": {
+    "token": "tok_jxbx6hr5r5b",
+    "code": "",
+    "expiresAt": 1791940888463,
+    "used": false,
+    "createdAt": 1791940588469
+  },
+  "tok_jaeq67y5s33": {
+    "token": "tok_jaeq67y5s33",
+    "code": "",
+    "expiresAt": 1791940889679,
+    "used": false,
+    "createdAt": 1791940589684
+  },
+  "tok_vr1fh7s5v1a": {
+    "token": "tok_vr1fh7s5v1a",
+    "code": "",
+    "expiresAt": 1791940893502,
+    "used": false,
+    "createdAt": 1791940593508
+  },
+  "tok_x6i7c8f5vcv": {
+    "token": "tok_x6i7c8f5vcv",
+    "code": "",
+    "expiresAt": 1791940893919,
+    "used": false,
+    "createdAt": 1791940593923
+  },
+  "tok_vg1ts635vlj": {
+    "token": "tok_vg1ts635vlj",
+    "code": "",
+    "expiresAt": 1791940894231,
+    "used": false,
+    "createdAt": 1791940594234
+  },
+  "tok_gwwi9kz5vpi": {
+    "token": "tok_gwwi9kz5vpi",
+    "code": "",
+    "expiresAt": 1791940894374,
+    "used": false,
+    "createdAt": 1791940594377
+  },
+  "tok_qxike065vvz": {
+    "token": "tok_qxike065vvz",
+    "code": "",
+    "expiresAt": 1791940894607,
+    "used": false,
+    "createdAt": 1791940594612
+  },
+  "tok_p8hx8n75vzs": {
+    "token": "tok_p8hx8n75vzs",
+    "code": "",
+    "expiresAt": 1791940894744,
+    "used": false,
+    "createdAt": 1791940594750
+  },
+  "tok_cmsrv6m5w3i": {
+    "token": "tok_cmsrv6m5w3i",
+    "code": "",
+    "expiresAt": 1791940894878,
+    "used": false,
+    "createdAt": 1791940594883
+  },
+  "tok_ylb6bu75z86": {
+    "token": "tok_ylb6bu75z86",
+    "code": "",
+    "expiresAt": 1791940898934,
+    "used": true,
+    "createdAt": 1791940598937,
+    "usedAt": 1791940668214,
+    "driverName": "Adriano jose"
+  },
+  "tok_87wx23zb6fb": {
+    "token": "tok_87wx23zb6fb",
+    "code": "",
+    "expiresAt": 1791941141543,
+    "used": false,
+    "createdAt": 1791940841551
+  },
+  "tok_mqpcw3jb7uu": {
+    "token": "tok_mqpcw3jb7uu",
+    "code": "",
+    "expiresAt": 1791941143398,
+    "used": false,
+    "createdAt": 1791940843403
+  },
+  "tok_bwe69xrqid4": {
+    "token": "tok_bwe69xrqid4",
+    "code": "",
+    "expiresAt": 1791941856856,
+    "used": false,
+    "createdAt": 1791941556856
+  },
+  "tok_test_auo1py": {
+    "token": "tok_test_auo1py",
+    "code": "",
+    "expiresAt": 1791941961612,
+    "used": false,
+    "createdAt": 1791941661635
+  },
+  "tok_test_uv440o": {
+    "token": "tok_test_uv440o",
+    "code": "",
+    "expiresAt": 1791941974109,
+    "used": false,
+    "createdAt": 1791941674133
+  },
+  "tok_k6b884zuv62": {
+    "token": "tok_k6b884zuv62",
+    "code": "",
+    "expiresAt": 1791942060074,
+    "used": false,
+    "createdAt": 1791941760075
+  },
+  "tok_063suwwuvoa": {
+    "token": "tok_063suwwuvoa",
+    "code": "",
+    "expiresAt": 1791942060730,
+    "used": false,
+    "createdAt": 1791941760732
+  },
+  "tok_rfvl1pz2wkw": {
+    "token": "tok_rfvl1pz2wkw",
+    "code": "",
+    "expiresAt": 1791942435152,
+    "used": false,
+    "createdAt": 1791942135155
+  },
+  "tok_lok6r7ugxc2": {
+    "token": "tok_lok6r7ugxc2",
+    "code": "",
+    "expiresAt": 1791943089314,
+    "used": false,
+    "createdAt": 1791942789316
+  },
+  "tok_vf4qfwxsp8a": {
+    "token": "tok_vf4qfwxsp8a",
+    "code": "",
+    "expiresAt": 1791943638682,
+    "used": false,
+    "createdAt": 1791943338685
+  }
+}

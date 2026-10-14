@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminal Operacional do Caixa • Pedidos & Impressão</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="qrcode.min.js"></script>
+
+  <style>
+    /* DESATIVA SELEÇÃO DE TEXTO ACIDENTAL E CLIQUE DIREITO */
+    body {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ESTILOS ESPECÍFICOS PARA IMPRESSÃO EM FOLHA A4 */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 8mm 10mm 8mm 10mm;
+      }
+      body {
+        background: white !important;
+        color: black !important;
+        font-family: Arial, Helvetica, sans-serif !important;
+        font-size: 11pt !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #printArea {
+        display: block !important;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+    }
+
+    @media screen {
+      #printArea {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans select-none" oncontextmenu="return handleBlockContextMenu(event)">
+
+  <!-- ==================================================== -->
+  <!-- TELA DE PAREAMENTO DO TERMINAL (SE NÃO ESTIVER PAREADO) -->
+  <!-- ==================================================== -->
+  <div id="unpairedScreen" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900 p-4">
+    <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950 p-6 sm:p-8 text-center text-white shadow-2xl space-y-5">
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-2xl shadow-sm">
+        <i class="fa-solid fa-desktop"></i>
+      </div>
+
+      <div>
+        <h2 class="text-xl font-bold tracking-tight">Terminal do Caixa da Loja</h2>
+        <p class="text-xs text-slate-400 mt-1">Este computador precisa ser pareado pelo proprietário para receber os pedidos da cozinha</p>
+      </div>
+
+      <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 text-left text-xs space-y-2 text-slate-300">
+        <p class="font-bold text-white flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-info text-indigo-400"></i> Como conectar este computador:
+        </p>
+        <p>1. Peça ao lojista/proprietário abrir o <strong>Painel Central</strong> no celular ou computador dele.</p>
+        <p>2. O proprietário clica no botão <strong>"Parear Caixa da Loja"</strong> e gera um código de 6 dígitos.</p>
+        <p>3. Digite o código descartável abaixo para liberar este terminal.</p>
+      </div>
+
+      <form onsubmit="handlePairTerminal(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Código Descartável de 6 Dígitos:</label>
+          <input type="text" id="terminalPairCodeInput" required placeholder="000-000" maxlength="7" style="width: 14ch;" class="mx-auto text-center font-mono text-2xl font-bold tracking-widest uppercase rounded-xl border-2 border-indigo-500/50 bg-slate-900 py-2.5 text-white focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+        </div>
+
+        <div id="pairErrorAlert" class="hidden text-xs text-rose-400 font-bold bg-rose-500/10 border border-rose-500/30 p-2.5 rounded-xl">
+          Código inválido ou já expirado.
+        </div>
+
+        <button type="submit" class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-3 text-xs font-bold text-white shadow-lg transition-all active:scale-95">
+          <i class="fa-solid fa-link mr-1"></i> Conectar e Iniciar Caixa
+        </button>
+      </form>
+      
+      <p class="text-[11px] text-slate-500">Terminal seguro • Conexão criptografada direta com a loja</p>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- TELA OPERACIONAL DO CAIXA (QUANDO PAREADO)           -->
+  <!-- ==================================================== -->
+  <div id="pairedTerminalApp" class="no-print flex-1 flex flex-col">
+    
+    <!-- BARRA SUPERIOR DO TERMINAL -->
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 shadow-sm">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 flex-wrap">
+        <div class="flex items-center gap-3">
+          <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm text-xl">
+            <i class="fa-solid fa-desktop"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 id="terminalStoreTitle" class="text-lg md:text-xl font-bold tracking-tight text-slate-900">Fast Delivery Express</h1>
+              <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
+                Caixa Operacional Conectado
+              </span>
+            </div>
+            <p class="text-xs text-slate-500">Recepção de Pedidos em Tempo Real • Impressão A4 • Expedição</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <!-- BOTÃO CONSULTAR CARDÁPIO (SOMENTE LEITURA PARA TIRAR DÚVIDAS NO BALCÃO) -->
+          <button onclick="openMenuConsultModal()" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors" title="Consulte produtos e preços para clientes do balcão ou telefone">
+            <i class="fa-solid fa-book-open text-emerald-600"></i>
+            Consultar Cardápio (Preços)
+          </button>
+
+          <!-- GUIA DO FLUXO -->
+          <button onclick="openFlowGuideModal()" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+            <i class="fa-solid fa-circle-question text-indigo-600"></i>
+            Guia de Expedição
+          </button>
+
+          <!-- APP DO MOTOBOY -->
+          <a href="motoboy.html" target="_blank" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs" title="Aplicativo do motoboy para escanear pedidos e otimizar rotas">
+            <i class="fa-solid fa-motorcycle text-emerald-600"></i>
+            App do Motoboy
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- PAINEL DE CONTROLE E FILTROS -->
+    <main class="mx-auto max-w-7xl flex-1 px-4 py-6 w-full">
+      
+      <!-- BARRA DE CONFIGURAÇÕES RÁPIDAS -->
+      <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-6 flex-wrap">
+          <!-- TOGGLE SOM -->
+          <label class="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-slate-700">
+            <input type="checkbox" id="soundToggle" checked onchange="saveTerminalSettings()" class="rounded border-slate-300 text-emerald-600 focus:ring-0">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-volume-high text-emerald-600"></i> Alarme sonoro em novo pedido</span>
+          </label>
+
+          <!-- TOGGLE AUTO-IMPRIMIR -->
+          <label class="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+            <input type="checkbox" id="autoPrintToggle" checked onchange="saveTerminalSettings()" class="rounded border-slate-300 text-emerald-600 focus:ring-0">
+            <span class="flex items-center gap-1.5 font-bold"><i class="fa-solid fa-bolt text-amber-500"></i> Auto-imprimir folha A4 ao pagar</span>
+          </label>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-500">Total de pedidos: <strong id="totalOrdersCount" class="text-slate-900">0</strong></span>
+        </div>
+      </div>
+
+      <!-- ABAS DE STATUS (PAGOS E EM SEPARAÇÃO UNIFICADOS) -->
+      <div class="mb-6 flex items-center gap-2 overflow-x-auto pb-1">
+        <button onclick="filterStatus('separando')" id="filter-separando" class="w-fit rounded-lg px-4 py-2 text-xs font-bold bg-emerald-600 text-white shadow-sm transition-all">
+          Pagos / Em Separação (<span id="count-separando">0</span>)
+        </button>
+        <button onclick="filterStatus('entrega')" id="filter-entrega" class="w-fit rounded-lg px-4 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all">
+          Saiu p/ Entrega (<span id="count-entrega">0</span>)
+        </button>
+        <button onclick="filterStatus('entregue')" id="filter-entregue" class="w-fit rounded-lg px-4 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all">
+          Entregues (<span id="count-entregue">0</span>)
+        </button>
+      </div>
+
+      <!-- LISTAGEM DE PEDIDOS (ORDEM DECRESCENTE / MAIS RECENTES NO TOPO) -->
+      <div id="ordersListContainer" class="space-y-4">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: CONSULTA DE CARDÁPIO (SOMENTE LEITURA CAIXA)  -->
+  <!-- ==================================================== -->
+  <div id="menuConsultModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <i class="fa-solid fa-book-open text-base"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Consulta de Produtos & Preços</h3>
+            <p class="text-xs text-slate-500">Tabela de consulta de balcão e atendimento (modo somente leitura)</p>
+          </div>
+        </div>
+        <button onclick="closeMenuConsultModal()" class="w-fit text-slate-400 hover:text-slate-700 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="py-3">
+        <input type="text" id="consultSearchInput" oninput="filterConsultMenu()" placeholder="Pesquisar produto ou ingrediente..." class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-emerald-500">
+      </div>
+
+      <div id="consultProductsList" class="flex-1 overflow-y-auto space-y-2 pr-1">
+        <!-- Renderizado via JS -->
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 text-right">
+        <button onclick="closeMenuConsultModal()" class="w-fit rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800">
+          Fechar Consulta
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: GUIA EXPLICATIVO DO FLUXO                     -->
+  <!-- ==================================================== -->
+  <div id="flowGuideModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <h3 class="text-base font-bold text-slate-900">Guia de Expedição do Caixa</h3>
+        </div>
+        <button onclick="closeFlowGuideModal()" class="w-fit text-slate-400 hover:text-slate-700 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-3 text-xs text-slate-600">
+        <p>1. <strong>Pagos / Em Separação:</strong> O cliente pagou no PIX, toca o alarme e a folha A4 imprime automaticamente na cozinha perto dos funcionários para início imediato do preparo.</p>
+        <p>2. <strong>Saiu p/ Entrega:</strong> Quando a cozinha terminar, grampeie a folha A4 na sacola e despache com o motoboy. O motoboy aponta a câmera do celular para o QR Code da folha e abre o GPS no endereço exato.</p>
+        <p>3. <strong>Entregues:</strong> Quando o motoboy retorna confirmando a entrega, marque como Entregue.</p>
+      </div>
+
+      <div class="mt-4 text-right">
+        <button onclick="closeFlowGuideModal()" class="w-fit rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- ÁREA DE IMPRESSÃO A4 (FORMATO PADRÃO FISCAL/LOGÍSTICA) -->
+  <!-- ==================================================== -->
+  <div id="printArea" style="display: none;"></div>
+
+  <script>
+    const ORDERS_STORAGE_KEY = 'delivery_orders_v1';
+    const CONFIG_KEY = 'DELIVERY_CONFIG';
+    const DRIVERS_KEY = 'DELIVERY_DRIVERS';
+    const PRODUCTS_KEY = 'DELIVERY_PRODUCTS';
+    const PAIRING_STORAGE_KEY = 'DELIVERY_PAIRING_CODE';
+    const TERMINALS_STORAGE_KEY = 'DELIVERY_PAIRED_TERMINALS';
+    const CURRENT_TERMINAL_KEY = 'CAIXA_TERMINAL_AUTH';
+
+    let currentFilter = 'separando';
+    let lastKnownOrderIds = new Set();
+    let audioCtx = null;
+
+    let storeConfig = {
+      storeName: 'Fast Delivery Express',
+      storePhone: '(11) 99999-8888',
+      deliveryFee: 5.00,
+      pixKey: 'loja.express@pix.com.br'
+    };
+
+    let drivers = [];
+    let products = [];
+
+    // ========================================================
+    // BLOQUEIO TOTAL DE COMPARTILHAMENTO DE LINKS ELETRÔNICOS
+    // ========================================================
+    function handleBlockContextMenu(e) {
+      e.preventDefault();
+      return false;
+    }
+
+    window.addEventListener('keydown', (e) => {
+      // Bloqueia atalhos de desenvolvedor ou visualização de código fonte
+      if (e.key === 'F12' || (e.ctrlKey && (e.key === 'u' || e.key === 'U' || e.key === 's' || e.key === 'S')) || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'C' || e.key === 'c'))) {
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    // ========================================================
+    // CHECAGEM DE PAREAMENTO DO TERMINAL
+    // ========================================================
+    function isTerminalPaired() {
+      try {
+        const auth = localStorage.getItem(CURRENT_TERMINAL_KEY);
+        if (!auth) return false;
+        const parsed = JSON.parse(auth);
+        
+        // Verifica se ainda consta nos terminais autorizados da loja
+        const terminals = JSON.parse(localStorage.getItem(TERMINALS_STORAGE_KEY) || '[]');
+        return terminals.some(t => t.id === parsed.id);
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function checkTerminalStatus() {
+      const paired = isTerminalPaired();
+      const unpairedScreen = document.getElementById('unpairedScreen');
+      const pairedApp = document.getElementById('pairedTerminalApp');
+
+      if (!paired) {
+        unpairedScreen.classList.remove('hidden');
+        pairedApp.classList.add('hidden');
+        document.getElementById('terminalPairCodeInput').focus();
+      } else {
+        unpairedScreen.classList.add('hidden');
+        pairedApp.classList.remove('hidden');
+        loadAllTerminalConfigs();
+        loadAndRenderOrders();
+      }
+    }
+
+    function handlePairTerminal(e) {
+      e.preventDefault();
+      const inputCode = document.getElementById('terminalPairCodeInput').value.trim();
+      const errBox = document.getElementById('pairErrorAlert');
+      errBox.classList.add('hidden');
+
+      try {
+        const rawPairing = localStorage.getItem(PAIRING_STORAGE_KEY);
+        if (!rawPairing) {
+          errBox.textContent = 'Nenhum código ativo no momento. Peça ao lojista para gerar o código de 5 minutos.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        const pairingData = JSON.parse(rawPairing);
+
+        if (pairingData.used) {
+          errBox.textContent = 'Este código já foi utilizado e queimado. Peça um novo código ao lojista.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        if (Date.now() > pairingData.expiresAt) {
+          errBox.textContent = 'Este código expirou (duração de 5 minutos). Peça um novo código ao lojista.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        if (pairingData.code.replace('-', '').toUpperCase() !== inputCode.replace('-', '').toUpperCase()) {
+          errBox.textContent = 'Código incorreto! Verifique o número exibido na tela do proprietário.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        // QUEIMA O CÓDIGO IMEDIATAMENTE (NUNCA MAIS PODE SER USADO)
+        pairingData.used = true;
+        localStorage.setItem(PAIRING_STORAGE_KEY, JSON.stringify(pairingData));
+
+        // CRIA A CREDENCIAL DO TERMINAL AUTORIZADO
+        const terminalId = 'term_' + Date.now();
+        const terminalObj = {
+          id: terminalId,
+          name: 'Computador do Caixa',
+          pairedAt: new Date().toISOString()
+        };
+
+        const existingTerminals = JSON.parse(localStorage.getItem(TERMINALS_STORAGE_KEY) || '[]');
+        existingTerminals.push(terminalObj);
+        localStorage.setItem(TERMINALS_STORAGE_KEY, JSON.stringify(existingTerminals));
+        localStorage.setItem(CURRENT_TERMINAL_KEY, JSON.stringify(terminalObj));
+
+        window.dispatchEvent(new Event('storage'));
+
+        alert('🎉 SUCESSO! Computador do caixa conectado com sucesso à loja!');
+        checkTerminalStatus();
+
+      } catch (err) {
+        errBox.textContent = 'Erro ao validar código. Tente novamente.';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    // ========================================================
+    // DADOS E OPERAÇÃO DO CAIXA
+    // ========================================================
+    function loadAllTerminalConfigs() {
+      try {
+        const rawCfg = localStorage.getItem(CONFIG_KEY);
+        if (rawCfg) storeConfig = { ...storeConfig, ...JSON.parse(rawCfg) };
+
+        const rawDrv = localStorage.getItem(DRIVERS_KEY);
+        if (rawDrv) drivers = JSON.parse(rawDrv);
+
+        const rawProd = localStorage.getItem(PRODUCTS_KEY);
+        if (rawProd) products = JSON.parse(rawProd);
+      } catch (e) {}
+
+      document.getElementById('terminalStoreTitle').textContent = storeConfig.storeName || 'Fast Delivery Express';
+    }
+
+    function saveTerminalSettings() {
+      const s = {
+        sound: document.getElementById('soundToggle')?.checked ?? true,
+        autoPrint: document.getElementById('autoPrintToggle')?.checked ?? true
+      };
+      localStorage.setItem('CAIXA_SETTINGS', JSON.stringify(s));
+    }
+
+    function loadTerminalSettings() {
+      try {
+        const raw = localStorage.getItem('CAIXA_SETTINGS');
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (document.getElementById('soundToggle')) document.getElementById('soundToggle').checked = s.sound !== false;
+          if (document.getElementById('autoPrintToggle')) document.getElementById('autoPrintToggle').checked = s.autoPrint !== false;
+        }
+      } catch (e) {}
+    }
+
+    function playOrderChime() {
+      if (!document.getElementById('soundToggle')?.checked) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.frequency.setValueAtTime(587.33, now);
+        gain1.gain.setValueAtTime(0.3, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.4);
+
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.frequency.setValueAtTime(880, now + 0.15);
+        gain2.gain.setValueAtTime(0.35, now + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now + 0.15);
+        osc2.stop(now + 0.7);
+      } catch (e) {}
+    }
+
+    function getStoredOrders() {
+      try {
+        const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        return list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveOrders(orders) {
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+      window.dispatchEvent(new Event('storage'));
+    }
+
+    function loadAndRenderOrders(checkNew = false) {
+      const orders = getStoredOrders();
+
+      if (checkNew) {
+        let hasNew = false;
+        let newestOrder = null;
+        orders.forEach(o => {
+          if (!lastKnownOrderIds.has(o.id)) {
+            hasNew = true;
+            newestOrder = o;
+          }
+        });
+
+        if (hasNew && lastKnownOrderIds.size > 0) {
+          playOrderChime();
+          if (document.getElementById('autoPrintToggle')?.checked && newestOrder) {
+            printOrder(newestOrder.id);
+          }
+        }
+      }
+
+      lastKnownOrderIds = new Set(orders.map(o => o.id));
+      updateCounters(orders);
+      renderOrdersList(orders);
+    }
+
+    function updateCounters(orders) {
+      const counts = { separando: 0, entrega: 0, entregue: 0 };
+      orders.forEach(o => {
+        if (o.status === 'pago' || o.status === 'separando') {
+          counts.separando++;
+        } else if (counts[o.status] !== undefined) {
+          counts[o.status]++;
+        }
+      });
+
+      document.getElementById('totalOrdersCount').textContent = orders.length;
+      document.getElementById('count-separando').textContent = counts.separando;
+      document.getElementById('count-entrega').textContent = counts.entrega;
+      document.getElementById('count-entregue').textContent = counts.entregue;
+    }
+
+    function filterStatus(status) {
+      currentFilter = status;
+      ['separando', 'entrega', 'entregue'].forEach(s => {
+        const btn = document.getElementById('filter-' + s);
+        if (btn) {
+          if (s === status) {
+            btn.className = 'w-fit rounded-lg px-4 py-2 text-xs font-bold bg-emerald-600 text-white shadow-sm transition-all';
+          } else {
+            btn.className = 'w-fit rounded-lg px-4 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all';
+          }
+        }
+      });
+      renderOrdersList(getStoredOrders());
+    }
+
+    function updateOrderStatus(orderId, newStatus) {
+      const orders = getStoredOrders();
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+      order.status = newStatus;
+      order.updatedAt = new Date().toISOString();
+      saveOrders(orders);
+      loadAndRenderOrders();
+    }
+
+    function assignDriver(orderId, driverId) {
+      const orders = getStoredOrders();
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+      order.driverId = driverId;
+      saveOrders(orders);
+      loadAndRenderOrders();
+    }
+
+    function renderOrdersList(orders) {
+      const container = document.getElementById('ordersListContainer');
+      const filtered = orders.filter(o => {
+        if (currentFilter === 'separando') return o.status === 'separando' || o.status === 'pago';
+        return o.status === currentFilter;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 mb-3 text-xl">
+              <i class="fa-solid fa-inbox"></i>
+            </div>
+            <h3 class="text-sm font-bold text-slate-700">Nenhum pedido nesta etapa</h3>
+            <p class="text-xs text-slate-400 mt-1">Os pedidos pagos pelos clientes entram automaticamente na cozinha em <strong>Pagos / Em Separação</strong>.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(o => {
+        const timeStr = new Date(o.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const itemsText = o.items.map(i => `${i.quantity}x ${i.title}`).join(', ');
+
+        return `
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm transition-all hover:border-slate-300">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-3">
+                <span class="rounded-xl bg-slate-900 px-3 py-1 text-xs font-black text-white">#${o.orderNumber}</span>
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900">${o.customer.name}</h3>
+                  <p class="text-xs text-slate-500">${timeStr} • ${o.customer.phone}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-base font-black text-emerald-600">R$ ${o.total.toFixed(2).replace('.', ',')}</span>
+                <button onclick="printOrder('${o.id}')" class="w-fit inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition-all">
+                  <i class="fa-solid fa-print text-emerald-600"></i> Imprimir Folha A4
+                </button>
+              </div>
+            </div>
+
+            <div class="py-3 text-xs text-slate-600 space-y-1">
+              <p><strong>Itens:</strong> ${itemsText}</p>
+              <p><strong>Endereço:</strong> ${o.customer.street}, Nº ${o.customer.number} ${o.customer.complement ? '(' + o.customer.complement + ')' : ''}</p>
+              ${o.customer.notes ? `<p class="text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200"><strong>Obs:</strong> ${o.customer.notes}</p>` : ''}
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-500">Motoboy:</span>
+                <select onchange="assignDriver('${o.id}', this.value)" class="text-xs rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 font-semibold text-slate-700 focus:outline-none">
+                  <option value="">Selecione o motoboy...</option>
+                  ${drivers.map(d => `<option value="${d.id}" ${o.driverId === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
+                </select>
+              </div>
+
+              <div class="flex items-center gap-2 flex-wrap">
+                ${(o.status === 'pago' || o.status === 'separando') ? `
+                  <button onclick="updateOrderStatus('${o.id}', 'entrega')" class="w-fit rounded-lg bg-blue-600 hover:bg-blue-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-all">
+                    Despachar c/ Motoboy →
+                  </button>
+                ` : ''}
+
+                ${o.status === 'entrega' ? `
+                  <button onclick="updateOrderStatus('${o.id}', 'entregue')" class="w-fit rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-all">
+                    Concluir Entrega ✓
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ========================================================
+    // MODAL DE CONSULTA DE CARDÁPIO (SOMENTE LEITURA CAIXA)
+    // ========================================================
+    function openMenuConsultModal() {
+      renderConsultMenu();
+      document.getElementById('menuConsultModal').classList.remove('hidden');
+    }
+
+    function closeMenuConsultModal() {
+      document.getElementById('menuConsultModal').classList.add('hidden');
+    }
+
+    function filterConsultMenu() {
+      renderConsultMenu();
+    }
+
+    function renderConsultMenu() {
+      const q = (document.getElementById('consultSearchInput')?.value || '').toLowerCase();
+      const container = document.getElementById('consultProductsList');
+      const filtered = products.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 py-6 text-center">Nenhum produto encontrado.</p>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(p => `
+        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+          <div class="flex items-center gap-3">
+            <img src="${p.imageUrl}" class="h-12 w-12 rounded-lg object-cover border border-slate-200 shrink-0">
+            <div>
+              <span class="inline-block bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded text-[10px] font-bold">${p.category}</span>
+              <h4 class="font-bold text-slate-900 mt-0.5">${p.name}</h4>
+              <p class="text-slate-500 text-[11px] line-clamp-1">${p.description}</p>
+            </div>
+          </div>
+          <div class="text-sm font-extrabold text-emerald-600 shrink-0 pl-2">
+            R$ ${p.price.toFixed(2).replace('.', ',')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openFlowGuideModal() {
+      document.getElementById('flowGuideModal').classList.remove('hidden');
+    }
+
+    function closeFlowGuideModal() {
+      document.getElementById('flowGuideModal').classList.add('hidden');
+    }
+
+    // ========================================================
+    // IMPRESSÃO SILENCIOSA EM FOLHA A4
+    // ========================================================
+    function printOrder(orderId) {
+      const orders = getStoredOrders();
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const hasGps = order.customer.location && order.customer.location.lat;
+      const lat = hasGps ? order.customer.location.lat : null;
+      const lng = hasGps ? order.customer.location.lng : null;
+
+      const gmapsUrl = hasGps 
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lat + ',' + lng)}#order=${encodeURIComponent(order.orderNumber)}&id=${encodeURIComponent(order.id)}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer.street + ', ' + order.customer.number + ', Brasil')}#order=${encodeURIComponent(order.orderNumber)}&id=${encodeURIComponent(order.id)}`;
+
+      const printContainer = document.getElementById('printArea');
+      const orderDate = new Date(order.createdAt).toLocaleDateString('pt-BR');
+      const orderTime = new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      const itemsRowsHtml = order.items.map(it => `
+        <tr style="border-bottom: 1px solid #d1d5db;">
+          <td style="padding: 7px 8px; text-align: center; font-weight: bold; font-size: 13pt;">[ &nbsp; ]</td>
+          <td style="padding: 7px 8px; text-align: center; font-weight: bold; font-size: 12pt;">${it.quantity}</td>
+          <td style="padding: 7px 8px; font-weight: 600;">${it.title}</td>
+          <td style="padding: 7px 8px; text-align: right;">R$ ${it.price.toFixed(2).replace('.', ',')}</td>
+          <td style="padding: 7px 8px; text-align: right; font-weight: bold;">R$ ${(it.price * it.quantity).toFixed(2).replace('.', ',')}</td>
+        </tr>
+      `).join('');
+
+      printContainer.innerHTML = `
+        <div style="max-width: 190mm; margin: 0 auto; color: #000; font-family: Arial, sans-serif;">
+          <div style="border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <h1 style="font-size: 18pt; font-weight: 900; margin: 0; text-transform: uppercase;">${storeConfig.storeName || 'FAST DELIVERY EXPRESS'}</h1>
+              <p style="margin: 2px 0 0 0; font-size: 9pt; color: #4b5563;">VIA DE PRODUÇÃO DA COZINHA & EXPEDIÇÃO MOTOBOY</p>
+            </div>
+            <div style="text-align: right; border: 2px solid #000; padding: 6px 12px; border-radius: 6px; background-color: #f9fafb;">
+              <span style="font-size: 9pt; font-weight: bold; display: block;">PEDIDO Nº</span>
+              <span style="font-size: 20pt; font-weight: 900; display: block;">${order.orderNumber}</span>
+              <span style="font-size: 8.5pt;">${orderDate} às ${orderTime}</span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 2fr 1.1fr; gap: 12px; border: 1.5px solid #000; border-radius: 6px; padding: 10px; margin-bottom: 14px;">
+            <div>
+              <span style="font-size: 8pt; font-weight: bold; text-transform: uppercase; color: #6b7280; display: block;">DESTINATÁRIO:</span>
+              <span style="font-size: 13pt; font-weight: 800; display: block;">${order.customer.name}</span>
+              <span style="font-size: 10.5pt; font-weight: 600; color: #1f2937;">WhatsApp/Tel: ${order.customer.phone}</span>
+              <div style="margin-top: 6px;">
+                <span style="font-size: 8pt; font-weight: bold; text-transform: uppercase; color: #6b7280; display: block;">ENDEREÇO DE ENTREGA:</span>
+                <p style="font-size: 12pt; font-weight: 800; margin: 2px 0 0 0;">${order.customer.street}, Nº ${order.customer.number}</p>
+                ${order.customer.complement ? `<p style="font-size: 9.5pt; margin: 2px 0 0 0;"><strong>Complemento:</strong> ${order.customer.complement}</p>` : ''}
+                ${order.customer.notes ? `<p style="font-size: 8.5pt; margin-top: 4px; background: #fef3c7; padding: 3px 5px; border-radius: 4px;"><strong>Obs:</strong> ${order.customer.notes}</p>` : ''}
+              </div>
+              <div style="margin-top: 6px; font-size: 9pt;">
+                <strong>Pagamento:</strong> <span style="background-color: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; font-weight: bold;">PIX CONFIRMADO (PAGO)</span>
+              </div>
+            </div>
+
+            <div style="border-left: 1.5px solid #000; padding-left: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+              <span style="font-size: 8.5pt; font-weight: 900; margin-bottom: 4px;">📍 RASTREIO GOOGLE MAPS</span>
+              <div id="terminalPrintQrBox" style="width: 130px; height: 130px;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&margin=0&data=${encodeURIComponent(gmapsUrl)}" width="130" height="130" style="display:block; margin:auto;" />
+              </div>
+              <span style="font-size: 7.5pt; font-weight: bold; margin-top: 4px;">MOTOBOY: Aponte a câmera para abrir o GPS!</span>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <div style="background-color: #111827; color: #fff; padding: 5px 8px; font-size: 9.5pt; font-weight: 900;">
+              ITENS DO PEDIDO • SEPARAÇÃO COZINHA
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 9.5pt; border: 1px solid #d1d5db;">
+              <thead>
+                <tr style="background-color: #f3f4f6; border-bottom: 1.5px solid #9ca3af;">
+                  <th style="padding: 6px 8px; text-align: center; width: 45px;">VISTO</th>
+                  <th style="padding: 6px 8px; text-align: center; width: 45px;">QTD</th>
+                  <th style="padding: 6px 8px; text-align: left;">DESCRIÇÃO DO ITEM</th>
+                  <th style="padding: 6px 8px; text-align: right; width: 85px;">VALOR</th>
+                  <th style="padding: 6px 8px; text-align: right; width: 90px;">TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>${itemsRowsHtml}</tbody>
+            </table>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 14px;">
+            <div style="width: 240px; border: 1.5px solid #000; border-radius: 4px; padding: 8px; background-color: #f9fafb;">
+              <div style="display: flex; justify-content: space-between; font-size: 9pt;">
+                <span>Subtotal:</span><span>R$ ${order.subtotal.toFixed(2).replace('.', ',')}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 9pt; margin-top: 2px;">
+                <span>Taxa Entrega:</span><span>R$ ${order.deliveryFee.toFixed(2).replace('.', ',')}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 12pt; font-weight: 900; border-top: 1.5px solid #000; padding-top: 4px; margin-top: 4px;">
+                <span>TOTAL:</span><span>R$ ${order.total.toFixed(2).replace('.', ',')}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const qrBox = document.getElementById('terminalPrintQrBox');
+      if (qrBox) {
+        qrBox.innerHTML = '';
+        try {
+          new QRCode(qrBox, {
+            text: gmapsUrl,
+            width: 130,
+            height: 130,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } catch (e) {
+          qrBox.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&margin=0&data=${encodeURIComponent(gmapsUrl)}" width="130" height="130" style="display:block; margin:auto;" />`;
+        }
+      }
+
+      window.print();
+    }
+
+    // Inicialização
+    window.addEventListener('DOMContentLoaded', () => {
+      loadTerminalSettings();
+      checkTerminalStatus();
+
+      window.addEventListener('storage', (e) => {
+        if (e.key === ORDERS_STORAGE_KEY) loadAndRenderOrders(true);
+        if (e.key === CONFIG_KEY || e.key === DRIVERS_KEY || e.key === PRODUCTS_KEY) loadAllTerminalConfigs();
+        if (e.key === TERMINALS_STORAGE_KEY) checkTerminalStatus();
+      });
+
+      setInterval(() => {
+        if (isTerminalPaired()) {
+          loadAndRenderOrders(true);
+          checkTerminalStatus();
+        }
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

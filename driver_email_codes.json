@@ -1,0 +1,18 @@
+{
+  "carlos@delivery.com": {
+    "code": "882479",
+    "formattedCode": "882-479",
+    "expiresAt": 1791867033490,
+    "used": true,
+    "createdAt": 1791866433490,
+    "usedAt": 1791866465166
+  },
+  "adrielle45133@gmail.com": {
+    "code": "333732",
+    "formattedCode": "333-732",
+    "expiresAt": 1791939014719,
+    "used": true,
+    "createdAt": 1791938414719,
+    "usedAt": 1791938435204
+  }
+}

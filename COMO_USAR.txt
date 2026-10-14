@@ -1,0 +1,43 @@
+====================================================================
+SISTEMA DE DELIVERY EXPRESS • SAAS R$ 49,90 • IMPRESSÃO A4 COM GOOGLE MAPS
+====================================================================
+
+PASTA DO SISTEMA:
+C:\Users\admin5\Desktop\SistemaDelivery\
+
+COMO FUNCIONA O MODELO SAAS R$ 49,90 & PIX DO BANCO CENTRAL:
+
+1. ZERO TAXA POR PEDIDO & ZERO API DE BANCO:
+   - Os clientes pagam 100% dos pedidos DIRETO na Chave PIX do Lojista!
+   - O sistema gera o QR Code oficial BR Code (Banco Central) com o valor exato calculado (itens + taxa de entrega) 100% offline no navegador.
+   - O Lojista não tem medo de colocar API e não paga comissão por venda.
+   - O Dono do SaaS (Você) cobra apenas a assinatura fixa de R$ 49,90/mês do lojista (sendo MEI, você paga apenas os R$ 89 fixos de imposto para o governo).
+   - Chave PIX do Administrador para receber o SaaS: adrielle145133@gmail.com
+
+2. TRAVA DE SEGURANÇA DA CHAVE PIX:
+   - Se o lojista não cadastrou sua chave PIX no painel, o cardápio fica travado para pagamentos, protegendo os clientes de fazerem pedidos sem destinatário.
+   - O lojista clica em "Minha Chave PIX & Loja" no painel, cadastra sua chave e o cardápio é destravado instantaneamente!
+
+3. ABAS OPERACIONAIS NO PAINEL DO LOJISTA:
+   - [Pagos / Novos]: Novos pedidos entram SEMPRE no topo da lista, tocam alarme e disparam a folha A4.
+   - [Em Separação]: Cozinha montando os pedidos com vistos [ ] na folha A4.
+   - [Saiu p/ Entrega]: Com o motoboy. Permite selecionar o entregador e mandar a rota no WhatsApp dele com 1 clique!
+   - [Entregues]: Pedidos entregues com sucesso e arquivados no dia.
+
+4. CADASTRO DE ENTREGADORES (MOTOBOYS):
+   - O próprio lojista cadastra seus motoboys em "Entregadores / Motoboys".
+   - Ao despachar, escolhe o motoboy e clica em "Rota p/ Motoboy" para abrir o WhatsApp com endereço e link do Google Maps!
+
+5. PERÍODO DE TESTE DE 2 DIAS & TELA DE BLOQUEIO AUTOMÁTICO:
+   - O lojista ganha 2 dias (48 horas) de teste grátis para experimentar o programa completo.
+   - Assim que expiram os 2 dias, o programa é BLOQUEADO automaticamente exibindo a tela da Licença SaaS.
+   - O lojista não consegue fechar a tela até pagar R$ 49,90 no PIX adrielle145133@gmail.com.
+   - Como desbloquear / retirar a tela após pagamento:
+     * No rodapé da tela ("Painel do Administrador"), você clica em "Liberar Programa por 30 Dias (Pagamento Confirmado)" e a tela de bloqueio é retirada imediatamente!
+     * Você também conta com botões para "Simular Bloqueio Imediato" e "Resetar Teste de 2 Dias".
+
+6. COMO INICIAR O SISTEMA:
+   - Dê 2 cliques no arquivo: 'INICIAR_MODO_IMPRESSAO_DIRETA.bat'
+   - Cardápio:          http://localhost:3000
+   - Painel do Lojista: http://localhost:3000/pedidos.html
+====================================================================

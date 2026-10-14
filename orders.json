@@ -1,0 +1,116 @@
+[
+  {
+    "id": "ord_1001",
+    "orderNumber": "#1001",
+    "createdAt": "2026-10-12T20:15:00.000Z",
+    "items": [
+      {
+        "id": "p1",
+        "title": "X-Burguer Artesanal Duplo",
+        "price": 32.9,
+        "quantity": 1
+      },
+      {
+        "id": "p2",
+        "title": "Batata Rústica com Cheddar",
+        "price": 18,
+        "quantity": 1
+      },
+      {
+        "id": "p3",
+        "title": "Coca-Cola Lata 350ml",
+        "price": 6.5,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 57.4,
+    "deliveryFee": 6,
+    "total": 63.4,
+    "paymentMethod": "PIX Confirmado (Pago)",
+    "customer": {
+      "name": "Mariana Souza",
+      "phone": "(11) 98123-4567",
+      "street": "Avenida Paulista",
+      "number": "1578",
+      "complement": "Apto 82",
+      "notes": "Deixar na portaria principal",
+      "location": {
+        "lat": -23.561414,
+        "lng": -46.655881
+      }
+    },
+    "status": "entrega",
+    "assignedDriverId": "drv_test",
+    "driverName": "Adrian Teste",
+    "dispatchedAt": "2026-10-14T01:36:29.706Z"
+  },
+  {
+    "id": "ord_1002",
+    "orderNumber": "#1002",
+    "createdAt": "2026-10-12T20:25:00.000Z",
+    "items": [
+      {
+        "id": "p4",
+        "title": "Pizza Especial Calabresa & Catupiry",
+        "price": 65,
+        "quantity": 1
+      },
+      {
+        "id": "p5",
+        "title": "Guaraná Antarctica 2L",
+        "price": 12,
+        "quantity": 1
+      }
+    ],
+    "subtotal": 77,
+    "deliveryFee": 7,
+    "total": 84,
+    "paymentMethod": "PIX Confirmado (Pago)",
+    "customer": {
+      "name": "Roberto Almeida",
+      "phone": "(11) 99876-5432",
+      "street": "Rua Augusta",
+      "number": "2100",
+      "complement": "Bloco B - Portão lateral",
+      "notes": "Tocar interfone 204",
+      "location": {
+        "lat": -23.55832,
+        "lng": -46.66275
+      }
+    },
+    "status": "entrega",
+    "assignedDriverId": "drv_test",
+    "driverName": "Adrian Teste",
+    "dispatchedAt": "2026-10-14T01:36:29.707Z"
+  },
+  {
+    "id": "ord_1003",
+    "orderNumber": "#1003",
+    "createdAt": "2026-10-12T20:35:00.000Z",
+    "items": [
+      {
+        "id": "p6",
+        "title": "Combo Smash Burger + Refri",
+        "price": 39.9,
+        "quantity": 2
+      }
+    ],
+    "subtotal": 79.8,
+    "deliveryFee": 5,
+    "total": 84.8,
+    "paymentMethod": "PIX Confirmado (Pago)",
+    "customer": {
+      "name": "Camila Ferreira",
+      "phone": "(11) 97654-3210",
+      "street": "Rua Oscar Freire",
+      "number": "920",
+      "complement": "Sala 34",
+      "notes": "Entregar em mãos no balcão da recepção",
+      "location": {
+        "lat": -23.5645,
+        "lng": -46.6682
+      }
+    },
+    "status": "pago"
+  }
+]

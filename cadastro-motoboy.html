@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cadastro de Entregador - Delivery Express</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between p-4">
+
+  <div class="w-full max-w-md mx-auto space-y-4">
+    <!-- CABEÇALHO -->
+    <header class="text-center pt-2 pb-1">
+      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-2xl shadow-lg mb-2">
+        <i class="fa-solid fa-id-card"></i>
+      </div>
+      <h1 class="text-lg font-black tracking-tight text-white uppercase">Cadastro de Entregador</h1>
+      <p class="text-xs text-slate-400 mt-0.5">Preencha seus dados para ingressar na equipe do restaurante</p>
+    </header>
+
+    <!-- ETAPA 1: VERIFICANDO VALIDADE DO LINK -->
+    <div id="stepCheckingBox" class="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-3">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xl">
+        <i class="fa-solid fa-spinner animate-spin"></i>
+      </div>
+      <p class="text-xs text-slate-300 font-bold">Verificando autorização do link de cadastro...</p>
+    </div>
+
+    <!-- ETAPA 2: LINK EXPIRADO OU INVÁLIDO -->
+    <div id="stepExpiredBox" class="hidden p-6 rounded-2xl bg-slate-900 border border-rose-500/40 text-center space-y-3.5">
+      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/40 text-2xl shadow-sm">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-black text-white">Link Expirado ou Inválido</h3>
+        <p id="expiredMessageText" class="text-xs text-slate-300 mt-2 leading-relaxed">
+          Este link de cadastro tinha validade de 5 minutos e já expirou ou foi utilizado.
+          Peça ao restaurante para gerar um novo link de cadastro.
+        </p>
+      </div>
+      <div class="pt-2">
+        <a href="motoboy.html" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-3 text-xs shadow-md transition-all">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+          <span>Ir para a Tela de Login do Motoboy</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ETAPA 3: FORMULÁRIO DE CADASTRO (LIBERADO DIRETAMENTE PELO LINK VÁLIDO) -->
+    <div id="stepFormBox" class="hidden p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3.5 text-xs text-left">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div>
+          <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+            <i class="fa-solid fa-circle-check"></i> Link Autorizado (5 Minutos)
+          </span>
+          <h2 class="text-sm font-black text-white">Preencha seus Dados para Cadastro</h2>
+        </div>
+      </div>
+
+      <form onsubmit="handleSaveRegistration(event)" class="space-y-3">
+        <!-- NOME COMPLETO -->
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Seu Nome Completo *</label>
+          <input type="text" id="regName" required placeholder="Ex: Roberto Carlos" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+        </div>
+
+        <!-- WHATSAPP E VEÍCULO -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">WhatsApp / Telefone *</label>
+            <input type="tel" id="regPhone" required placeholder="(92) 99999-9999" maxlength="15" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">Moto / Placa *</label>
+            <input type="text" id="regVehicle" required placeholder="Ex: CG 160 (ABC-1234)" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- FOTO DA FRENTE DO RG / CNH -->
+        <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/80 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-slate-200">
+              <i class="fa-solid fa-id-card text-indigo-400 mr-1"></i> Foto da FRENTE do RG / CNH *
+            </label>
+            <span id="regRgFrenteTag" class="hidden text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-md">✓ Frente Anexada</span>
+          </div>
+
+          <label class="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2.5 px-3 text-xs font-bold text-white shadow-sm cursor-pointer active:scale-95 transition-all">
+            <i class="fa-solid fa-camera"></i>
+            <span>📷 Tirar Foto da Frente ou Galeria</span>
+            <input type="file" id="regRgFrenteInput" accept="image/*" onchange="previewRgFrente(event)" class="hidden">
+          </label>
+
+          <div id="regRgFrenteBox" class="hidden mt-1 flex items-center gap-2 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
+            <img id="regRgFrenteImg" src="" alt="Frente RG" class="h-10 w-14 object-cover rounded-md border border-indigo-500/50">
+            <span class="text-[10px] text-emerald-400 font-bold">Frente carregada ✓</span>
+          </div>
+        </div>
+
+        <!-- FOTO DO VERSO DO RG / CNH -->
+        <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/80 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="block font-bold text-slate-200">
+              <i class="fa-solid fa-id-card-clip text-indigo-400 mr-1"></i> Foto do VERSO do RG / CNH *
+            </label>
+            <span id="regRgVersoTag" class="hidden text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-md">✓ Verso Anexado</span>
+          </div>
+
+          <label class="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2.5 px-3 text-xs font-bold text-white shadow-sm cursor-pointer active:scale-95 transition-all">
+            <i class="fa-solid fa-camera"></i>
+            <span>📷 Tirar Foto do Verso ou Galeria</span>
+            <input type="file" id="regRgVersoInput" accept="image/*" onchange="previewRgVerso(event)" class="hidden">
+          </label>
+
+          <div id="regRgVersoBox" class="hidden mt-1 flex items-center gap-2 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
+            <img id="regRgVersoImg" src="" alt="Verso RG" class="h-10 w-14 object-cover rounded-md border border-indigo-500/50">
+            <span class="text-[10px] text-emerald-400 font-bold">Verso carregado ✓</span>
+          </div>
+        </div>
+
+        <div id="formErrorAlert" class="hidden text-xs text-rose-400 font-bold bg-rose-500/10 border border-rose-500/30 p-2 rounded-xl"></div>
+
+        <div class="pt-2">
+          <button type="submit" id="btnSubmitRegistration" class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 py-3 text-xs font-black text-slate-950 shadow-lg shadow-emerald-950/40 active:scale-95 transition-all flex items-center justify-center gap-2">
+            <i class="fa-solid fa-circle-check text-sm"></i>
+            <span>Concluir Cadastro</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ETAPA 4: SUCESSO DO CADASTRO & REDIRECIONAMENTO PARA LOGIN -->
+    <div id="stepSuccessBox" class="hidden p-6 rounded-2xl bg-slate-900 border border-emerald-500/40 text-center space-y-4">
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-3xl">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-black text-white">Cadastro Realizado com Sucesso!</h3>
+        <p id="successDriverName" class="text-xs text-emerald-400 font-bold mt-1">Olá, Entregador!</p>
+        <p class="text-xs text-slate-300 mt-2">
+          Seu cadastro com foto de RG frente e verso foi registrado com sucesso na loja.
+          Acesse a tela oficial de login informando apenas o seu telefone para receber o código de acesso.
+        </p>
+      </div>
+      <div class="pt-2">
+        <a href="motoboy.html" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-3 text-xs shadow-lg transition-all active:scale-95">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+          <span>Ir para a Tela de Login do Motoboy</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="text-center pt-2">
+      <a href="motoboy.html" class="text-xs text-slate-400 hover:text-slate-200 underline">
+        Já possui cadastro? Acessar tela de login
+      </a>
+    </div>
+  </div>
+
+  <footer class="text-center text-[11px] text-slate-600 py-3">
+    Delivery Express • Sistema Seguro de Entregas
+  </footer>
+
+  <script>
+    const DRIVERS_KEY = 'DELIVERY_DRIVERS';
+    let tempRgFrente = null;
+    let tempRgVerso = null;
+    let validatedCode = null;
+
+    function compressImageFile(file, maxWidth, maxHeight, quality, callback) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          callback(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function previewRgFrente(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      compressImageFile(file, 480, 360, 0.6, (base64) => {
+        tempRgFrente = base64;
+        document.getElementById('regRgFrenteImg').src = base64;
+        document.getElementById('regRgFrenteBox').classList.remove('hidden');
+        document.getElementById('regRgFrenteTag').classList.remove('hidden');
+      });
+    }
+
+    function previewRgVerso(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      compressImageFile(file, 480, 360, 0.6, (base64) => {
+        tempRgVerso = base64;
+        document.getElementById('regRgVersoImg').src = base64;
+        document.getElementById('regRgVersoBox').classList.remove('hidden');
+        document.getElementById('regRgVersoTag').classList.remove('hidden');
+      });
+    }
+
+    let validatedToken = null;
+
+    function showExpiredMessage(msg) {
+      document.getElementById('stepCheckingBox')?.classList.add('hidden');
+      document.getElementById('stepFormBox')?.classList.add('hidden');
+      const expBox = document.getElementById('stepExpiredBox');
+      const expMsg = document.getElementById('expiredMessageText');
+      if (expMsg && msg) expMsg.textContent = msg;
+      if (expBox) expBox.classList.remove('hidden');
+    }
+
+    async function checkInviteTokenOnLoad() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      if (!token) {
+        showExpiredMessage('Nenhum link de autorização foi detectado. Solicite o link exclusivo de cadastro (válido por 5 minutos) ao restaurante.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/driver-invite?token=${encodeURIComponent(token)}`);
+        if (!res.ok) throw new Error('Falha ao verificar link');
+        const data = await res.json();
+
+        if (data && data.valid === true) {
+          validatedToken = token;
+          document.getElementById('stepCheckingBox')?.classList.add('hidden');
+          document.getElementById('stepExpiredBox')?.classList.add('hidden');
+          document.getElementById('stepFormBox')?.classList.remove('hidden');
+          const firstInp = document.getElementById('regName');
+          if (firstInp) setTimeout(() => firstInp.focus(), 150);
+        } else {
+          let reasonMsg = 'Este link de cadastro tinha validade de 5 minutos e já expirou. Peça ao restaurante para gerar um novo link.';
+          if (data && data.reason === 'used') {
+            reasonMsg = 'Este link de cadastro já foi utilizado anteriormente (uso único).';
+          }
+          showExpiredMessage(reasonMsg);
+        }
+      } catch (err) {
+        // Fallback para verificação local caso o backend esteja oscilando
+        try {
+          const raw = localStorage.getItem('DELIVERY_DRIVER_PAIRING_CODE');
+          if (raw) {
+            const p = JSON.parse(raw);
+            if (p.token === token && !p.used && p.expiresAt > Date.now()) {
+              validatedToken = token;
+              document.getElementById('stepCheckingBox')?.classList.add('hidden');
+              document.getElementById('stepFormBox')?.classList.remove('hidden');
+              return;
+            }
+          }
+        } catch (e) {}
+        showExpiredMessage('Não foi possível validar o link ou o tempo de 5 minutos expirou. Peça um novo link ao restaurante.');
+      }
+    }
+
+    async function handleSaveRegistration(e) {
+      e.preventDefault();
+      const name = (document.getElementById('regName')?.value || '').trim();
+      const phone = (document.getElementById('regPhone')?.value || '').trim();
+      const vehicle = (document.getElementById('regVehicle')?.value || '').trim();
+      const errBox = document.getElementById('formErrorAlert');
+      const btn = document.getElementById('btnSubmitRegistration');
+
+      if (errBox) errBox.classList.add('hidden');
+
+      if (!name) {
+        if (errBox) {
+          errBox.textContent = 'Informe seu nome completo.';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (!cleanPhone || cleanPhone.length < 10) {
+        if (errBox) {
+          errBox.textContent = 'Informe um WhatsApp/Telefone válido com DDD (mínimo 10 dígitos).';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (!vehicle) {
+        if (errBox) {
+          errBox.textContent = 'Informe o modelo da moto e a placa.';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (!tempRgFrente) {
+        if (errBox) {
+          errBox.textContent = 'Por favor, tire uma foto da FRENTE do seu documento (RG ou CNH).';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (!tempRgVerso) {
+        if (errBox) {
+          errBox.textContent = 'Por favor, tire uma foto do VERSO do seu documento (RG ou CNH).';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const oldBtnHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Concluindo Cadastro...';
+
+      try {
+        const driverId = 'drv_' + Date.now();
+        const newDriver = {
+          id: driverId,
+          name,
+          phone: cleanPhone,
+          vehicle,
+          rgFrentePhoto: tempRgFrente,
+          rgVersoPhoto: tempRgVerso,
+          createdAt: new Date().toISOString()
+        };
+
+        // Salva no servidor
+        await fetch('/api/drivers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newDriver)
+        });
+
+        // Atualiza cache local
+        let localDrivers = [];
+        try { localDrivers = JSON.parse(localStorage.getItem(DRIVERS_KEY) || '[]'); } catch(e) {}
+        localDrivers.push(newDriver);
+        localStorage.setItem(DRIVERS_KEY, JSON.stringify(localDrivers));
+
+        // Queima o token de convite no servidor
+        if (validatedToken) {
+          fetch('/api/driver-burn-invite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: validatedToken, driverName: name })
+          }).catch(() => {});
+        }
+
+        // Exibe tela de sucesso
+        document.getElementById('stepFormBox').classList.add('hidden');
+        document.getElementById('stepSuccessBox').classList.remove('hidden');
+        document.getElementById('successDriverName').textContent = `Olá, ${name.toUpperCase()}!`;
+
+      } catch (err) {
+        if (errBox) {
+          errBox.textContent = 'Erro ao salvar cadastro. Tente novamente.';
+          errBox.classList.remove('hidden');
+        }
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = oldBtnHtml;
+      }
+    }
+
+    // Inicialização ao carregar: formata máscara do telefone e valida link
+    document.addEventListener('DOMContentLoaded', () => {
+      const phoneInput = document.getElementById('regPhone');
+      if (phoneInput) {
+        phoneInput.addEventListener('input', (e) => {
+          let v = e.target.value.replace(/\D/g, '');
+          if (v.length > 11) v = v.substring(0, 11);
+          if (v.length > 6) {
+            e.target.value = `(${v.substring(0, 2)}) ${v.substring(2, 7)}-${v.substring(7)}`;
+          } else if (v.length > 2) {
+            e.target.value = `(${v.substring(0, 2)}) ${v.substring(2)}`;
+          } else if (v.length > 0) {
+            e.target.value = `(${v}`;
+          }
+        });
+      }
+
+      checkInviteTokenOnLoad();
+    });
+  </script>
+</body>
+</html>

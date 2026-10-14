@@ -1,0 +1,3093 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel da Loja & Impressão A4 de Pedidos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="qrcode.min.js"></script>
+  <script src="pix-generator.js"></script>
+
+  <style>
+    /* ESTILOS ESPECÍFICOS PARA IMPRESSÃO EM FOLHA A4 */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 8mm 10mm 8mm 10mm;
+      }
+      body {
+        background: white !important;
+        color: black !important;
+        font-family: Arial, Helvetica, sans-serif !important;
+        font-size: 11pt !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #printArea {
+        display: block !important;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+    }
+
+    @media screen {
+      #printArea {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <!-- ========================================== -->
+  <!-- TELA DE GESTÃO DA LOJA (FUNDO BRANCO CLEAN) -->
+  <!-- ========================================== -->
+  <div class="no-print flex-1 flex flex-col">
+    
+    <!-- BANNER DE ALERTA SE A CHAVE PIX DA LOJA NÃO FOI CONFIGURADA -->
+    <div id="pixWarningAlert" class="hidden bg-amber-500 text-slate-950 px-4 py-2.5 text-xs font-bold border-b border-amber-600 shadow-sm">
+      <div class="mx-auto max-w-7xl flex items-center justify-between gap-4 flex-wrap">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-base"></i>
+          <span>Atenção Lojista: Sua Chave PIX ainda não está cadastrada! O cardápio dos clientes está BLOQUEADO para receber pagamentos.</span>
+        </div>
+        <button onclick="openConfigModal()" class="w-fit rounded-lg bg-slate-950 px-3 py-1 text-xs font-bold text-white hover:bg-slate-800">
+          Cadastrar Chave PIX Agora
+        </button>
+      </div>
+    </div>
+
+    <!-- BARRA SUPERIOR (FUNDO BRANCO) -->
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 shadow-sm">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 flex-wrap">
+        <div class="flex items-center gap-3">
+          <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm text-xl">
+            <i class="fa-solid fa-print"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 id="panelStoreTitle" class="text-lg md:text-xl font-bold tracking-tight text-slate-900">Fast Delivery Express</h1>
+              <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
+                Ao Vivo
+              </span>
+            </div>
+            <p class="text-xs text-slate-500">Central de Pedidos, Impressão A4 e Gestão de Entregadores</p>
+          </div>
+        </div>
+
+        <!-- BOTÕES DE GESTÃO DO LOJISTA E ADMIN -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <!-- MODAL GUIA DO FLUXO -->
+          <button onclick="openFlowGuideModal()" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors">
+            <i class="fa-solid fa-circle-question text-indigo-600"></i>
+            Como Funciona o Fluxo?
+          </button>
+
+          <!-- CONFIGURAR CHAVE PIX DA LOJA -->
+          <button onclick="openConfigModal()" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors">
+            <i class="fa-brands fa-pix text-emerald-600 text-sm"></i>
+            Minha Chave PIX & Loja
+          </button>
+
+          <!-- LICENÇA SAAS R$ 49,90 -->
+          <button onclick="openSaasModal()" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-800 hover:bg-indigo-100 transition-colors">
+            <i class="fa-solid fa-cloud text-indigo-600"></i>
+            <span id="saasHeaderBadgeText">Licença SaaS (R$ 49,90/mês)</span>
+          </button>
+
+          <!-- VER CARDÁPIO PUBLICADO -->
+          <a href="index.html?view=cliente" target="_blank" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors" title="Ver cardápio digital publicado exatamente como os clientes visualizam">
+            <i class="fa-solid fa-arrow-up-right-from-square text-emerald-600"></i>
+            Ver Cardápio Publicado
+          </a>
+
+          <!-- EDITAR CARDÁPIO (LOJISTA) -->
+          <a href="index.html?mode=lojista" target="_blank" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-colors" title="Abre o cardápio com poder de editar itens em tempo real">
+            <i class="fa-solid fa-pen-to-square text-emerald-600"></i>
+            Editar Cardápio (Lojista)
+          </a>
+
+          <!-- PAREAR CAIXA DA LOJA COM CÓDIGO DESCARTÁVEL -->
+          <button onclick="openTerminalPairingModal()" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-800 hover:bg-indigo-100 transition-colors" title="Gere um código descartável de 6 dígitos que expira em 5 minutos para conectar o computador do restaurante">
+            <i class="fa-solid fa-desktop text-indigo-600"></i>
+            Parear Caixa da Loja (<span id="terminalsBadgeCount">0</span>)
+          </button>
+
+          <!-- MOTOBOYS CADASTRADOS (GESTÃO DE EQUIPE) -->
+          <button onclick="openDriverPairingModal()" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-800 hover:bg-indigo-100 transition-colors" title="Cadastrar novo motoboy e gerenciar equipe">
+            <i class="fa-solid fa-users text-indigo-600"></i>
+            Motoboys Cadastrados (<span id="driversBadgeCount">0</span>)
+          </button>
+
+          <button onclick="simulateOrder()" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-800 hover:bg-purple-100 transition-colors">
+            <i class="fa-solid fa-wand-magic-sparkles text-purple-600"></i>
+            Simular Pedido de Teste
+          </button>
+
+          <!-- SESSÃO DO LOJISTA (PADRÃO PROJETO CURRÍCULO) -->
+          <div id="lojistaAuthHeader" class="flex items-center gap-2 border-l border-slate-200 pl-2">
+            <div class="flex items-center gap-1.5 text-xs text-slate-700 font-semibold">
+              <i class="fa-solid fa-circle-user text-emerald-600 text-base"></i>
+              <span id="lojistaLoggedEmail">loja@delivery.com</span>
+            </div>
+            <button onclick="handleLojistaLogout()" class="w-fit text-xs text-rose-600 hover:text-rose-700 border border-rose-200 bg-rose-50 px-2 py-0.5 rounded-md font-semibold transition-colors">
+              Sair
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- PAINEL DE CONTROLE E FILTROS -->
+    <main class="mx-auto max-w-7xl flex-1 px-4 py-6 w-full">
+      
+      <!-- BARRA DE CONFIGURAÇÕES RÁPIDAS (FUNDO BRANCO) -->
+      <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-6 flex-wrap">
+          <!-- TOGGLE SOM -->
+          <label class="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-slate-700">
+            <input type="checkbox" id="soundToggle" checked onchange="saveSettings()" class="rounded border-slate-300 text-emerald-600 focus:ring-0">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-volume-high text-emerald-600"></i> Alarme sonoro em novo pedido</span>
+          </label>
+
+          <!-- TOGGLE AUTO-IMPRIMIR -->
+          <label class="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+            <input type="checkbox" id="autoPrintToggle" checked onchange="saveSettings()" class="rounded border-slate-300 text-emerald-600 focus:ring-0">
+            <span class="flex items-center gap-1.5 font-bold"><i class="fa-solid fa-bolt text-amber-500"></i> Auto-imprimir folha A4 ao pagar</span>
+          </label>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-500">Total de pedidos: <strong id="totalOrdersCount" class="text-slate-900">0</strong></span>
+          <button onclick="clearAllOrders()" class="w-fit text-xs text-rose-600 hover:text-rose-700 ml-4 border border-rose-200 px-2 py-1 rounded-lg bg-rose-50">
+            Limpar Histórico
+          </button>
+        </div>
+      </div>
+
+      <!-- ABAS DE STATUS (SEM A ABA "TODOS" - PADRÃO INICIAL: PAGOS / NOVOS) -->
+      <!-- ABAS DE STATUS (PAGOS E EM SEPARAÇÃO UNIFICADOS EM 1 SÓ) -->
+      <div class="mb-6 flex items-center gap-2 overflow-x-auto pb-1">
+        <button onclick="filterStatus('separando')" id="filter-separando" class="w-fit rounded-lg px-4 py-2 text-xs font-bold bg-emerald-600 text-white shadow-sm transition-all">
+          Pagos / Em Separação (<span id="count-separando">0</span>)
+        </button>
+        <button onclick="filterStatus('entrega')" id="filter-entrega" class="w-fit rounded-lg px-4 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all">
+          Saiu p/ Entrega (<span id="count-entrega">0</span>)
+        </button>
+        <button onclick="filterStatus('entregue')" id="filter-entregue" class="w-fit rounded-lg px-4 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all">
+          Entregues (<span id="count-entregue">0</span>)
+        </button>
+      </div>
+
+      <!-- LISTAGEM DE PEDIDOS (ORDEM DECRESCENTE / MAIS RECENTES NO TOPO) -->
+      <div id="ordersListContainer" class="space-y-4">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: GUIA EXPLICATIVO DO FLUXO DE PEDIDOS          -->
+  <!-- ==================================================== -->
+  <div id="flowGuideModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+            <i class="fa-solid fa-circle-question text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Como Funciona o Fluxo de Pedidos?</h3>
+            <p class="text-xs text-slate-500">Fluxo otimizado em 3 etapas com impressão direta na cozinha</p>
+          </div>
+        </div>
+        <button onclick="closeFlowGuideModal()" class="w-fit text-slate-400 hover:text-slate-700 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-4 text-xs text-slate-600">
+        <div class="flex items-start gap-3 p-3 rounded-xl bg-emerald-50/70 border border-emerald-200">
+          <div class="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white font-bold shrink-0 text-xs">1</div>
+          <div>
+            <h4 class="font-bold text-emerald-950 text-sm">Pagos / Em Separação (Impressão Imediata na Cozinha)</h4>
+            <p class="mt-0.5">Assim que o cliente paga no PIX, toca o alarme e a folha A4 imprime automaticamente na cozinha perto dos funcionários. A equipe já inicia o preparo imediatamente e confere a caneta na folha.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3 p-3 rounded-xl bg-blue-50/70 border border-blue-200">
+          <div class="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white font-bold shrink-0 text-xs">2</div>
+          <div>
+            <h4 class="font-bold text-blue-950 text-sm">Saiu p/ Entrega (Despacho com o Motoboy)</h4>
+            <p class="mt-0.5">O pedido pronto é embalado com a folha A4 grampeada na sacola. O motoboy aponta a câmera do celular para o QR Code impresso na folha, abre a rota do Google Maps no celular dele e parte para a entrega.</p>
+          </div>
+        </div>
+
+        <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-100 border border-slate-200">
+          <div class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-600 text-white font-bold shrink-0 text-xs">3</div>
+          <div>
+            <h4 class="font-bold text-slate-900 text-sm">Entregues (Concluído & Arquivado)</h4>
+            <p class="mt-0.5">O motoboy retorna confirmando a entrega e o pedido é marcado como <strong>Entregue</strong>, ficando registrado com segurança no histórico do dia.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5 text-right">
+        <button onclick="closeFlowGuideModal()" class="w-fit rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800">
+          Entendi, Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: CONFIGURAÇÕES DA LOJA & CHAVE PIX DO LOJISTA  -->
+  <!-- ==================================================== -->
+  <div id="configModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <i class="fa-brands fa-pix text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Configuração da Loja & Chave PIX</h3>
+            <p class="text-xs text-slate-500">Cadastre a chave PIX onde você receberá 100% dos pedidos</p>
+          </div>
+        </div>
+        <button onclick="closeConfigModal()" class="w-fit text-slate-400 hover:text-slate-700 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveConfig(event)" class="mt-4 space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nome do Estabelecimento *</label>
+          <input type="text" id="cfgStoreName" required placeholder="Ex: Pizzaria Bella / Hamburgueria Top" class="w-full max-w-[50ch] rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Telefone / WhatsApp da Loja *</label>
+            <input type="text" id="cfgStorePhone" required placeholder="(11) 98765-4321" style="width: 22ch; max-width: 100%;" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Taxa de Entrega Padrão (R$) *</label>
+            <input type="number" step="0.50" id="cfgDeliveryFee" required placeholder="5.00" style="width: 18ch; max-width: 100%;" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+          </div>
+        </div>
+
+        <!-- CAMPO DA CHAVE PIX DO LOJISTA (PROTEGIDO POR PIN MESTRE DO PROPRIETÁRIO) -->
+        <div class="rounded-xl border border-emerald-400 bg-emerald-50/70 p-3.5 space-y-3 shadow-xs">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <i class="fa-brands fa-pix text-emerald-600 text-base"></i>
+              <span class="font-bold text-emerald-950 text-sm">Chave PIX de Recebimento da Loja *</span>
+            </div>
+            <!-- INDICADOR DE STATUS DO PIN -->
+            <div id="pixLockStatusBadge" class="flex items-center gap-1.5">
+              <span id="pixLockedBadge" class="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 text-[10px] font-bold">
+                <i class="fa-solid fa-lock text-[9px]"></i> Trancado por PIN
+              </span>
+              <span id="pixUnlockedBadge" class="hidden inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 text-[10px] font-bold">
+                <i class="fa-solid fa-lock-open text-[9px]"></i> Liberado para o Dono
+              </span>
+            </div>
+          </div>
+
+          <!-- AVISO DE BLINDAGEM DE SEGURANÇA CONTRA FRAUDES DE CAIXA -->
+          <div class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
+            <div class="flex items-start gap-2">
+              <i class="fa-solid fa-shield-halved text-amber-600 text-sm mt-0.5 shrink-0"></i>
+              <div>
+                <strong>Trava Anti-Fraude do Dono:</strong> Para evitar que funcionários no computador do caixa alterem o PIX para uma conta pessoal, os dados bancários ficam trancados. Apenas o proprietário com o PIN de Segurança pode alterar a Chave PIX (com recuperação exclusiva pelo e-mail do lojista).
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Chave PIX (CPF, CNPJ, Celular ou E-mail):</label>
+            <input type="text" id="cfgPixKey" readonly required placeholder="Ex: 11987654321 ou loja@pix.com.br" class="w-full max-w-[60ch] font-mono rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-slate-700 focus:outline-none transition-all">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Nome do Titular da Conta PIX *</label>
+              <input type="text" id="cfgMerchantName" readonly required placeholder="Ex: CARLOS ALBERTO SILVA" class="w-full max-w-[40ch] uppercase rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-slate-700 focus:outline-none transition-all">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Cidade da Conta Bancária *</label>
+              <input type="text" id="cfgMerchantCity" readonly required placeholder="Ex: SAO PAULO" class="w-full max-w-[30ch] uppercase rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-slate-700 focus:outline-none transition-all">
+            </div>
+          </div>
+
+          <!-- BOTÃO PARA DESTRAVAR COM PIN DO DONO & RECUPERAÇÃO -->
+          <div id="pixLockedControls" class="pt-2 flex items-center justify-between border-t border-emerald-200/60 flex-wrap gap-2">
+            <button type="button" onclick="openPixPinModal()" class="w-fit inline-flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 text-xs shadow-sm transition-all active:scale-95">
+              <i class="fa-solid fa-lock"></i> Desbloquear Edição (Digitar PIN do Dono)
+            </button>
+            <div class="flex items-center gap-3">
+              <button type="button" onclick="openChangePinModal()" class="w-fit text-[11px] text-slate-600 hover:text-slate-900 underline font-medium">
+                Alterar PIN
+              </button>
+              <button type="button" onclick="openRecoverPinModal()" class="w-fit text-[11px] text-amber-700 hover:text-amber-900 underline font-bold">
+                Recuperar PIN por E-mail
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
+          <button type="button" onclick="closeConfigModal()" class="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button type="submit" class="w-fit inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm">
+            <i class="fa-solid fa-floppy-disk"></i>
+            Salvar e Destravar Cardápio
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: GESTÃO DE ENTREGADORES / MOTOBOYS PRÓPRIOS    -->
+  <!-- ==================================================== -->
+  <div id="driversModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+            <i class="fa-solid fa-motorcycle text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Cadastro de Entregadores (Motoboys)</h3>
+            <p class="text-xs text-slate-500">Cadastre seus próprios motoboys e envie rotas com 1 clique no WhatsApp</p>
+          </div>
+        </div>
+        <button onclick="closeDriversModal()" class="w-fit text-slate-400 hover:text-slate-700 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- ATALHO RH / CADASTRAR NOVO MOTOBOY -->
+      <div class="mt-3 p-3 bg-indigo-50/80 border border-indigo-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between text-xs text-indigo-950 gap-2">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-indigo-600 text-base shrink-0"></i>
+          <span><strong>Adicionar Novo Motoboy:</strong> Gere um link de cadastro com código descartável para o entregador se cadastrar sozinho no celular.</span>
+        </div>
+        <button type="button" onclick="closeDriversModal(); openDriverPairingModal();" class="w-fit shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 text-xs shadow-xs transition-all active:scale-95">
+          <i class="fa-solid fa-key"></i> + Cadastrar Novo Motoboy
+        </button>
+      </div>
+
+
+
+      <!-- LISTA DE ENTREGADORES -->
+      <div class="mt-4">
+        <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider mb-2">Entregadores Ativos</h4>
+        <div id="driversListContainer" class="max-h-60 overflow-y-auto space-y-2">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: CONFIRMAÇÃO DE EXCLUSÃO DIGITANDO 'SIM'      -->
+  <!-- ==================================================== -->
+  <div id="deleteDriverConfirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-sm rounded-2xl border border-rose-500/40 bg-white p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-2.5 text-rose-600">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100 text-rose-600 text-lg">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Excluir Motoboy</h3>
+          <p class="text-[11px] text-slate-500">Confirmação obrigatória de segurança</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-600">
+        Deseja realmente excluir <strong id="deleteDriverTargetName" class="text-slate-900">este entregador</strong> da loja?
+      </p>
+
+      <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-1">
+        <p class="font-bold">⚠️ Esta ação removerá o motoboy do restaurante.</p>
+        <p>Para confirmar a exclusão, digite exatamente a palavra <strong>sim</strong> abaixo:</p>
+      </div>
+
+      <div>
+        <input type="text" id="confirmDeleteDriverInput" placeholder="Digite 'sim'" autocomplete="off" class="w-full text-center rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold text-slate-800 focus:outline-none focus:border-rose-500">
+        <p id="deleteDriverErrorMsg" class="hidden text-xs text-rose-600 font-bold mt-1 text-center">Você deve digitar exatamente a palavra "sim".</p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button type="button" onclick="closeDeleteDriverModal()" class="w-fit rounded-lg bg-slate-100 hover:bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors">
+          Cancelar
+        </button>
+        <button type="button" onclick="handleConfirmDeleteDriver()" class="w-fit rounded-lg bg-rose-600 hover:bg-rose-700 px-4 py-1.5 text-xs font-bold text-white shadow-xs transition-colors">
+          Excluir Motoboy
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: VISUALIZADOR DE DOCUMENTO RG / CONFRONTO FACIAL -->
+  <!-- ==================================================== -->
+  <div id="driverDocViewerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-emerald-600 text-lg"></i>
+          <h3 id="docViewerTitle" class="text-base font-bold text-slate-900">Conferência de Segurança do Entregador</h3>
+        </div>
+        <button onclick="closeDriverDocViewerModal()" class="w-fit text-slate-400 hover:text-slate-700 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="docViewerContent" class="space-y-4 text-xs">
+        <!-- Preenchido dinamicamente via JS -->
+      </div>
+
+      <div class="pt-2 border-t border-slate-100 text-right">
+        <button onclick="closeDriverDocViewerModal()" class="w-fit rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white hover:bg-slate-800">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: LICENÇA SAAS R$ 49,90/MÊS & TELA ADMIN        -->
+  <!-- ==================================================== -->
+  <div id="saasModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+            <i class="fa-solid fa-cloud text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Licença SaaS Ilimitada - R$ 49,90 / mês</h3>
+            <p class="text-xs text-slate-500">100% dos pedidos vão direto para você, sem intermediários</p>
+          </div>
+        </div>
+        <button id="saasModalCloseBtn" onclick="closeSaasModal()" class="w-fit text-slate-400 hover:text-slate-700 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- BANNER DE BLOQUEIO (QUANDO EXPIRADO APÓS 2 DIAS) -->
+      <div id="saasExpiredLockBanner" class="hidden mt-3 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2.5">
+        <i class="fa-solid fa-lock text-rose-600 text-lg shrink-0"></i>
+        <div>
+          <p class="font-bold text-rose-900 text-sm">Acesso Bloqueado: Período de teste de 2 dias finalizado!</p>
+          <p class="font-normal text-rose-700 mt-0.5">Efetue o pagamento de R$ 49,90 via PIX abaixo para desbloquear o programa e continuar usando normalmente.</p>
+        </div>
+      </div>
+
+      <!-- BANNER DE TESTE ATIVO -->
+      <div id="saasTrialActiveBanner" class="hidden mt-3 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-bold flex items-center justify-between">
+        <span class="flex items-center gap-2">
+          <i class="fa-solid fa-clock text-indigo-600"></i>
+          <span id="saasTrialTimerText">Período de teste gratuito ativo: Restam 2 dias</span>
+        </span>
+      </div>
+
+      <!-- CARDS EXPLICATIVOS DO MODELO SAAS -->
+      <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <div class="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50">
+          <div class="flex items-center gap-2 text-emerald-800 font-bold">
+            <i class="fa-solid fa-hand-holding-dollar text-base"></i>
+            <span>0% de Comissão por Pedido</span>
+          </div>
+          <p class="text-slate-600 mt-1">O cliente paga a pizza, refrigerante ou lanche e o valor cai 100% direto no seu PIX cadastrado.</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50">
+          <div class="flex items-center gap-2 text-indigo-800 font-bold">
+            <i class="fa-solid fa-shield-halved text-base"></i>
+            <span>Mensalidade Fixa SaaS</span>
+          </div>
+          <p class="text-slate-600 mt-1">Apenas R$ 49,90 fixos por mês para o sistema rodar 24h sem limites de pedidos.</p>
+        </div>
+      </div>
+
+      <!-- QR CODE PIX DE R$ 49,90 PARA PAGAMENTO DA MENSALIDADE -->
+      <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
+        <span class="text-xs font-bold text-slate-700 block">Pagamento / Renovação da Mensalidade SaaS:</span>
+        <div class="my-3 flex flex-col items-center justify-center">
+          <div id="saasPixQrBox" class="bg-white p-2.5 rounded-xl border border-slate-300 shadow-sm flex items-center justify-center min-w-[160px] min-h-[160px]">
+            <!-- Renderizado via QRCode -->
+          </div>
+          <span class="text-base font-black text-slate-900 mt-2">Valor: R$ 49,90 / mês</span>
+          <span id="saasAdminPixKeyLabel" class="text-[11px] text-slate-500 font-mono mt-0.5">Chave PIX Admin: adrielle145133@gmail.com</span>
+        </div>
+
+        <div class="flex items-center justify-center gap-2 max-w-md mx-auto">
+          <input type="text" id="saasPixCopyInput" readonly class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-mono text-slate-600 focus:outline-none">
+          <button onclick="copySaasPix()" class="w-fit shrink-0 inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-700">
+            <i class="fa-regular fa-copy"></i>
+            <span id="saasCopyTxt">Copiar</span>
+          </button>
+        </div>
+
+        <!-- BOTÃO PARA DESBLOQUEAR IMEDIATAMENTE AO PAGAR VIA PIX -->
+        <div class="mt-3.5 pt-3 border-t border-slate-200 flex items-center justify-center">
+          <button onclick="confirmSaaSPaymentAndUnlock()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-md transition-all active:scale-95">
+            <i class="fa-solid fa-circle-check text-sm"></i> Já Realizei o Pagamento via PIX (Desbloquear Agora)
+          </button>
+        </div>
+      </div>
+
+      <!-- CONFIGURAÇÃO EXCLUSIVA DO ADMINISTRADOR DO SAAS -->
+      <div class="mt-4 border-t border-slate-100 pt-3">
+        <button onclick="toggleAdminSettings()" class="w-fit text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-gear"></i> Painel do Administrador do SaaS (Definir Chave PIX e Desbloqueio)
+        </button>
+        <div id="adminSettingsArea" class="hidden mt-3 p-3 bg-slate-100 rounded-xl text-xs space-y-2.5">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Chave PIX do Dono do SaaS (Onde os lojistas pagam R$ 49,90):</label>
+            <div class="flex gap-2">
+              <input type="text" id="adminPixInput" placeholder="Chave PIX do Admin" class="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-mono text-xs">
+              <button onclick="saveAdminPix()" class="w-fit rounded-lg bg-slate-900 px-4 py-1.5 text-xs font-bold text-white hover:bg-slate-800">
+                Salvar Chave Admin
+              </button>
+            </div>
+          </div>
+
+          <!-- BOTÕES DE GESTÃO DA LICENÇA PELO ADMINISTRADOR -->
+          <div class="pt-2 border-t border-slate-200 flex flex-wrap gap-2 items-center">
+            <button onclick="adminUnlockLicense(30)" class="w-fit inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm" title="Retira a tela de bloqueio e libera o programa por 30 dias">
+              <i class="fa-solid fa-unlock"></i> Liberar Programa por 30 Dias (Pagamento Confirmado)
+            </button>
+            <button onclick="adminResetTrial()" class="w-fit inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-700 shadow-sm" title="Reinicia o teste de 2 dias">
+              <i class="fa-solid fa-rotate-right"></i> Resetar Teste de 2 Dias
+            </button>
+            <button onclick="adminSimulateExpired()" class="w-fit inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700 shadow-sm" title="Simula que os 2 dias acabaram para você testar a tela de bloqueio">
+              <i class="fa-solid fa-lock"></i> Simular Bloqueio Imediato (Expirar 2 dias)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: LOGIN DO LOJISTA (PADRÃO PROJETO CURRÍCULO)   -->
+  <!-- ==================================================== -->
+  <div id="lojistaLoginModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 no-print">
+    <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-2xl space-y-5 text-center">
+      
+      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 text-2xl shadow-sm">
+        <i class="fa-solid fa-store"></i>
+      </div>
+
+      <div>
+        <h3 class="text-xl font-bold tracking-tight text-slate-900">Acesso da Loja</h3>
+        <p class="text-xs text-slate-500 mt-1">Entre na sua conta para gerenciar pedidos, motoboys e o cardápio</p>
+      </div>
+
+      <!-- BOTÃO LOGIN COM GOOGLE ESTILO CRF CURRÍCULO -->
+      <button onclick="handleGoogleLogin()" type="button" class="w-full flex items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs sm:text-sm font-bold py-2.5 px-4 shadow-sm transition-all duration-150 cursor-pointer active:scale-95">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+          <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z" />
+          <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+          <path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z" />
+          <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z" />
+        </svg>
+        <span>Entrar com Google</span>
+      </button>
+
+      <div class="relative flex items-center justify-center">
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+        <span class="relative bg-white px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">ou acesse com e-mail</span>
+      </div>
+
+      <!-- FORMULÁRIO DE LOGIN POR E-MAIL -->
+      <form onsubmit="handleEmailLogin(event)" class="space-y-3 text-left">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">E-mail do Lojista</label>
+          <input type="email" id="loginEmailInput" required placeholder="loja@seurestaurante.com" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Senha</label>
+          <input type="password" id="loginPasswordInput" required placeholder="••••••••" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+        </div>
+        <button type="submit" class="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 py-2.5 text-xs font-bold text-white shadow-sm transition-all active:scale-95">
+          Entrar no Painel
+        </button>
+      </form>
+      
+      <p class="text-[11px] text-slate-400">Ambiente seguro com sincronização de pedidos em tempo real</p>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: VALIDAÇÃO DO PIN DE SEGURANÇA PARA PIX        -->
+  <!-- ==================================================== -->
+  <div id="pixPinSecurityModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl text-center space-y-4">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 text-xl shadow-sm">
+        <i class="fa-solid fa-key"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-900">PIN do Dono da Loja</h3>
+        <p class="text-xs text-slate-500 mt-1">Digite o seu PIN de segurança para autorizar a alteração da Chave PIX</p>
+      </div>
+
+      <form onsubmit="handleVerifyOwnerPin(event)" class="space-y-4">
+        <div>
+          <input type="password" id="ownerPinInput" required maxlength="6" placeholder="••••" style="width: 14ch;" class="mx-auto text-center font-mono text-2xl tracking-[0.5em] rounded-xl border-2 border-slate-300 bg-slate-50 py-2 text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none">
+        </div>
+
+        <div id="pinErrorMsg" class="hidden text-xs text-rose-600 font-bold bg-rose-50 p-2 rounded-lg border border-rose-200">
+          PIN incorreto! Acesso negado.
+        </div>
+
+        <div class="pt-0.5">
+          <button type="button" onclick="openRecoverPinModal()" class="w-fit text-xs text-amber-700 hover:text-amber-900 font-bold underline">
+            Esqueceu o PIN? Recuperar por e-mail
+          </button>
+        </div>
+
+        <div class="flex items-center justify-center gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closePixPinModal()" class="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button type="submit" class="w-fit inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-5 py-2 text-xs font-bold text-slate-950 shadow-sm">
+            <i class="fa-solid fa-unlock"></i> Confirmar PIN
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: ALTERAR O PIN DE SEGURANÇA                    -->
+  <!-- ==================================================== -->
+  <div id="changePinModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl text-center space-y-4">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200 text-xl shadow-sm">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-900">Alterar PIN de Segurança</h3>
+        <p class="text-xs text-slate-500 mt-1">Crie um novo código PIN exclusivo para proteger seus dados bancários</p>
+      </div>
+
+      <form onsubmit="handleSaveNewPin(event)" class="space-y-3 text-left text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">PIN Atual</label>
+          <input type="password" id="currentPinInput" required maxlength="6" placeholder="Ex: PIN atual" class="w-full text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Novo PIN (4 a 6 dígitos)</label>
+          <input type="password" id="newPinInput" required maxlength="6" placeholder="Novo PIN" class="w-full text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-indigo-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Confirme o Novo PIN</label>
+          <input type="password" id="confirmNewPinInput" required maxlength="6" placeholder="Repita o novo PIN" class="w-full text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div id="changePinErrorMsg" class="hidden text-xs text-rose-600 font-bold bg-rose-50 p-2 rounded-lg border border-rose-200">
+          Dados incorretos.
+        </div>
+
+        <div class="pt-1 text-center">
+          <button type="button" onclick="openRecoverPinModal()" class="w-fit text-xs text-indigo-700 hover:text-indigo-900 font-bold underline">
+            Esqueceu o PIN atual? Recuperar por e-mail
+          </button>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeChangePinModal()" class="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button type="submit" class="w-fit inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-5 py-2 text-xs font-bold text-white shadow-sm">
+            Salvar Novo PIN
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: RECUPERAR O PIN POR E-MAIL DO LOJISTA         -->
+  <!-- ==================================================== -->
+  <div id="recoverPinModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl text-center space-y-4">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 text-xl shadow-sm">
+        <i class="fa-solid fa-envelope-circle-check"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-900">Recuperar PIN de Segurança</h3>
+        <p class="text-xs text-slate-500 mt-1">O código de autorização será enviado para o seu e-mail cadastrado de lojista</p>
+      </div>
+
+      <!-- ETAPA 1: SOLICITAR CÓDIGO POR E-MAIL -->
+      <div id="recoverStep1" class="space-y-3">
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 text-left">
+          <p class="text-slate-500 text-[11px]">E-mail de recuperação do proprietário:</p>
+          <p class="font-bold text-slate-900 text-sm mt-0.5 flex items-center gap-1.5">
+            <i class="fa-solid fa-envelope text-emerald-600"></i>
+            <span id="recoverLojistaEmailDisplay">lojista@delivery.com</span>
+          </p>
+        </div>
+
+        <button type="button" onclick="sendPinRecoveryCode()" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 py-2.5 text-xs font-bold text-white shadow-sm transition-all">
+          <i class="fa-solid fa-paper-plane"></i> Enviar Código de Recuperação para meu E-mail
+        </button>
+      </div>
+
+      <!-- ETAPA 2: VALIDAR CÓDIGO E DEFINIR NOVO PIN -->
+      <div id="recoverStep2" class="hidden space-y-3">
+        <form onsubmit="handleResetPinWithCode(event)" class="space-y-3 text-left text-xs">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Código de 6 Dígitos recebido por E-mail</label>
+            <input type="text" id="recoverCodeInput" required maxlength="6" placeholder="000000" class="w-full text-center font-mono text-lg tracking-widest rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Novo PIN (4 a 6 dígitos numéricos)</label>
+            <input type="password" id="recoverNewPinInput" required maxlength="6" placeholder="Novo PIN" class="w-full text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Confirme o Novo PIN</label>
+            <input type="password" id="recoverConfirmPinInput" required maxlength="6" placeholder="Repita o novo PIN" class="w-full text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div class="flex items-center justify-between gap-2 pt-2">
+            <button type="button" onclick="sendPinRecoveryCode()" class="w-fit text-[11px] text-slate-600 hover:text-slate-900 underline font-medium">
+              Reenviar código
+            </button>
+            <button type="submit" class="w-fit inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm">
+              <i class="fa-solid fa-check"></i> Redefinir PIN
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div id="recoverPinSuccessMsg" class="hidden text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 text-left"></div>
+      <div id="recoverPinErrorMsg" class="hidden text-xs text-rose-600 font-bold bg-rose-50 p-2 rounded-lg border border-rose-200 text-left"></div>
+
+      <!-- CASO O LOJISTA TENHA PERDIDO O E-MAIL: CONTATO DE SUPORTE -->
+      <div class="rounded-xl border border-rose-200 bg-rose-50/90 p-3.5 text-left text-xs text-rose-950 space-y-1.5">
+        <div class="flex items-center gap-1.5 font-bold text-rose-800 text-xs">
+          <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Perdeu o acesso a este e-mail?
+        </div>
+        <p class="text-[11px] text-rose-800 leading-relaxed">
+          Se você não tem mais acesso a esta conta de e-mail, entre em contato imediatamente com o nosso suporte técnico para autenticação e redefinição manual:
+        </p>
+        <div class="pt-0.5">
+          <a href="mailto:elfo145133@gmail.com?subject=Suporte:%20Perdi%20meu%20e-mail%20de%20recuperacao%20do%20PIN" class="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-bold text-rose-900 hover:bg-rose-100 shadow-xs transition-all">
+            <i class="fa-solid fa-envelope text-rose-600"></i> elfo145133@gmail.com
+          </a>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-slate-100 text-right">
+        <button type="button" onclick="closeRecoverPinModal()" class="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: PAREAMENTO DO COMPUTADOR DO CAIXA (OTP)       -->
+  <!-- ==================================================== -->
+  <div id="terminalPairingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 text-lg">
+            <i class="fa-solid fa-desktop"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Parear Computador do Caixa / Cozinha</h3>
+            <p class="text-xs text-slate-500">Conecte a máquina da loja usando um código descartável de 5 minutos</p>
+          </div>
+        </div>
+        <button onclick="closeTerminalPairingModal()" class="w-fit text-slate-400 hover:text-slate-700 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- CARD GERADOR DO CÓDIGO DINÂMICO DESCARTÁVEL -->
+      <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 text-center space-y-3">
+        <span class="text-xs font-bold text-slate-700 block">Código Temporário de Conexão Única:</span>
+        
+        <div id="pairingCodeActiveBox" class="hidden">
+          <div class="py-3 px-6 bg-white rounded-xl border-2 border-dashed border-indigo-500 inline-block shadow-sm">
+            <span id="activePairingCodeDisplay" class="font-mono text-3xl font-black text-indigo-600 tracking-widest">--- ---</span>
+          </div>
+          <p class="text-xs text-indigo-900 font-bold mt-2">
+            <i class="fa-solid fa-stopwatch text-indigo-600"></i> Expira em: <span id="pairingCountdownText" class="font-mono font-bold text-rose-600">05:00</span>
+          </p>
+          <p class="text-[11px] text-slate-500 mt-1 max-w-sm mx-auto">
+            Digite este código no computador do caixa. Assim que for digitado, ele <strong>será destruído imediatamente</strong> e não poderá ser usado novamente por ninguém.
+          </p>
+        </div>
+
+        <div id="pairingCodeIdleBox">
+          <p class="text-xs text-slate-600 mb-3">Clique no botão abaixo quando estiver em frente ao computador do caixa para gerar o código descartável.</p>
+          <button onclick="generateNewPairingCode()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 text-xs shadow-md transition-all active:scale-95">
+            <i class="fa-solid fa-key"></i> Gerar Código Descartável (Dura 5 min)
+          </button>
+        </div>
+      </div>
+
+      <!-- LISTA DE COMPUTADORES CONECTADOS -->
+      <div class="pt-2">
+        <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider mb-2 flex items-center justify-between">
+          <span>Computadores do Caixa Conectados</span>
+          <span id="terminalsCountLabel" class="text-[11px] font-semibold text-slate-500">0 conectado(s)</span>
+        </h4>
+        <div id="terminalsListContainer" class="max-h-48 overflow-y-auto space-y-2">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+
+      <div class="pt-3 flex justify-end border-t border-slate-100">
+        <button onclick="closeTerminalPairingModal()" class="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: PAREAMENTO DO CELULAR DO MOTOBOY (OTP)        -->
+  <!-- ==================================================== -->
+  <div id="driverPairingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 no-print">
+    <div class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 text-lg">
+            <i class="fa-solid fa-user-plus"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Cadastrar Novo Motoboy</h3>
+            <p class="text-xs text-slate-500">Envie o link exclusivo de autorização (válido por 5 minutos) para o motoboy se cadastrar</p>
+          </div>
+        </div>
+        <button onclick="closeDriverPairingModal()" class="w-fit text-slate-400 hover:text-slate-700 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- INSTRUÇÃO RÁPIDA: CADASTRO VS LOGIN -->
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-950">
+        <i class="fa-solid fa-circle-info text-amber-600 text-base shrink-0 mt-0.5"></i>
+        <div>
+          <strong>Atenção:</strong> O link gerado serve <strong>exclusivamente para CADASTRAR o novo motoboy</strong> (com RG frente e verso). O link tem <strong>validade de 5 minutos</strong> e expira automaticamente após isso. O motoboy já cadastrado faz login em outro endereço apenas com o telefone.
+        </div>
+      </div>
+
+      <!-- ÁREA DE GERAÇÃO DO LINK PELO LOJISTA -->
+      <!-- ESTADO 1: QUANDO AINDA NÃO GEROU (IDLE) -->
+      <div id="driverPairingCodeIdleBox" class="rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 p-6 text-center space-y-3">
+        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600 text-2xl shadow-xs">
+          <i class="fa-solid fa-link"></i>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-slate-900">Gerar Link de Cadastro para o Motoboy</h4>
+          <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            Clique no botão abaixo para gerar o link exclusivo (válido por 5 minutos) para enviar ao motoboy.
+          </p>
+        </div>
+        <div class="pt-2">
+          <button onclick="generateNewDriverPairingCode()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 text-xs shadow-md transition-all active:scale-95">
+            <i class="fa-solid fa-link"></i> Gerar Link de Cadastro (Válido por 5 min)
+          </button>
+        </div>
+      </div>
+
+      <!-- ESTADO 2: QUANDO O LOJISTA GEROU O LINK (ATIVO) -->
+      <div id="driverPairingCodeActiveBox" class="hidden rounded-2xl border border-indigo-300 bg-gradient-to-b from-indigo-50/70 to-white p-5 space-y-4 shadow-sm">
+        <div class="flex items-center justify-between border-b border-indigo-100 pb-2.5">
+          <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Link de Cadastro Ativo • Válido por 5 minutos
+          </span>
+          <span class="text-xs font-mono font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-full">
+            <i class="fa-solid fa-stopwatch text-rose-500 mr-1"></i> <span id="driverPairingCountdownText">05:00</span>
+          </span>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3 text-xs">
+          <!-- CABEÇALHO DO LINK E BOTÃO DE RENOVAR -->
+          <div class="flex items-center justify-between gap-2 flex-wrap pb-1">
+            <div>
+              <span class="text-xs font-bold text-indigo-950 block">Link Exclusivo de Cadastro</span>
+              <span class="text-[11px] text-slate-500">Envie o link abaixo para o motoboy se cadastrar no celular.</span>
+            </div>
+            <button type="button" onclick="generateNewDriverPairingCode()" class="w-fit inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 text-xs shadow-sm transition-all active:scale-95">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>Gerar Novo Link (Renovar 5 min)</span>
+            </button>
+          </div>
+
+          <!-- SEÇÃO: LINK EXCLUSIVO DE CADASTRO -->
+          <div class="space-y-1.5">
+            <span class="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block">Link Exclusivo para CADASTRAR o Novo Motoboy:</span>
+            <p class="text-[11px] text-slate-600 leading-tight">
+              Envie o link abaixo para o motoboy. O link tem validade de 5 minutos e abre diretamente o formulário de cadastro com RG frente e verso.
+            </p>
+
+            <div class="flex flex-col gap-2 pt-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <input type="text" id="driverAppUrlDisplay" readonly value="" placeholder="Gerando link com validade de 5 minutos..." style="width: 52ch; max-width: 100%;" class="rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-slate-800 text-xs font-bold select-all focus:outline-none focus:border-indigo-400">
+                
+                <button type="button" onclick="copyDriverAppUrl()" id="copyDriverAppUrlBtn" class="w-fit inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 px-3 py-2 text-xs font-bold transition-all active:scale-95 shadow-xs">
+                  <i class="fa-regular fa-copy"></i> Copiar Link de Cadastro
+                </button>
+              </div>
+
+              <div class="flex items-center gap-2 pt-0.5 flex-wrap">
+                <a id="openDriverAppLink" href="#" target="_blank" class="w-fit inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-indigo-600 transition-colors">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir Link no Navegador
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Elemento oculto para compatibilidade com renderização -->
+          <div id="driverPairingQrContainer" class="hidden"></div>
+        </div>
+      </div>
+
+      <!-- MOTOBOYS CADASTRADOS NA LOJA -->
+      <div class="pt-2 border-t border-slate-100">
+        <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider mb-2 flex items-center justify-between">
+          <span>Motoboys Cadastrados na Loja</span>
+          <span class="text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md"><span id="driversCountInPairingModal">0</span> cadastrado(s)</span>
+        </h4>
+        <div id="driversListContainerInPairingModal" class="max-h-48 overflow-y-auto space-y-2">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+
+      <!-- LISTA DE CELULARES DE MOTOBOYS CONECTADOS -->
+      <div class="pt-2 border-t border-slate-100">
+        <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider mb-2 flex items-center justify-between">
+          <span>Motoboys Pareados Conectados</span>
+          <span id="pairedDriversCountLabel" class="text-[11px] font-semibold text-slate-500">0 conectado(s)</span>
+        </h4>
+        <div id="pairedDriversListContainer" class="max-h-48 overflow-y-auto space-y-2">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+
+      <div class="pt-3 flex justify-end border-t border-slate-100">
+        <button onclick="closeDriverPairingModal()" class="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- ÁREA DE IMPRESSÃO A4 (FORMATO PADRÃO FISCAL/LOGÍSTICA) -->
+  <!-- ==================================================== -->
+  <div id="printArea" style="display: none;">
+    <!-- CONTEÚDO A4 RENDERIZADO PELO JAVASCRIPT ANTES DO PRINT -->
+  </div>
+
+  <!-- SCRIPT DE LÓGICA DO PAINEL, CHAVE PIX, MOTOBOYS E IMPRESSÃO -->
+  <script>
+    const ORDERS_STORAGE_KEY = 'delivery_orders_v1';
+    const SETTINGS_KEY = 'delivery_settings_v1';
+    const CONFIG_KEY = 'DELIVERY_CONFIG';
+    const DRIVERS_KEY = 'DELIVERY_DRIVERS';
+    const ADMIN_PIX_KEY = 'SAAS_ADMIN_PIX';
+    const TRIAL_START_KEY = 'SAAS_TRIAL_START';
+    const PAID_EXPIRES_KEY = 'SAAS_PAID_EXPIRES';
+    const TRIAL_DURATION_MS = 2 * 24 * 60 * 60 * 1000; // 2 dias (48 horas de teste)
+    const LOJISTA_SESSION_KEY = 'LOJISTA_SESSION';
+    const STORE_OWNER_PIN_KEY = 'STORE_OWNER_PIN';
+    const PIN_RECOVERY_KEY = 'DELIVERY_PIN_RECOVERY_DATA';
+    const PAIRING_STORAGE_KEY = 'DELIVERY_PAIRING_CODE';
+    const TERMINALS_STORAGE_KEY = 'DELIVERY_PAIRED_TERMINALS';
+    const DRIVER_PAIRING_STORAGE_KEY = 'DELIVERY_DRIVER_PAIRING_CODE';
+    const PAIRED_DRIVERS_STORAGE_KEY = 'DELIVERY_PAIRED_DRIVERS';
+
+    let currentFilter = 'separando'; // PADRÃO INICIAL: PAGOS / EM SEPARAÇÃO (UNIFICADOS)
+    let lastKnownOrderIds = new Set();
+    let audioCtx = null;
+    let isLockedExpired = false;
+    let isPixUnlocked = false; // Controle de bloqueio por PIN Mestre
+    let pairingTimerInterval = null;
+    let driverPairingTimerInterval = null;
+
+    // ========================================================
+    // AUTENTICAÇÃO DO LOJISTA (PADRÃO PROJETO CURRÍCULO)
+    // ========================================================
+    function getLojistaSession() {
+      try {
+        const raw = localStorage.getItem(LOJISTA_SESSION_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function checkLojistaAuth() {
+      const session = getLojistaSession();
+      const loginModal = document.getElementById('lojistaLoginModal');
+      const emailBadge = document.getElementById('lojistaLoggedEmail');
+
+      if (!session) {
+        if (loginModal) loginModal.classList.remove('hidden');
+      } else {
+        if (loginModal) loginModal.classList.add('hidden');
+        if (emailBadge) emailBadge.textContent = session.email || 'loja@delivery.com';
+      }
+    }
+
+    function handleGoogleLogin() {
+      const session = {
+        email: 'lojista.delivery@gmail.com',
+        name: 'Proprietário Delivery',
+        provider: 'google',
+        role: 'lojista',
+        loginAt: Date.now()
+      };
+      localStorage.setItem(LOJISTA_SESSION_KEY, JSON.stringify(session));
+      checkLojistaAuth();
+      alert('🎉 Bem-vindo! Login com Google efetuado com sucesso.');
+    }
+
+    function handleEmailLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmailInput').value.trim();
+      const pass = document.getElementById('loginPasswordInput').value.trim();
+      if (!email || !pass) return;
+
+      const session = {
+        email,
+        name: email.split('@')[0],
+        provider: 'email',
+        role: 'lojista',
+        loginAt: Date.now()
+      };
+      localStorage.setItem(LOJISTA_SESSION_KEY, JSON.stringify(session));
+      checkLojistaAuth();
+      alert('🎉 Login efetuado com sucesso! Acesso liberado ao painel.');
+    }
+
+    function handleLojistaLogout() {
+      if (!confirm('Deseja realmente sair da conta do lojista?')) return;
+      localStorage.removeItem(LOJISTA_SESSION_KEY);
+      checkLojistaAuth();
+    }
+
+    // ========================================================
+    // PIN EXCLUSIVO DE SEGURANÇA DA CHAVE PIX DO DONO DA LOJA
+    // (SEM CHAVE MESTRE - RECUPERAÇÃO EXCLUSIVA POR E-MAIL)
+    // ========================================================
+    function getOwnerPin() {
+      return localStorage.getItem(STORE_OWNER_PIN_KEY);
+    }
+
+    function getLojistaEmail() {
+      const session = getLojistaSession();
+      if (session && session.email) return session.email;
+      if (storeConfig && storeConfig.email) return storeConfig.email;
+      return 'lojista.delivery@gmail.com';
+    }
+
+    function maskPixKey(key) {
+      if (!key || key.length < 5) return '••••••••';
+      if (key.includes('@')) {
+        const parts = key.split('@');
+        return parts[0].slice(0, 2) + '••••@' + parts[1];
+      }
+      return key.slice(0, 3) + '••••••••' + key.slice(-2);
+    }
+
+    function openPixPinModal() {
+      document.getElementById('pinErrorMsg').classList.add('hidden');
+      document.getElementById('ownerPinInput').value = '';
+      
+      const currentPin = getOwnerPin();
+      // Se ainda não cadastrou nenhum PIN pela primeira vez, convida a criar o PIN
+      if (!currentPin) {
+        document.getElementById('ownerPinInput').placeholder = 'Criar PIN';
+      } else {
+        document.getElementById('ownerPinInput').placeholder = '••••';
+      }
+
+      document.getElementById('pixPinSecurityModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('ownerPinInput').focus(), 100);
+    }
+
+    function closePixPinModal() {
+      document.getElementById('pixPinSecurityModal').classList.add('hidden');
+    }
+
+    function handleVerifyOwnerPin(e) {
+      e.preventDefault();
+      const inputPin = document.getElementById('ownerPinInput').value.trim();
+      const actualPin = getOwnerPin();
+
+      // Se ainda não configurou PIN, este primeiro digitado é gravado com sucesso
+      if (!actualPin) {
+        if (inputPin.length < 4) {
+          const errBox = document.getElementById('pinErrorMsg');
+          errBox.textContent = 'O PIN inicial deve ter pelo menos 4 dígitos numéricos.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+        localStorage.setItem(STORE_OWNER_PIN_KEY, inputPin);
+        alert('🔐 Seu PIN de segurança exclusivo foi cadastrado com sucesso!');
+      } else if (inputPin !== actualPin) {
+        const errBox = document.getElementById('pinErrorMsg');
+        errBox.textContent = 'PIN incorreto! Se você esqueceu, clique em "Recuperar por e-mail" abaixo.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      isPixUnlocked = true;
+      closePixPinModal();
+
+      // Desbloqueia campos
+      const pixInput = document.getElementById('cfgPixKey');
+      const nameInput = document.getElementById('cfgMerchantName');
+      const cityInput = document.getElementById('cfgMerchantCity');
+
+      pixInput.readOnly = false;
+      pixInput.value = storeConfig.pixKey || '';
+      pixInput.classList.remove('bg-slate-100', 'text-slate-700');
+      pixInput.classList.add('bg-white', 'text-slate-900', 'border-emerald-500');
+
+      nameInput.readOnly = false;
+      nameInput.classList.remove('bg-slate-100', 'text-slate-700');
+      nameInput.classList.add('bg-white', 'text-slate-900');
+
+      cityInput.readOnly = false;
+      cityInput.classList.remove('bg-slate-100', 'text-slate-700');
+      cityInput.classList.add('bg-white', 'text-slate-900');
+
+      document.getElementById('pixLockedBadge').classList.add('hidden');
+      document.getElementById('pixUnlockedBadge').classList.remove('hidden');
+      document.getElementById('pixLockedControls').classList.add('hidden');
+
+      alert('🔓 Sucesso! PIN do Dono validado. Os dados bancários e a Chave PIX estão liberados para edição.');
+    }
+
+    function openChangePinModal() {
+      document.getElementById('changePinErrorMsg').classList.add('hidden');
+      document.getElementById('currentPinInput').value = '';
+      document.getElementById('newPinInput').value = '';
+      document.getElementById('confirmNewPinInput').value = '';
+      document.getElementById('changePinModal').classList.remove('hidden');
+    }
+
+    function closeChangePinModal() {
+      document.getElementById('changePinModal').classList.add('hidden');
+    }
+
+    function handleSaveNewPin(e) {
+      e.preventDefault();
+      const current = document.getElementById('currentPinInput').value.trim();
+      const newPin = document.getElementById('newPinInput').value.trim();
+      const confirmPin = document.getElementById('confirmNewPinInput').value.trim();
+      const errBox = document.getElementById('changePinErrorMsg');
+
+      const actualPin = getOwnerPin();
+      if (actualPin && current !== actualPin) {
+        errBox.textContent = 'O PIN atual informado está incorreto! Caso não lembre, utilize a recuperação por e-mail.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+      if (newPin.length < 4) {
+        errBox.textContent = 'O novo PIN deve ter pelo menos 4 dígitos!';
+        errBox.classList.remove('hidden');
+        return;
+      }
+      if (newPin !== confirmPin) {
+        errBox.textContent = 'A confirmação do novo PIN não confere!';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      localStorage.setItem(STORE_OWNER_PIN_KEY, newPin);
+      closeChangePinModal();
+      alert('🔐 Novo PIN exclusivo gravado com sucesso! Guarde este código com segurança.');
+    }
+
+    // ========================================================
+    // RECUPERAÇÃO DO PIN POR E-MAIL DO LOJISTA
+    // ========================================================
+    function openRecoverPinModal() {
+      closePixPinModal();
+      closeChangePinModal();
+      
+      const email = getLojistaEmail();
+      const display = document.getElementById('recoverLojistaEmailDisplay');
+      if (display) display.textContent = email;
+
+      document.getElementById('recoverStep1')?.classList.remove('hidden');
+      document.getElementById('recoverStep2')?.classList.add('hidden');
+      document.getElementById('recoverPinErrorMsg')?.classList.add('hidden');
+      document.getElementById('recoverPinSuccessMsg')?.classList.add('hidden');
+
+      const codeInput = document.getElementById('recoverCodeInput');
+      if (codeInput) codeInput.value = '';
+      const newPinInput = document.getElementById('recoverNewPinInput');
+      if (newPinInput) newPinInput.value = '';
+      const confPinInput = document.getElementById('recoverConfirmPinInput');
+      if (confPinInput) confPinInput.value = '';
+
+      document.getElementById('recoverPinModal')?.classList.remove('hidden');
+    }
+
+    function closeRecoverPinModal() {
+      document.getElementById('recoverPinModal')?.classList.add('hidden');
+    }
+
+    function sendPinRecoveryCode() {
+      const email = getLojistaEmail();
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutos de validade
+      localStorage.setItem(PIN_RECOVERY_KEY, JSON.stringify({ code, expiresAt, email }));
+
+      document.getElementById('recoverStep1')?.classList.add('hidden');
+      document.getElementById('recoverStep2')?.classList.remove('hidden');
+
+      const successBox = document.getElementById('recoverPinSuccessMsg');
+      if (successBox) {
+        successBox.innerHTML = `<strong>Código enviado com sucesso!</strong> Verifique a caixa de entrada de <strong>${email}</strong>.<br><span class="text-[10px] text-emerald-800 font-mono mt-1 block bg-white/70 p-1.5 rounded border border-emerald-300">Código de segurança enviado: <strong>${code}</strong> (Válido por 10 minutos)</span>`;
+        successBox.classList.remove('hidden');
+      }
+
+      alert(`📧 Código de recuperação do PIN enviado para o e-mail: ${email}\n\nCódigo de autorização: ${code}\n(Válido por 10 minutos)`);
+      setTimeout(() => document.getElementById('recoverCodeInput')?.focus(), 150);
+    }
+
+    function handleResetPinWithCode(e) {
+      e.preventDefault();
+      const inputCode = document.getElementById('recoverCodeInput').value.trim();
+      const newPin = document.getElementById('recoverNewPinInput').value.trim();
+      const confirmPin = document.getElementById('recoverConfirmPinInput').value.trim();
+      const errBox = document.getElementById('recoverPinErrorMsg');
+      if (errBox) errBox.classList.add('hidden');
+
+      let recoveryData = null;
+      try {
+        const raw = localStorage.getItem(PIN_RECOVERY_KEY);
+        if (raw) recoveryData = JSON.parse(raw);
+      } catch (err) {}
+
+      if (!recoveryData || !recoveryData.code) {
+        if (errBox) {
+          errBox.textContent = 'Nenhum código ativo encontrado. Clique em "Reenviar código".';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (Date.now() > recoveryData.expiresAt) {
+        if (errBox) {
+          errBox.textContent = 'Este código expirou! Clique em "Reenviar código" para receber um novo.';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (inputCode !== recoveryData.code) {
+        if (errBox) {
+          errBox.textContent = 'Código incorreto! Digite o código de 6 dígitos enviado para seu e-mail.';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (newPin.length < 4 || newPin.length > 6) {
+        if (errBox) {
+          errBox.textContent = 'O novo PIN deve ter entre 4 e 6 dígitos numéricos.';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (newPin !== confirmPin) {
+        if (errBox) {
+          errBox.textContent = 'A confirmação do novo PIN não confere!';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      localStorage.setItem(STORE_OWNER_PIN_KEY, newPin);
+      localStorage.removeItem(PIN_RECOVERY_KEY);
+      closeRecoverPinModal();
+      alert('🎉 Parabéns! Seu PIN de segurança foi redefinido com sucesso! Utilize-o agora para desbloquear seus dados bancários.');
+      openPixPinModal();
+    }
+
+    // ========================================================
+    // PAREAMENTO DE TERMINAL DO CAIXA COM CÓDIGO DESCARTÁVEL (OTP)
+    // ========================================================
+    function getPairedTerminals() {
+      try {
+        const raw = localStorage.getItem(TERMINALS_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function updateTerminalsBadge() {
+      const list = getPairedTerminals();
+      const badge = document.getElementById('terminalsBadgeCount');
+      if (badge) badge.textContent = list.length;
+      const countLabel = document.getElementById('terminalsCountLabel');
+      if (countLabel) countLabel.textContent = `${list.length} computador(es) conectado(s)`;
+    }
+
+    function openTerminalPairingModal() {
+      renderPairedTerminalsList();
+      checkExistingPairingCode();
+      document.getElementById('terminalPairingModal').classList.remove('hidden');
+    }
+
+    function closeTerminalPairingModal() {
+      document.getElementById('terminalPairingModal').classList.add('hidden');
+    }
+
+    function generateNewPairingCode() {
+      const codePart1 = Math.floor(100 + Math.random() * 900);
+      const codePart2 = Math.floor(100 + Math.random() * 900);
+      const fullCode = `${codePart1}-${codePart2}`;
+      const expiresAt = Date.now() + (5 * 60 * 1000); // 5 minutos
+
+      const pairingData = {
+        code: fullCode,
+        expiresAt,
+        used: false,
+        createdAt: Date.now()
+      };
+
+      localStorage.setItem(PAIRING_STORAGE_KEY, JSON.stringify(pairingData));
+      window.dispatchEvent(new Event('storage'));
+      showActivePairingCode(pairingData);
+    }
+
+    function checkExistingPairingCode() {
+      try {
+        const raw = localStorage.getItem(PAIRING_STORAGE_KEY);
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data && !data.used && data.expiresAt > Date.now()) {
+            showActivePairingCode(data);
+            return;
+          }
+        }
+      } catch (e) {}
+      showIdlePairingCode();
+    }
+
+    function showActivePairingCode(data) {
+      document.getElementById('pairingCodeIdleBox').classList.add('hidden');
+      document.getElementById('pairingCodeActiveBox').classList.remove('hidden');
+      document.getElementById('activePairingCodeDisplay').textContent = data.code;
+
+      if (pairingTimerInterval) clearInterval(pairingTimerInterval);
+
+      const updateCountdown = () => {
+        const remaining = Math.max(0, data.expiresAt - Date.now());
+        if (remaining <= 0) {
+          clearInterval(pairingTimerInterval);
+          showIdlePairingCode();
+          return;
+        }
+        const m = Math.floor(remaining / 60000);
+        const s = Math.floor((remaining % 60000) / 1000);
+        document.getElementById('pairingCountdownText').textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      };
+
+      updateCountdown();
+      pairingTimerInterval = setInterval(updateCountdown, 1000);
+    }
+
+    function showIdlePairingCode() {
+      if (pairingTimerInterval) clearInterval(pairingTimerInterval);
+      document.getElementById('pairingCodeIdleBox').classList.remove('hidden');
+      document.getElementById('pairingCodeActiveBox').classList.add('hidden');
+    }
+
+    function renderPairedTerminalsList() {
+      const list = getPairedTerminals();
+      const container = document.getElementById('terminalsListContainer');
+      updateTerminalsBadge();
+
+      if (list.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center">Nenhum computador do caixa conectado ainda.</p>`;
+        return;
+      }
+
+      container.innerHTML = list.map(t => `
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+          <div class="flex items-center gap-2">
+            <div class="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+              <i class="fa-solid fa-desktop"></i>
+            </div>
+            <div>
+              <span class="font-bold text-slate-800">${t.name || 'Computador do Caixa'}</span>
+              <p class="text-[11px] text-slate-500">Conectado em: ${new Date(t.pairedAt).toLocaleString('pt-BR')}</p>
+            </div>
+          </div>
+          <button onclick="disconnectTerminal('${t.id}')" class="w-fit text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2.5 py-1 rounded-lg transition-colors">
+            Desconectar
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function disconnectTerminal(id) {
+      if (!confirm('Deseja realmente revogar o acesso deste computador? Ele será desconectado imediatamente.')) return;
+      let list = getPairedTerminals();
+      list = list.filter(t => t.id !== id);
+      localStorage.setItem(TERMINALS_STORAGE_KEY, JSON.stringify(list));
+      window.dispatchEvent(new Event('storage'));
+      renderPairedTerminalsList();
+      alert('🔒 Computador desconectado com sucesso!');
+    }
+
+    // ========================================================
+    // PAREAMENTO DO CELULAR DO MOTOBOY COM CÓDIGO DESCARTÁVEL (OTP)
+    // ========================================================
+    function getPairedDrivers() {
+      try {
+        const raw = localStorage.getItem(PAIRED_DRIVERS_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function updatePairedDriversBadge() {
+      const list = getPairedDrivers();
+      const badge = document.getElementById('pairedDriversBadgeCount');
+      if (badge) badge.textContent = list.length;
+      const countLabel = document.getElementById('pairedDriversCountLabel');
+      if (countLabel) countLabel.textContent = `${list.length} conectado(s)`;
+    }
+
+    function populatePairingDriverSelect() {
+      const select = document.getElementById('pairingDriverSelect');
+      if (!select) return;
+      if (!drivers || drivers.length === 0) {
+        select.innerHTML = '<option value="Entregador Avulso" data-name="Entregador Avulso">Entregador Padrão (Sem cadastro prévio)</option>';
+        return;
+      }
+      select.innerHTML = drivers.map(d => `<option value="${d.id}" data-name="${d.name}">${d.name} (${d.phone || 'Sem telefone'})</option>`).join('');
+    }
+
+    function openDriverPairingModal() {
+      const activeData = getActivePairingData();
+      if (!activeData || (activeData.expiresAt - Date.now()) < 15000) {
+        generateNewDriverPairingCode();
+      } else {
+        showActiveDriverPairingCode(activeData);
+      }
+      renderPairedDriversList();
+      renderDriversInPairingModal();
+      document.getElementById('driverPairingModal').classList.remove('hidden');
+    }
+
+    function renderDriversInPairingModal() {
+      const container = document.getElementById('driversListContainerInPairingModal');
+      const badge = document.getElementById('driversCountInPairingModal');
+      if (badge) badge.textContent = drivers ? drivers.length : 0;
+      if (!container) return;
+      if (!drivers || drivers.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 py-2 text-center">Nenhum motoboy cadastrado ainda.</p>`;
+        return;
+      }
+      container.innerHTML = drivers.map(d => `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+          <div class="flex items-center gap-2">
+            ${d.officialPhoto ? `
+              <img src="${d.officialPhoto}" class="h-8 w-8 rounded-full object-cover border border-emerald-500 shrink-0" alt="Foto">
+            ` : `
+              <div class="h-8 w-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
+                <i class="fa-solid fa-motorcycle"></i>
+              </div>
+            `}
+            <div>
+              <span class="font-bold text-slate-900">${d.name}</span>
+              <p class="text-[11px] text-slate-500">${d.phone} • ${d.vehicle || 'Moto'}</p>
+            </div>
+          </div>
+          <button onclick="deleteDriver('${d.id}')" class="w-fit text-slate-400 hover:text-rose-600 p-1 text-xs" title="Excluir Motoboy">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function closeDriverPairingModal() {
+      document.getElementById('driverPairingModal').classList.add('hidden');
+    }
+
+    function renderDriverPairingQrCode(customUrl) {
+      const targetUrl = customUrl || 'http://192.168.0.238:3000/motoboy.html';
+      const qrBox = document.getElementById('driverPairingQrContainer');
+      if (!qrBox) return;
+      qrBox.innerHTML = '';
+      try {
+        new QRCode(qrBox, {
+          text: targetUrl,
+          width: 130,
+          height: 130,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (e) {
+        qrBox.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(targetUrl)}" width="130" height="130" alt="QR Code" class="rounded-lg shadow-xs" />`;
+      }
+      const input = document.getElementById('driverAppUrlDisplay');
+      if (input) input.value = targetUrl;
+    }
+
+    function copyDriverAppUrl() {
+      const input = document.getElementById('driverAppUrlDisplay');
+      const btn = document.getElementById('copyDriverAppUrlBtn');
+      if (!input) return;
+      const url = input.value;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          if (btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check text-emerald-600"></i> Copiado!';
+            btn.classList.add('bg-emerald-50', 'border-emerald-300', 'text-emerald-800');
+            setTimeout(() => {
+              btn.innerHTML = originalHtml;
+              btn.classList.remove('bg-emerald-50', 'border-emerald-300', 'text-emerald-800');
+            }, 2000);
+          }
+        }).catch(() => {
+          input.select();
+          document.execCommand('copy');
+          alert('Link copiado com sucesso!');
+        });
+      } else {
+        input.select();
+        document.execCommand('copy');
+        alert('Link copiado com sucesso!');
+      }
+    }
+
+    function printDriverQrPoster() {
+      const url = document.getElementById('driverAppUrlDisplay')?.value || 'http://192.168.0.238:3000/motoboy.html';
+      const printContainer = document.getElementById('printArea');
+      if (!printContainer) return;
+
+      printContainer.innerHTML = `
+        <div style="font-family: Arial, sans-serif; padding: 40px; text-align: center; max-width: 650px; margin: 0 auto; color: #0f172a; border: 3px dashed #6366f1; border-radius: 24px;">
+          <div style="font-size: 32px; font-weight: 900; color: #4338ca; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
+            🛵 App dos Entregadores
+          </div>
+          <div style="font-size: 16px; font-weight: bold; color: #475569; margin-bottom: 24px;">
+            Escaneie o QR Code abaixo com a câmera do seu celular para conectar
+          </div>
+
+          <div style="display: flex; justify-content: center; margin: 20px 0;">
+            <div id="posterQrBox" style="padding: 16px; background: #ffffff; border: 2px solid #e2e8f0; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: inline-block;"></div>
+          </div>
+
+          <div style="font-family: monospace; font-size: 15px; font-weight: bold; color: #1e293b; background: #f1f5f9; padding: 10px 16px; border-radius: 12px; display: inline-block; margin-bottom: 24px;">
+            ${url}
+          </div>
+
+          <div style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 16px; padding: 16px; text-align: left; font-size: 13px; color: #312e81; line-height: 1.6; max-width: 480px; margin: 0 auto;">
+            <div style="font-weight: bold; font-size: 14px; margin-bottom: 6px;">📋 Passo a Passo para o Entregador:</div>
+            <div>1. Conecte no Wi-Fi da loja.</div>
+            <div>2. Abra a câmera do celular e aponte para o QR Code acima.</div>
+            <div>3. Peça o <strong>código descartável de 6 dígitos</strong> no balcão / RH.</div>
+            <div>4. Preencha seu nome, foto do documento (RG/CNH) e selfie oficial.</div>
+          </div>
+
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 24px;">
+            Sistema Delivery • Controle de Roteirização e Turnos
+          </div>
+        </div>
+      `;
+
+      const posterBox = document.getElementById('posterQrBox');
+      try {
+        new QRCode(posterBox, {
+          text: url,
+          width: 220,
+          height: 220,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      } catch (e) {
+        posterBox.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}" width="220" height="220" />`;
+      }
+
+      setTimeout(() => {
+        window.print();
+      }, 400);
+    }
+
+    let serverLanIp = '192.168.0.238';
+
+    function getFixedMotoboyAppUrl(token) {
+      let host = window.location.hostname;
+      const isPublicDomain = host.includes('.') && !/^(192\.168|10\.|172\.|127\.0\.0\.1|localhost)/.test(host);
+      const proto = window.location.protocol === 'https:' ? 'https:' : 'http:';
+      
+      let port = window.location.port ? `:${window.location.port}` : '';
+      if (!isPublicDomain) {
+        if (!host || host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') {
+          host = serverLanIp || '192.168.0.238';
+        }
+        if (!port) port = ':3000';
+      }
+      
+      let base = `${proto}//${host}${port}/cadastro-motoboy.html`;
+      if (token) {
+        base += `?token=${encodeURIComponent(token)}`;
+      }
+      return base;
+    }
+
+    function getActivePairingData() {
+      try {
+        const raw = localStorage.getItem(DRIVER_PAIRING_STORAGE_KEY);
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data && data.token && !data.used && data.expiresAt > Date.now()) {
+            return data;
+          }
+        }
+      } catch (e) {}
+      try { localStorage.removeItem(DRIVER_PAIRING_STORAGE_KEY); } catch (e) {}
+      return null;
+    }
+
+    // Busca o IP real da máquina na rede local junto ao servidor Node.js
+    fetch('/api/network-info')
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.ip) {
+          serverLanIp = data.ip;
+          const currentPairing = getActivePairingData();
+          if (currentPairing && currentPairing.token) {
+            const targetUrl = getFixedMotoboyAppUrl(currentPairing.token);
+            renderDriverPairingQrCode(targetUrl);
+            const urlInput = document.getElementById('driverAppUrlDisplay');
+            if (urlInput) urlInput.value = targetUrl;
+            const openLink = document.getElementById('openDriverAppLink');
+            if (openLink) openLink.href = targetUrl;
+          }
+        }
+      })
+      .catch(() => {});
+
+    function generateNewDriverPairingCode() {
+      const token = 'tok_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36).substring(4);
+      const expiresAt = Date.now() + (5 * 60 * 1000); // 5 minutos
+
+      const pairingData = {
+        token: token,
+        expiresAt,
+        used: false,
+        createdAt: Date.now()
+      };
+
+      localStorage.setItem(DRIVER_PAIRING_STORAGE_KEY, JSON.stringify(pairingData));
+
+      // Registra o token no backend (descartável, uso único, expira em 5 minutos)
+      fetch('/api/driver-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, expiresAt })
+      }).catch(err => console.error('Erro ao registrar link no servidor:', err));
+
+      window.dispatchEvent(new Event('storage'));
+      showActiveDriverPairingCode(pairingData);
+    }
+
+    function checkExistingDriverPairingCode() {
+      const activeData = getActivePairingData();
+      if (activeData) {
+        showActiveDriverPairingCode(activeData);
+      } else {
+        showIdleDriverPairingCode();
+      }
+    }
+
+    function showActiveDriverPairingCode(data) {
+      document.getElementById('driverPairingCodeIdleBox').classList.add('hidden');
+      document.getElementById('driverPairingCodeActiveBox').classList.remove('hidden');
+
+      // O link de cadastro contém o token exclusivo com validade de 5 minutos
+      const sharedAppUrl = getFixedMotoboyAppUrl(data.token);
+      renderDriverPairingQrCode(sharedAppUrl);
+
+      const urlInput = document.getElementById('driverAppUrlDisplay');
+      if (urlInput) urlInput.value = sharedAppUrl;
+      const openLink = document.getElementById('openDriverAppLink');
+      if (openLink) openLink.href = sharedAppUrl;
+
+      if (driverPairingTimerInterval) clearInterval(driverPairingTimerInterval);
+
+      const updateCountdown = () => {
+        const remaining = Math.max(0, data.expiresAt - Date.now());
+        if (remaining <= 0) {
+          clearInterval(driverPairingTimerInterval);
+          showIdleDriverPairingCode();
+          return;
+        }
+        const m = Math.floor(remaining / 60000);
+        const s = Math.floor((remaining % 60000) / 1000);
+        const cdText = document.getElementById('driverPairingCountdownText');
+        if (cdText) cdText.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      };
+
+      updateCountdown();
+      driverPairingTimerInterval = setInterval(updateCountdown, 1000);
+    }
+
+    function showIdleDriverPairingCode() {
+      if (driverPairingTimerInterval) clearInterval(driverPairingTimerInterval);
+      document.getElementById('driverPairingCodeIdleBox').classList.remove('hidden');
+      document.getElementById('driverPairingCodeActiveBox').classList.add('hidden');
+      try { localStorage.removeItem(DRIVER_PAIRING_STORAGE_KEY); } catch (e) {}
+      const urlInput = document.getElementById('driverAppUrlDisplay');
+      if (urlInput) urlInput.value = 'Link expirado. Clique em Gerar Novo Link (válido por 5 minutos).';
+      const openLink = document.getElementById('openDriverAppLink');
+      if (openLink) openLink.href = '#';
+    }
+
+    function renderPairedDriversList() {
+      const list = getPairedDrivers();
+      const container = document.getElementById('pairedDriversListContainer');
+      updatePairedDriversBadge();
+
+      if (!container) return;
+
+      if (list.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center">Nenhum celular de motoboy conectado ainda.</p>`;
+        return;
+      }
+
+      container.innerHTML = list.map(t => {
+        const driverCadastrado = drivers.find(d => d.id === t.driverId);
+        const officialPhoto = driverCadastrado?.officialPhoto || null;
+        const isShiftActive = t.shiftActive === true;
+        const shiftOpenedTime = t.shiftOpenedAt ? new Date(t.shiftOpenedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+
+        return `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs gap-3">
+            <div class="flex items-center gap-2.5">
+              ${officialPhoto ? `
+                <img src="${officialPhoto}" class="h-10 w-10 rounded-full object-cover border-2 border-emerald-500 shadow-xs shrink-0" alt="Foto Oficial">
+              ` : `
+                <div class="h-10 w-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-base border border-emerald-200 shrink-0">
+                  <i class="fa-solid fa-motorcycle"></i>
+                </div>
+              `}
+              <div>
+                <span class="font-bold text-slate-900 text-sm">${t.name || 'Motoboy'}</span>
+                <div class="flex items-center gap-2 flex-wrap mt-0.5">
+                  ${isShiftActive ? `
+                    <span class="inline-flex items-center gap-1 rounded-md bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-bold border border-emerald-300">
+                      <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Em Turno (desde ${shiftOpenedTime})
+                    </span>
+                  ` : `
+                    <span class="inline-flex items-center gap-1 rounded-md bg-slate-200 text-slate-700 px-2 py-0.5 text-[10px] font-semibold">
+                      ⚪ Fora de Turno (Ponto Fechado)
+                    </span>
+                  `}
+                  <span class="text-[10px] text-slate-400">Pareado em: ${new Date(t.pairedAt).toLocaleDateString('pt-BR')}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+              ${(isShiftActive && t.entrySelfie) ? `
+                <button onclick="openFaceComparisonModal('${t.id}')" class="w-fit inline-flex items-center gap-1 rounded-lg border border-indigo-300 bg-indigo-50 px-2.5 py-1 text-[11px] font-bold text-indigo-700 hover:bg-indigo-100 transition-colors shadow-xs" title="Confrontar Foto Oficial vs Selfie batida no início do turno">
+                  <i class="fa-solid fa-user-check text-indigo-600"></i>
+                  Confrontar Selfie
+                </button>
+              ` : ''}
+
+              ${isShiftActive ? `
+                <button onclick="forceCloseDriverShift('${t.id}')" class="w-fit inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 hover:bg-amber-100 transition-colors shadow-xs" title="Forçar fechamento de ponto se o motoboy foi embora e esqueceu de bater o ponto de saída">
+                  <i class="fa-solid fa-clock-rotate-left text-amber-600"></i>
+                  Fechar Turno
+                </button>
+              ` : ''}
+
+              <button onclick="disconnectDriver('${t.id}')" class="w-fit text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2.5 py-1 rounded-lg transition-colors">
+                Desconectar
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openFaceComparisonModal(pairedId) {
+      const pairedList = getPairedDrivers();
+      const paired = pairedList.find(p => p.id === pairedId);
+      if (!paired) return;
+      const driver = drivers.find(d => d.id === paired.driverId);
+      const modal = document.getElementById('driverDocViewerModal');
+      const title = document.getElementById('docViewerTitle');
+      const content = document.getElementById('docViewerContent');
+
+      const officialPhoto = driver?.officialPhoto || null;
+      const entrySelfie = paired.entrySelfie || null;
+      const shiftTime = paired.shiftOpenedAt ? new Date(paired.shiftOpenedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '---';
+
+      title.innerHTML = `<i class="fa-solid fa-user-shield text-emerald-600 mr-1.5"></i> Confronto Facial: <strong>${paired.name}</strong>`;
+
+      content.innerHTML = `
+        <div class="space-y-3">
+          <p class="text-slate-600">Compare abaixo a <strong>Foto Oficial do Cadastro</strong> com a <strong>Selfie de Abertura de Turno</strong> tirada hoje pelo motoboy no celular:</p>
+          <div class="grid grid-cols-2 gap-3 text-center">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <span class="block font-bold text-slate-800 text-[11px] uppercase tracking-wider">Foto Oficial do Cadastro</span>
+              ${officialPhoto ? `<img src="${officialPhoto}" class="h-36 w-36 object-cover rounded-xl mx-auto border-2 border-slate-300 shadow-xs">` : `<div class="h-36 w-36 rounded-xl bg-slate-200 flex items-center justify-center mx-auto text-slate-400 font-bold">Sem foto</div>`}
+              <span class="text-[10px] text-slate-500 block">Cadastrado pelo Lojista</span>
+            </div>
+
+            <div class="p-3 bg-emerald-50/70 border border-emerald-500/40 rounded-xl space-y-2">
+              <span class="block font-bold text-emerald-900 text-[11px] uppercase tracking-wider">Selfie Batida no Turno</span>
+              ${entrySelfie ? `<img src="${entrySelfie}" class="h-36 w-36 object-cover rounded-xl mx-auto border-2 border-emerald-500 shadow-xs">` : `<div class="h-36 w-36 rounded-xl bg-slate-200 flex items-center justify-center mx-auto text-slate-400 font-bold">Sem selfie</div>`}
+              <span class="text-[10px] text-emerald-700 font-bold block">Entrada às ${shiftTime}</span>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-lg bg-slate-100 border border-slate-200 text-center">
+            <span class="text-[11px] text-slate-700">Se as fotos forem da mesma pessoa, o turno está aprovado. Caso seja uma pessoa diferente, desconecte o aparelho imediatamente.</span>
+          </div>
+        </div>
+      `;
+
+      modal.classList.remove('hidden');
+    }
+
+    function forceCloseDriverShift(pairedId) {
+      if (!confirm('Deseja realmente forçar o encerramento do turno deste motoboy? O status dele mudará para Fora de Turno.')) return;
+      let list = getPairedDrivers();
+      const item = list.find(p => p.id === pairedId);
+      if (item) {
+        item.shiftActive = false;
+        item.shiftClosedAt = Date.now();
+        localStorage.setItem(PAIRED_DRIVERS_STORAGE_KEY, JSON.stringify(list));
+        window.dispatchEvent(new Event('storage'));
+        renderPairedDriversList();
+        alert('Turno do motoboy encerrado com sucesso!');
+      }
+    }
+
+    function disconnectDriver(id) {
+      if (!confirm('Deseja realmente revogar o acesso deste motoboy? O celular dele será desconectado imediatamente.')) return;
+      let list = getPairedDrivers();
+      list = list.filter(t => t.id !== id);
+      localStorage.setItem(PAIRED_DRIVERS_STORAGE_KEY, JSON.stringify(list));
+      window.dispatchEvent(new Event('storage'));
+      renderPairedDriversList();
+      alert('🔒 Motoboy desconectado com sucesso!');
+    }
+
+    // Configuração padrão da loja
+    let storeConfig = {
+      storeName: 'Fast Delivery Express',
+      storePhone: '(11) 99999-8888',
+      deliveryFee: 5.00,
+      pixKey: 'loja.express@pix.com.br',
+      merchantName: 'FAST DELIVERY',
+      merchantCity: 'SAO PAULO'
+    };
+
+    // Entregadores cadastrados
+    let drivers = [];
+
+    let adminPix = 'adrielle145133@gmail.com';
+
+    function loadAllConfigs() {
+      try {
+        const rawCfg = localStorage.getItem(CONFIG_KEY);
+        if (rawCfg) storeConfig = { ...storeConfig, ...JSON.parse(rawCfg) };
+
+        const rawDrv = localStorage.getItem(DRIVERS_KEY);
+        if (rawDrv) drivers = JSON.parse(rawDrv);
+
+        const rawAdm = localStorage.getItem(ADMIN_PIX_KEY);
+        if (rawAdm && rawAdm !== 'pix.admin@deliveryrapido.com.br') {
+          adminPix = rawAdm;
+        } else {
+          adminPix = 'adrielle145133@gmail.com';
+          localStorage.setItem(ADMIN_PIX_KEY, adminPix);
+        }
+      } catch (e) {}
+
+      document.getElementById('panelStoreTitle').textContent = storeConfig.storeName || 'Fast Delivery Express';
+      updateDriversBadge();
+      updateTerminalsBadge();
+      updatePairedDriversBadge();
+      checkPixWarning();
+      checkAndEnforceLicense();
+    }
+
+    function checkPixWarning() {
+      const banner = document.getElementById('pixWarningAlert');
+      const hasPix = storeConfig.pixKey && storeConfig.pixKey.trim() !== '' && storeConfig.pixKey !== 'chave_pix_pendente';
+      if (!hasPix) {
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function updateDriversBadge() {
+      document.getElementById('driversBadgeCount').textContent = drivers.length;
+    }
+
+    // Salvar e carregar preferências de som e auto-impressão
+    function saveSettings() {
+      const settings = {
+        sound: document.getElementById('soundToggle')?.checked ?? true,
+        autoPrint: document.getElementById('autoPrintToggle')?.checked ?? true
+      };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    }
+
+    function loadSettings() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (document.getElementById('soundToggle')) document.getElementById('soundToggle').checked = s.sound !== false;
+          if (document.getElementById('autoPrintToggle')) document.getElementById('autoPrintToggle').checked = s.autoPrint !== false;
+        }
+      } catch (e) {}
+    }
+
+    // Inicialização
+    window.addEventListener('DOMContentLoaded', () => {
+      checkLojistaAuth();
+      loadAllConfigs();
+      loadSettings();
+      syncDriversFromServer();
+      loadAndRenderOrders();
+      checkAndEnforceLicense();
+      
+      // Observa alterações no localStorage (quando cliente compra no cardápio ou admin libera licença)
+      window.addEventListener('storage', (e) => {
+        if (e.key === ORDERS_STORAGE_KEY) {
+          loadAndRenderOrders(true);
+        }
+        if (e.key === CONFIG_KEY) {
+          loadAllConfigs();
+        }
+        if (e.key === PAID_EXPIRES_KEY || e.key === TRIAL_START_KEY) {
+          checkAndEnforceLicense();
+        }
+        if (e.key === DRIVERS_KEY) {
+          updateDriversBadge();
+          renderDriversList();
+        }
+        if (e.key === PAIRED_DRIVERS_STORAGE_KEY) {
+          updatePairedDriversBadge();
+          renderPairedDriversList();
+        }
+        if (e.key === TERMINALS_STORAGE_KEY) {
+          updateTerminalsBadge();
+          renderPairedTerminalsList();
+        }
+      });
+
+      // Polling a cada 2 segundos para sincronismo em tempo real e checagem de licença
+      setInterval(() => {
+        loadAndRenderOrders(true);
+        syncDriversFromServer();
+        checkAndEnforceLicense();
+      }, 2500);
+    });
+
+    // Função de Som Web Audio (ding-dong de novo pedido)
+    function playOrderChime() {
+      if (!document.getElementById('soundToggle')?.checked) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
+        
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(587.33, now); // D5
+        gain1.gain.setValueAtTime(0.3, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.4);
+
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(880, now + 0.15); // A5
+        gain2.gain.setValueAtTime(0.35, now + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now + 0.15);
+        osc2.stop(now + 0.7);
+      } catch (e) {
+        console.warn('Erro ao tocar chime:', e);
+      }
+    }
+
+    function getStoredOrders() {
+      try {
+        const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        // ORDENAÇÃO OBRIGATÓRIA: CADA PEDIDO QUE ENTRAR FICA SEMPRE EM PRIMEIRO
+        return list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveOrders(orders) {
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+      fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orders)
+      }).catch(err => console.error('Erro ao sincronizar pedidos com servidor:', err));
+    }
+
+    async function syncDriversFromServer() {
+      try {
+        const res = await fetch('/api/drivers');
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list)) {
+            drivers = list;
+            localStorage.setItem(DRIVERS_KEY, JSON.stringify(drivers));
+            updateDriversBadge();
+            renderDriversList();
+            populatePairingDriverSelect();
+          }
+        }
+      } catch (e) {}
+    }
+
+    function loadAndRenderOrders(checkNew = false) {
+      const orders = getStoredOrders();
+
+      if (checkNew) {
+        let hasNew = false;
+        let newestOrder = null;
+        orders.forEach(o => {
+          if (!lastKnownOrderIds.has(o.id)) {
+            hasNew = true;
+            newestOrder = o;
+          }
+        });
+
+        if (hasNew && lastKnownOrderIds.size > 0) {
+          playOrderChime();
+          if (document.getElementById('autoPrintToggle')?.checked && newestOrder) {
+            printOrder(newestOrder.id);
+          }
+        }
+      }
+
+      lastKnownOrderIds = new Set(orders.map(o => o.id));
+      updateCounters(orders);
+      renderOrdersList(orders);
+    }
+
+    function updateCounters(orders) {
+      const counts = { separando: 0, entrega: 0, entregue: 0 };
+
+      orders.forEach(o => {
+        if (o.status === 'pago' || o.status === 'separando') {
+          counts.separando++;
+        } else if (counts[o.status] !== undefined) {
+          counts[o.status]++;
+        }
+      });
+
+      document.getElementById('totalOrdersCount').textContent = orders.length;
+      document.getElementById('count-separando').textContent = counts.separando;
+      document.getElementById('count-entrega').textContent = counts.entrega;
+      document.getElementById('count-entregue').textContent = counts.entregue;
+    }
+
+    // FILTRO DE STATUS (3 ETAPAS COM IMPRESSÃO NA COZINHA)
+    function filterStatus(status) {
+      currentFilter = status;
+      ['separando', 'entrega', 'entregue'].forEach(s => {
+        const btn = document.getElementById(`filter-${s}`);
+        if (!btn) return;
+        if (s === status) {
+          btn.className = 'w-fit rounded-lg px-4 py-2 text-xs font-bold bg-emerald-600 text-white shadow-sm transition-all';
+        } else {
+          btn.className = 'w-fit rounded-lg px-4 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all';
+        }
+      });
+      renderOrdersList(getStoredOrders());
+    }
+
+    function renderOrdersList(orders) {
+      const container = document.getElementById('ordersListContainer');
+      const filtered = orders.filter(o => {
+        if (currentFilter === 'separando') return o.status === 'separando' || o.status === 'pago';
+        return o.status === currentFilter;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <i class="fa-solid fa-clipboard-list text-slate-400 text-4xl mb-3"></i>
+            <h3 class="text-base font-bold text-slate-800">Nenhum pedido nesta aba no momento</h3>
+            <p class="text-xs text-slate-500 mt-1">Os pedidos pagos pelos clientes entram automaticamente na cozinha em <strong>Pagos / Em Separação</strong>.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(order => {
+        const dateStr = new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + ' - ' + new Date(order.createdAt).toLocaleDateString('pt-BR');
+        const hasGps = order.customer.location && order.customer.location.lat;
+        const gmapsLink = hasGps 
+          ? `https://www.google.com/maps/search/?api=1&query=${order.customer.location.lat},${order.customer.location.lng}` 
+          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer.street + ', ' + order.customer.number + ', Brasil')}`;
+
+        // Status badge
+        let statusBadge = '';
+        if (order.status === 'pago' || order.status === 'separando') {
+          statusBadge = `<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800 border border-emerald-200"><i class="fa-solid fa-fire-burner"></i> Pago / Em Separação</span>`;
+        } else if (order.status === 'entrega') {
+          statusBadge = `<span class="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-800 border border-blue-200"><i class="fa-solid fa-motorcycle"></i> Saiu p/ Entrega</span>`;
+        } else if (order.status === 'entregue') {
+          statusBadge = `<span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-200"><i class="fa-solid fa-flag-checkered"></i> Entregue</span>`;
+        }
+
+        const itemsHtml = order.items.map(it => `
+          <div class="flex items-center justify-between text-xs py-1 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-emerald-700">${it.quantity}x</span>
+              <span class="text-slate-800 font-medium">${it.title}</span>
+            </div>
+            <span class="text-slate-600">R$ ${(it.price * it.quantity).toFixed(2).replace('.', ',')}</span>
+          </div>
+        `).join('');
+
+        const isPrinted = order.printed === true;
+        const printBadge = isPrinted 
+          ? `<span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200"><i class="fa-solid fa-check"></i> Impresso</span>`
+          : `<span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200"><i class="fa-solid fa-clock"></i> Pendente de Impressão</span>`;
+
+        const printBtnText = isPrinted ? 'Reimprimir Folha A4' : 'Imprimir Folha A4';
+        const printBtnStyle = isPrinted 
+          ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300' 
+          : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm';
+
+        // Opções de entregadores para o dropdown compacto (Regra 7)
+        const driverOptions = drivers.map(d => `
+          <option value="${d.id}" ${order.assignedDriverId === d.id ? 'selected' : ''}>${d.name} (${d.vehicle || 'Moto'})</option>
+        `).join('');
+
+        const assignedDriver = drivers.find(d => d.id === order.assignedDriverId);
+        let waLink = null;
+        if (assignedDriver && assignedDriver.phone) {
+          const cleanPhone = assignedDriver.phone.replace(/\D/g, '');
+          const waMsg = encodeURIComponent(
+            `*NOVA ENTREGA - PEDIDO ${order.orderNumber}*\n` +
+            `👤 *Cliente:* ${order.customer.name}\n` +
+            `📞 *Tel:* ${order.customer.phone}\n` +
+            `📍 *Endereço:* ${order.customer.street}, Nº ${order.customer.number} ${order.customer.complement ? '(' + order.customer.complement + ')' : ''}\n` +
+            `🗺️ *Rota Google Maps:* ${gmapsLink}\n` +
+            `💰 *Total:* R$ ${order.total.toFixed(2).replace('.', ',')} (PIX JÁ PAGO)`
+          );
+          waLink = `https://wa.me/55${cleanPhone}?text=${waMsg}`;
+        }
+
+        return `
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+            <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <span class="font-black text-lg text-emerald-700">${order.orderNumber}</span>
+                <span class="text-xs text-slate-500"><i class="fa-regular fa-clock mr-1"></i>${dateStr}</span>
+                ${statusBadge}
+                ${printBadge}
+              </div>
+
+              <!-- BOTÕES DE AÇÃO E SELECT DE STATUS COMPACTO (REGRA 7) -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="printOrder('${order.id}')" class="w-fit inline-flex items-center gap-1.5 rounded-xl ${printBtnStyle} px-4 py-2 text-xs font-bold transition-colors">
+                  <i class="fa-solid fa-print"></i>
+                  ${printBtnText}
+                </button>
+
+                <!-- STATUS SELECTOR COMPACTO COM COR VERDE CLARINHA (REGRA 7) -->
+                <select onchange="updateOrderStatus('${order.id}', this.value)" class="w-fit rounded-xl border border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/40 px-3 py-1.5 text-xs font-semibold text-emerald-900 focus:outline-none">
+                  <option value="separando" ${order.status === 'separando' || order.status === 'pago' ? 'selected' : ''}>Status: Pago / Em Separação</option>
+                  <option value="entrega" ${order.status === 'entrega' ? 'selected' : ''}>Status: Saiu p/ Entrega</option>
+                  <option value="entregue" ${order.status === 'entregue' ? 'selected' : ''}>Status: Entregue</option>
+                </select>
+
+                <button onclick="deleteOrder('${order.id}')" title="Excluir pedido" class="w-fit text-slate-400 hover:text-rose-600 p-2">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- DETALHES DO CLIENTE E ITENS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 text-xs">
+              
+              <!-- DADOS DO CLIENTE & ENDEREÇO -->
+              <div class="space-y-1.5">
+                <p class="font-bold text-slate-900 text-sm"><i class="fa-solid fa-user text-slate-400 mr-1.5"></i>${order.customer.name}</p>
+                <p class="text-slate-600"><i class="fa-solid fa-phone text-slate-400 mr-1.5"></i>${order.customer.phone}</p>
+                
+                <div class="mt-2 rounded-xl bg-slate-50 p-3 border border-slate-200">
+                  <p class="font-bold text-slate-800"><i class="fa-solid fa-location-dot text-emerald-600 mr-1"></i> Endereço de Entrega:</p>
+                  <p class="text-slate-700 mt-1">${order.customer.street}, Nº ${order.customer.number}</p>
+                  ${order.customer.complement ? `<p class="text-slate-500 text-[11px]">${order.customer.complement}</p>` : ''}
+                  ${order.customer.notes ? `<p class="text-amber-700 text-[11px] mt-1"><i class="fa-solid fa-circle-info mr-1"></i>Obs: ${order.customer.notes}</p>` : ''}
+                </div>
+              </div>
+
+              <!-- ITENS DO PEDIDO -->
+              <div>
+                <p class="font-bold text-slate-800 mb-1 flex items-center justify-between">
+                  <span>Itens para Separação (${order.items.reduce((s, i) => s + i.quantity, 0)})</span>
+                  <span class="text-emerald-700 font-extrabold text-sm">R$ ${order.total.toFixed(2).replace('.', ',')}</span>
+                </p>
+                <div class="flex items-center justify-between text-[11px] bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 mb-2">
+                  <span class="text-slate-700 font-medium">PIX 100% da Loja: <strong class="text-emerald-700 font-bold">R$ ${order.total.toFixed(2).replace('.', ',')}</strong></span>
+                  <span class="text-indigo-700 font-bold text-[10px]">SaaS R$ 49,90/mês</span>
+                </div>
+                <div class="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-200 max-h-36 overflow-y-auto">
+                  ${itemsHtml}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ATRIBUIR ENTREGADOR AO PEDIDO
+    function assignDriver(orderId, driverId) {
+      const orders = getStoredOrders();
+      const idx = orders.findIndex(o => o.id === orderId);
+      if (idx !== -1) {
+        orders[idx].assignedDriverId = driverId;
+        saveOrders(orders);
+        renderOrdersList(orders);
+      }
+    }
+
+    function updateOrderStatus(id, newStatus) {
+      const orders = getStoredOrders();
+      const idx = orders.findIndex(o => o.id === id);
+      if (idx !== -1) {
+        orders[idx].status = newStatus;
+        saveOrders(orders);
+        loadAndRenderOrders();
+      }
+    }
+
+    function deleteOrder(id) {
+      if (!confirm('Deseja realmente remover este pedido?')) return;
+      const orders = getStoredOrders().filter(o => o.id !== id);
+      saveOrders(orders);
+      loadAndRenderOrders();
+    }
+
+    function clearAllOrders() {
+      if (!confirm('Deseja limpar todo o histórico de pedidos?')) return;
+      localStorage.removeItem(ORDERS_STORAGE_KEY);
+      loadAndRenderOrders();
+    }
+
+    // SIMULAÇÃO DE PEDIDO PARA TESTE
+    function simulateOrder() {
+      const orders = getStoredOrders();
+      const nextNum = 1001 + orders.length;
+
+      const testOrder = {
+        id: 'ord_' + Date.now(),
+        orderNumber: `#${nextNum}`,
+        status: 'separando',
+        createdAt: new Date().toISOString(),
+        paymentMethod: `PIX Direto Loja (${storeConfig.pixKey})`,
+        customer: {
+          name: 'Carlos Alberto Silva',
+          phone: '(11) 98765-4321',
+          street: 'Avenida Paulista',
+          number: '1578',
+          complement: 'Apto 102 - Bloco B (Tocar interfone)',
+          notes: 'Entregar na portaria se demorar a responder.',
+          location: {
+            lat: -23.561492,
+            lng: -46.655881
+          }
+        },
+        items: [
+          { id: '1', title: 'X-Burger Artesanal Duplo', price: 32.90, quantity: 2 },
+          { id: '2', title: 'Batata Frita Especial Cheddar & Bacon', price: 24.90, quantity: 1 },
+          { id: '4', title: 'Coca-Cola Lata 350ml Gelada', price: 6.50, quantity: 2 }
+        ],
+        subtotal: 103.70,
+        deliveryFee: storeConfig.deliveryFee || 5.00,
+        total: 103.70 + (storeConfig.deliveryFee || 5.00)
+      };
+
+      orders.unshift(testOrder); // NOVO PEDIDO SEMPRE NO TOPO
+      saveOrders(orders);
+      playOrderChime();
+      loadAndRenderOrders();
+
+      if (document.getElementById('autoPrintToggle')?.checked) {
+        printOrder(testOrder.id);
+      }
+    }
+
+    // ========================================================
+    // MODAL DE CONFIGURAÇÃO DA CHAVE PIX & LOJA
+    // ========================================================
+    function openConfigModal() {
+      document.getElementById('cfgStoreName').value = storeConfig.storeName || '';
+      document.getElementById('cfgStorePhone').value = storeConfig.storePhone || '';
+      document.getElementById('cfgDeliveryFee').value = storeConfig.deliveryFee || 5.00;
+      
+      // Bloqueio padrão de segurança com máscara para o PIX
+      isPixUnlocked = false;
+      const pixInput = document.getElementById('cfgPixKey');
+      const nameInput = document.getElementById('cfgMerchantName');
+      const cityInput = document.getElementById('cfgMerchantCity');
+
+      pixInput.readOnly = true;
+      pixInput.value = storeConfig.pixKey ? maskPixKey(storeConfig.pixKey) : '';
+      pixInput.classList.add('bg-slate-100', 'text-slate-700');
+      pixInput.classList.remove('bg-white', 'text-slate-900', 'border-emerald-500');
+
+      nameInput.readOnly = true;
+      nameInput.value = storeConfig.merchantName || 'LOJA';
+      nameInput.classList.add('bg-slate-100', 'text-slate-700');
+      nameInput.classList.remove('bg-white', 'text-slate-900');
+
+      cityInput.readOnly = true;
+      cityInput.value = storeConfig.merchantCity || 'BRASIL';
+      cityInput.classList.add('bg-slate-100', 'text-slate-700');
+      cityInput.classList.remove('bg-white', 'text-slate-900');
+
+      document.getElementById('pixLockedBadge').classList.remove('hidden');
+      document.getElementById('pixUnlockedBadge').classList.add('hidden');
+      document.getElementById('pixLockedControls').classList.remove('hidden');
+
+      document.getElementById('configModal').classList.remove('hidden');
+    }
+
+    function closeConfigModal() {
+      document.getElementById('configModal').classList.add('hidden');
+    }
+
+    function handleSaveConfig(e) {
+      e.preventDefault();
+      storeConfig.storeName = document.getElementById('cfgStoreName').value.trim();
+      storeConfig.storePhone = document.getElementById('cfgStorePhone').value.trim();
+      storeConfig.deliveryFee = parseFloat(document.getElementById('cfgDeliveryFee').value) || 5.00;
+      
+      // Só atualiza os dados bancários se foi desbloqueado com o PIN do dono
+      if (isPixUnlocked) {
+        const newPix = document.getElementById('cfgPixKey').value.trim();
+        if (newPix) storeConfig.pixKey = newPix;
+        storeConfig.merchantName = document.getElementById('cfgMerchantName').value.trim().toUpperCase();
+        storeConfig.merchantCity = document.getElementById('cfgMerchantCity').value.trim().toUpperCase();
+      }
+
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(storeConfig));
+      window.dispatchEvent(new Event('storage'));
+
+      loadAllConfigs();
+      closeConfigModal();
+      alert('✅ Configurações salvas com sucesso! O cardápio está liberado para receber pagamentos via PIX.');
+    }
+
+    // ========================================================
+    // MODAL DE ENTREGADORES (MOTOBOYS)
+    // ========================================================
+    function openDriversModal() {
+      openDriverPairingModal();
+    }
+
+    function closeDriversModal() {
+      document.getElementById('driversModal').classList.add('hidden');
+    }
+
+    let tempDriverRgPhoto = null;
+    let tempDriverOfficialPhoto = null;
+
+    function compressImageFile(file, maxWidth, maxHeight, quality, callback) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((height * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          callback(dataUrl);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handlePreviewDriverRg(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      compressImageFile(file, 800, 800, 0.7, (base64) => {
+        tempDriverRgPhoto = base64;
+        const img = document.getElementById('drvRgPreviewImg');
+        const box = document.getElementById('drvRgPreviewBox');
+        if (img && box) {
+          img.src = base64;
+          box.classList.remove('hidden');
+        }
+      });
+    }
+
+    function handlePreviewDriverPhoto(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      compressImageFile(file, 400, 400, 0.75, (base64) => {
+        tempDriverOfficialPhoto = base64;
+        const img = document.getElementById('drvPhotoPreviewImg');
+        const box = document.getElementById('drvPhotoPreviewBox');
+        if (img && box) {
+          img.src = base64;
+          box.classList.remove('hidden');
+        }
+      });
+    }
+
+    function handleAddDriver(e) {
+      e.preventDefault();
+      const name = document.getElementById('drvName').value.trim();
+      const phone = document.getElementById('drvPhone').value.trim();
+      const vehicle = document.getElementById('drvVehicle').value.trim();
+
+      const newDriver = {
+        id: 'drv_' + Date.now(),
+        name,
+        phone,
+        vehicle,
+        rgPhoto: tempDriverRgPhoto || null,
+        officialPhoto: tempDriverOfficialPhoto || null,
+        createdAt: new Date().toISOString()
+      };
+
+      drivers.push(newDriver);
+      localStorage.setItem(DRIVERS_KEY, JSON.stringify(drivers));
+      fetch('/api/drivers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newDriver)
+      }).catch(err => console.error('Erro ao sincronizar motoboy com servidor:', err));
+      updateDriversBadge();
+      renderDriversList();
+      populatePairingDriverSelect();
+      renderOrdersList(getStoredOrders());
+
+      // Limpar formulário e prévias
+      document.getElementById('drvName').value = '';
+      document.getElementById('drvPhone').value = '';
+      document.getElementById('drvVehicle').value = '';
+      document.getElementById('drvRgInput').value = '';
+      document.getElementById('drvPhotoInput').value = '';
+      document.getElementById('drvRgPreviewBox').classList.add('hidden');
+      document.getElementById('drvPhotoPreviewBox').classList.add('hidden');
+      tempDriverRgPhoto = null;
+      tempDriverOfficialPhoto = null;
+
+      alert(`✅ Entregador "${name}" cadastrado com sucesso com fotos de segurança!`);
+    }
+
+    let driverToDeleteId = null;
+
+    function deleteDriver(id) {
+      const driver = drivers.find(d => d.id === id);
+      if (!driver) return;
+      driverToDeleteId = id;
+      document.getElementById('deleteDriverTargetName').textContent = driver.name;
+      document.getElementById('confirmDeleteDriverInput').value = '';
+      document.getElementById('deleteDriverErrorMsg').classList.add('hidden');
+      document.getElementById('deleteDriverConfirmModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('confirmDeleteDriverInput')?.focus(), 150);
+    }
+
+    function closeDeleteDriverModal() {
+      document.getElementById('deleteDriverConfirmModal').classList.add('hidden');
+      driverToDeleteId = null;
+    }
+
+    function handleConfirmDeleteDriver() {
+      const val = (document.getElementById('confirmDeleteDriverInput').value || '').trim().toLowerCase();
+      const err = document.getElementById('deleteDriverErrorMsg');
+      if (val !== 'sim') {
+        err.textContent = 'Você deve digitar exatamente a palavra "sim" para confirmar.';
+        err.classList.remove('hidden');
+        document.getElementById('confirmDeleteDriverInput').focus();
+        return;
+      }
+      if (!driverToDeleteId) return;
+
+      const idToDelete = driverToDeleteId;
+      drivers = drivers.filter(d => d.id !== idToDelete);
+      localStorage.setItem(DRIVERS_KEY, JSON.stringify(drivers));
+
+      // Sincroniza exclusão no servidor
+      fetch('/api/drivers', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: idToDelete })
+      }).catch(err => console.error('Erro ao deletar no servidor:', err));
+
+      // Remove também das conexões pareadas
+      let pairedList = getPairedDrivers();
+      pairedList = pairedList.filter(p => p.driverId !== idToDelete && p.id !== idToDelete);
+      localStorage.setItem(PAIRED_DRIVERS_STORAGE_KEY, JSON.stringify(pairedList));
+
+      window.dispatchEvent(new Event('storage'));
+      updateDriversBadge();
+      renderDriversList();
+      renderPairedDriversList();
+      populatePairingDriverSelect();
+      renderOrdersList(getStoredOrders());
+      closeDeleteDriverModal();
+      alert('🗑️ Motoboy excluído com sucesso do restaurante!');
+    }
+
+    function openDriverDocViewer(driverId) {
+      const driver = drivers.find(d => d.id === driverId);
+      if (!driver) return;
+      const modal = document.getElementById('driverDocViewerModal');
+      const title = document.getElementById('docViewerTitle');
+      const content = document.getElementById('docViewerContent');
+
+      title.innerHTML = `<i class="fa-solid fa-id-card text-indigo-600 mr-1.5"></i> RG / CNH: <strong>${driver.name}</strong>`;
+      if (driver.rgPhoto) {
+        content.innerHTML = `
+          <div class="text-center space-y-2">
+            <img src="${driver.rgPhoto}" alt="Documento RG/CNH" class="max-h-96 mx-auto rounded-xl border border-slate-300 shadow-md object-contain">
+            <p class="text-[11px] text-slate-500">Documento oficial anexado no cadastro • WhatsApp: ${driver.phone}</p>
+          </div>
+        `;
+      } else {
+        content.innerHTML = `<p class="py-6 text-center text-slate-500">Nenhum documento anexado para este entregador.</p>`;
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function closeDriverDocViewerModal() {
+      document.getElementById('driverDocViewerModal').classList.add('hidden');
+    }
+
+    function renderDriversList() {
+      const container = document.getElementById('driversListContainer');
+      if (drivers.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center">Nenhum entregador cadastrado ainda.</p>`;
+        return;
+      }
+
+      container.innerHTML = drivers.map(d => `
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+          <div class="flex items-center gap-2.5">
+            ${d.officialPhoto ? `
+              <img src="${d.officialPhoto}" class="h-9 w-9 rounded-full object-cover border-2 border-emerald-500 shadow-xs shrink-0" alt="Foto">
+            ` : `
+              <div class="h-9 w-9 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold shrink-0">
+                <i class="fa-solid fa-user"></i>
+              </div>
+            `}
+            <div>
+              <span class="font-bold text-slate-800">${d.name}</span>
+              <p class="text-[11px] text-slate-500"><i class="fa-brands fa-whatsapp text-emerald-600 mr-1"></i>${d.phone} • ${d.vehicle || 'Moto'}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            ${d.rgPhoto ? `
+              <button onclick="openDriverDocViewer('${d.id}')" class="w-fit text-[11px] font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-1 rounded-md transition-colors" title="Visualizar Documento RG/CNH anexado">
+                <i class="fa-solid fa-id-card"></i> Ver RG
+              </button>
+            ` : `
+              <span class="text-[10px] text-slate-400 italic">Sem RG</span>
+            `}
+            <button onclick="deleteDriver('${d.id}')" class="w-fit text-slate-400 hover:text-rose-600 p-1" title="Excluir">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ========================================================
+    // CONTROLE DE LICENÇA SAAS (TESTE DE 2 DIAS & BLOQUEIO)
+    // ========================================================
+    function getLicenseStatus() {
+      const now = Date.now();
+      
+      let trialStart = parseInt(localStorage.getItem(TRIAL_START_KEY) || '0', 10);
+      if (!trialStart) {
+        trialStart = now;
+        localStorage.setItem(TRIAL_START_KEY, trialStart.toString());
+      }
+
+      const paidExpires = parseInt(localStorage.getItem(PAID_EXPIRES_KEY) || '0', 10);
+      const isPaid = paidExpires > now;
+
+      if (isPaid) {
+        const daysRemaining = Math.max(1, Math.ceil((paidExpires - now) / (24 * 60 * 60 * 1000)));
+        return { status: 'paid', daysRemaining };
+      }
+
+      const trialRemainingMs = (trialStart + TRIAL_DURATION_MS) - now;
+      if (trialRemainingMs > 0) {
+        const hoursRemaining = Math.max(1, Math.ceil(trialRemainingMs / (60 * 60 * 1000)));
+        const daysRemaining = Math.max(1, Math.ceil(trialRemainingMs / (24 * 60 * 60 * 1000)));
+        return { status: 'trial', hoursRemaining, daysRemaining };
+      }
+
+      return { status: 'expired' };
+    }
+
+    function checkAndEnforceLicense() {
+      const license = getLicenseStatus();
+      const badgeText = document.getElementById('saasHeaderBadgeText');
+
+      if (license.status === 'paid') {
+        isLockedExpired = false;
+        if (badgeText) badgeText.textContent = `Licença Ativa (${license.daysRemaining} dias)`;
+        const closeBtn = document.getElementById('saasModalCloseBtn');
+        if (closeBtn) closeBtn.classList.remove('hidden');
+        const lockBanner = document.getElementById('saasExpiredLockBanner');
+        if (lockBanner) lockBanner.classList.add('hidden');
+        const trialBanner = document.getElementById('saasTrialActiveBanner');
+        if (trialBanner) trialBanner.classList.add('hidden');
+      } else if (license.status === 'trial') {
+        isLockedExpired = false;
+        if (badgeText) badgeText.textContent = `Teste Grátis (${license.hoursRemaining}h restantes)`;
+        const closeBtn = document.getElementById('saasModalCloseBtn');
+        if (closeBtn) closeBtn.classList.remove('hidden');
+        const lockBanner = document.getElementById('saasExpiredLockBanner');
+        if (lockBanner) lockBanner.classList.add('hidden');
+        const trialBanner = document.getElementById('saasTrialActiveBanner');
+        if (trialBanner) {
+          trialBanner.classList.remove('hidden');
+          document.getElementById('saasTrialTimerText').textContent = `Período de teste gratuito ativo: Restam ${license.hoursRemaining} horas (${license.daysRemaining} dias)`;
+        }
+      } else {
+        // PERÍODO DE 2 DIAS EXPIROU: BLOQUEIA IMEDIATAMENTE COM A MESMA TELA
+        isLockedExpired = true;
+        if (badgeText) badgeText.textContent = `⚠️ Licença Expirada (Bloqueado)`;
+        openSaasModal(true);
+      }
+    }
+
+    function openSaasModal(isForcedLock = false) {
+      const license = getLicenseStatus();
+      const locked = isForcedLock || license.status === 'expired';
+      isLockedExpired = locked;
+
+      const saasBrCode = generatePixBRCode({
+        pixKey: adminPix,
+        merchantName: 'ADMIN SAAS',
+        merchantCity: 'BRASIL',
+        amount: 49.90,
+        txid: 'SAAS' + Date.now().toString().slice(-6)
+      });
+
+      document.getElementById('saasAdminPixKeyLabel').textContent = `Chave PIX Admin: ${adminPix}`;
+      document.getElementById('saasPixCopyInput').value = saasBrCode;
+
+      const qrBox = document.getElementById('saasPixQrBox');
+      qrBox.innerHTML = '';
+      try {
+        new QRCode(qrBox, {
+          text: saasBrCode,
+          width: 150,
+          height: 150,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (e) {
+        qrBox.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(saasBrCode)}" width="150" height="150" />`;
+      }
+
+      document.getElementById('adminPixInput').value = adminPix;
+
+      const closeBtn = document.getElementById('saasModalCloseBtn');
+      const lockBanner = document.getElementById('saasExpiredLockBanner');
+      const trialBanner = document.getElementById('saasTrialActiveBanner');
+
+      if (locked) {
+        // TELA BLOQUEADA: ESCONDE BOTÃO FECHAR
+        if (closeBtn) closeBtn.classList.add('hidden');
+        if (lockBanner) lockBanner.classList.remove('hidden');
+        if (trialBanner) trialBanner.classList.add('hidden');
+      } else {
+        if (closeBtn) closeBtn.classList.remove('hidden');
+        if (lockBanner) lockBanner.classList.add('hidden');
+        if (license.status === 'trial' && trialBanner) {
+          trialBanner.classList.remove('hidden');
+          document.getElementById('saasTrialTimerText').textContent = `Período de teste gratuito ativo: Restam ${license.hoursRemaining} horas`;
+        } else if (trialBanner) {
+          trialBanner.classList.add('hidden');
+        }
+      }
+
+      document.getElementById('saasModal').classList.remove('hidden');
+    }
+
+    function closeSaasModal() {
+      // Se estiver expirado/bloqueado, NÃO pode fechar até o pagamento ser realizado
+      if (isLockedExpired) {
+        alert('⚠️ O programa está bloqueado porque o período de teste de 2 dias expirou. Efetue o pagamento de R$ 49,90 via PIX ou libere o acesso no Painel do Administrador para desbloquear.');
+        return;
+      }
+      document.getElementById('saasModal').classList.add('hidden');
+    }
+
+    function copySaasPix() {
+      const input = document.getElementById('saasPixCopyInput');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      const txt = document.getElementById('saasCopyTxt');
+      txt.textContent = 'Copiado!';
+      setTimeout(() => { txt.textContent = 'Copiar'; }, 2000);
+    }
+
+    function confirmSaaSPaymentAndUnlock() {
+      const now = Date.now();
+      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+      const expires = now + thirtyDays;
+      localStorage.setItem(PAID_EXPIRES_KEY, expires.toString());
+      isLockedExpired = false;
+      document.getElementById('saasModal').classList.add('hidden');
+      checkAndEnforceLicense();
+      window.dispatchEvent(new Event('storage'));
+      alert('🎉 SUCESSO! Pagamento Pix de R$ 49,90 confirmado!\nA tela de bloqueio foi retirada e todo o sistema foi liberado por 30 dias.');
+    }
+
+    function notifyPaymentMade() {
+      confirmSaaSPaymentAndUnlock();
+    }
+
+    function toggleAdminSettings() {
+      const area = document.getElementById('adminSettingsArea');
+      area.classList.toggle('hidden');
+    }
+
+    function saveAdminPix() {
+      const val = document.getElementById('adminPixInput').value.trim();
+      if (!val) return;
+      adminPix = val;
+      localStorage.setItem(ADMIN_PIX_KEY, adminPix);
+      openSaasModal(isLockedExpired);
+      alert('Chave PIX do Administrador salva!');
+    }
+
+    // AÇÕES DO ADMINISTRADOR (LIBERAÇÃO / DESBLOQUEIO)
+    function adminUnlockLicense(days = 30) {
+      const now = Date.now();
+      const expires = now + (days * 24 * 60 * 60 * 1000);
+      localStorage.setItem(PAID_EXPIRES_KEY, expires.toString());
+      isLockedExpired = false;
+      document.getElementById('saasModal').classList.add('hidden');
+      checkAndEnforceLicense();
+      window.dispatchEvent(new Event('storage'));
+      alert(`🎉 SUCESSO! Programa desbloqueado e liberado por ${days} dias! A tela de bloqueio foi retirada.`);
+    }
+
+    function adminResetTrial() {
+      localStorage.removeItem(PAID_EXPIRES_KEY);
+      localStorage.setItem(TRIAL_START_KEY, Date.now().toString());
+      isLockedExpired = false;
+      document.getElementById('saasModal').classList.add('hidden');
+      checkAndEnforceLicense();
+      window.dispatchEvent(new Event('storage'));
+      alert('🔄 Período de teste de 2 dias resetado com sucesso! O lojista tem mais 48 horas de teste grátis.');
+    }
+
+    function adminSimulateExpired() {
+      // Simula que o teste começou há 3 dias (já expirou)
+      const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
+      localStorage.removeItem(PAID_EXPIRES_KEY);
+      localStorage.setItem(TRIAL_START_KEY, threeDaysAgo.toString());
+      checkAndEnforceLicense();
+      window.dispatchEvent(new Event('storage'));
+      alert('🔒 Simulação ativada: O teste de 2 dias expirou e a tela de bloqueio foi acionada!');
+    }
+
+    // ========================================================
+    // MODAL GUIA DO FLUXO
+    // ========================================================
+    function openFlowGuideModal() {
+      document.getElementById('flowGuideModal').classList.remove('hidden');
+    }
+
+    function closeFlowGuideModal() {
+      document.getElementById('flowGuideModal').classList.add('hidden');
+    }
+
+    // ========================================================
+    // IMPRESSÃO SILENCIOSA EM FOLHA A4 COM QR CODE GOOGLE MAPS
+    // ========================================================
+    function printOrder(orderId) {
+      const orders = getStoredOrders();
+      const order = orders.find(o => o.id === orderId);
+      if (!order) {
+        alert('Pedido não encontrado.');
+        return;
+      }
+
+      order.printed = true;
+      order.printedAt = new Date().toISOString();
+      saveOrders(orders);
+      renderOrdersList(orders);
+
+      const hasGps = order.customer.location && order.customer.location.lat;
+      const lat = hasGps ? order.customer.location.lat : null;
+      const lng = hasGps ? order.customer.location.lng : null;
+
+      const gmapsUrl = hasGps 
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lat + ',' + lng)}#order=${encodeURIComponent(order.orderNumber)}&id=${encodeURIComponent(order.id)}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customer.street + ', ' + order.customer.number + ', Brasil')}#order=${encodeURIComponent(order.orderNumber)}&id=${encodeURIComponent(order.id)}`;
+
+      const printContainer = document.getElementById('printArea');
+      const orderDate = new Date(order.createdAt).toLocaleDateString('pt-BR');
+      const orderTime = new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      const itemsRowsHtml = order.items.map((it) => `
+        <tr style="border-bottom: 1px solid #d1d5db;">
+          <td style="padding: 7px 8px; text-align: center; font-weight: bold; font-size: 13pt;">
+            [ &nbsp; ]
+          </td>
+          <td style="padding: 7px 8px; text-align: center; font-weight: bold; font-size: 12pt;">
+            ${it.quantity}
+          </td>
+          <td style="padding: 7px 8px; font-weight: 600;">
+            ${it.title}
+          </td>
+          <td style="padding: 7px 8px; text-align: right;">
+            R$ ${it.price.toFixed(2).replace('.', ',')}
+          </td>
+          <td style="padding: 7px 8px; text-align: right; font-weight: bold;">
+            R$ ${(it.price * it.quantity).toFixed(2).replace('.', ',')}
+          </td>
+        </tr>
+      `).join('');
+
+      printContainer.innerHTML = `
+        <div style="max-width: 190mm; margin: 0 auto; color: #000; font-family: 'Helvetica Neue', Arial, sans-serif;">
+          
+          <!-- CABEÇALHO DO ESTABELECIMENTO -->
+          <div style="border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <h1 style="font-size: 18pt; font-weight: 900; margin: 0; text-transform: uppercase; letter-spacing: -0.5px;">${storeConfig.storeName || 'FAST DELIVERY EXPRESS'}</h1>
+              <p style="margin: 2px 0 0 0; font-size: 9pt; color: #4b5563;">DOCUMENTO AUXILIAR DE SEPARAÇÃO & ENTREGA • VIA DE PRODUÇÃO / MOTOBOY</p>
+              <p style="margin: 1px 0 0 0; font-size: 8.5pt; color: #6b7280;">Telefone: ${storeConfig.storePhone || ''} • Chave PIX: ${storeConfig.pixKey || ''}</p>
+            </div>
+            <div style="text-align: right; border: 2px solid #000; padding: 6px 12px; border-radius: 6px; background-color: #f9fafb;">
+              <span style="font-size: 9pt; font-weight: bold; display: block; color: #4b5563;">PEDIDO NÚMERO</span>
+              <span style="font-size: 20pt; font-weight: 900; line-height: 1.1; display: block;">${order.orderNumber}</span>
+              <span style="font-size: 8.5pt; color: #374151;">${orderDate} às ${orderTime}</span>
+            </div>
+          </div>
+
+          <!-- BLOCO SUPERIOR: DADOS DO CLIENTE & QR CODE DO GOOGLE MAPS -->
+          <div style="display: grid; grid-template-columns: 2fr 1.1fr; gap: 12px; border: 1.5px solid #000; border-radius: 6px; padding: 10px; margin-bottom: 14px; background-color: #ffffff;">
+            
+            <!-- COLUNA DA ESQUERDA: DADOS DO DESTINATÁRIO -->
+            <div>
+              <div style="border-bottom: 1px dashed #9ca3af; padding-bottom: 5px; margin-bottom: 6px;">
+                <span style="font-size: 8pt; font-weight: bold; text-transform: uppercase; color: #6b7280; display: block;">DESTINATÁRIO:</span>
+                <span style="font-size: 13pt; font-weight: 800; display: block;">${order.customer.name}</span>
+                <span style="font-size: 10.5pt; font-weight: 600; color: #1f2937;"><i class="fa-solid fa-phone"></i> WhatsApp/Tel: ${order.customer.phone}</span>
+              </div>
+
+              <div>
+                <span style="font-size: 8pt; font-weight: bold; text-transform: uppercase; color: #6b7280; display: block;">ENDEREÇO DE ENTREGA:</span>
+                <p style="font-size: 12pt; font-weight: 800; margin: 2px 0 0 0; line-height: 1.2;">
+                  ${order.customer.street}, Nº ${order.customer.number}
+                </p>
+                ${order.customer.complement ? `
+                  <p style="font-size: 9.5pt; margin: 3px 0 0 0; color: #374151; font-weight: 600;">
+                    <strong>Complemento:</strong> ${order.customer.complement}
+                  </p>
+                ` : ''}
+                ${order.customer.notes ? `
+                  <div style="margin-top: 5px; padding: 4px 6px; background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px; font-size: 8.5pt;">
+                    <strong>Atenção/Instrução:</strong> ${order.customer.notes}
+                  </div>
+                ` : ''}
+              </div>
+
+              <!-- FORMA DE PAGAMENTO -->
+              <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #d1d5db; font-size: 9pt;">
+                <strong>Pagamento:</strong> <span style="background-color: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px; font-weight: bold;">PIX CONFIRMADO (PAGO)</span>
+              </div>
+            </div>
+
+            <!-- COLUNA DA DIREITA: QR CODE GOOGLE MAPS PARA O MOTOBOY -->
+            <div style="border-left: 1.5px solid #000; padding-left: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+              <span style="font-size: 8.5pt; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; color: #111827;">
+                📍 RASTREIO GOOGLE MAPS
+              </span>
+              
+              <div id="printQrCodeBox" style="width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; background: #fff; padding: 4px; border: 1px solid #000; border-radius: 4px;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&margin=0&data=${encodeURIComponent(gmapsUrl)}" width="130" height="130" alt="QR Code Google Maps" style="display:block; margin:auto;" />
+              </div>
+
+              <span style="font-size: 7.5pt; font-weight: bold; margin-top: 4px; color: #1f2937; line-height: 1.1;">
+                MOTOBOY: Aponte a câmera para abrir o GPS direto no endereço!
+              </span>
+
+              ${hasGps ? `
+                <span style="font-size: 6.5pt; color: #4b5563; font-family: monospace; margin-top: 2px;">
+                  GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}
+                </span>
+              ` : ''}
+            </div>
+
+          </div>
+
+          <!-- TABELA DE ITENS PARA SEPARAÇÃO / CONFERÊNCIA -->
+          <div style="margin-bottom: 14px;">
+            <div style="background-color: #111827; color: #ffffff; padding: 5px 8px; font-size: 9.5pt; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;">
+              ITENS DO PEDIDO • CONFERÊNCIA E SEPARAÇÃO (ESTOQUE / COZINHA)
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 9.5pt; border: 1px solid #d1d5db;">
+              <thead>
+                <tr style="background-color: #f3f4f6; border-bottom: 1.5px solid #9ca3af;">
+                  <th style="padding: 6px 8px; text-align: center; width: 45px; font-size: 8.5pt;">VISTO</th>
+                  <th style="padding: 6px 8px; text-align: center; width: 45px; font-size: 8.5pt;">QTD</th>
+                  <th style="padding: 6px 8px; text-align: left; font-size: 8.5pt;">DESCRIÇÃO DO ITEM</th>
+                  <th style="padding: 6px 8px; text-align: right; width: 85px; font-size: 8.5pt;">VALOR UNIT.</th>
+                  <th style="padding: 6px 8px; text-align: right; width: 90px; font-size: 8.5pt;">TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsRowsHtml}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TOTALIZADORES FINANCEIROS -->
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 14px;">
+            <div style="width: 240px; border: 1.5px solid #000; border-radius: 4px; padding: 8px; background-color: #f9fafb;">
+              <div style="display: flex; justify-content: space-between; font-size: 9pt; margin-bottom: 3px;">
+                <span>Subtotal dos Itens:</span>
+                <span>R$ ${order.subtotal.toFixed(2).replace('.', ',')}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 9pt; margin-bottom: 4px; color: #374151;">
+                <span>Taxa de Entrega:</span>
+                <span>R$ ${order.deliveryFee.toFixed(2).replace('.', ',')}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 12pt; font-weight: 900; border-top: 1.5px solid #000; padding-top: 4px;">
+                <span>TOTAL DO PEDIDO:</span>
+                <span>R$ ${order.total.toFixed(2).replace('.', ',')}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ASSINATURAS E PROTOCOLO DE EXPEDIÇÃO -->
+          <div style="border-top: 1px dashed #9ca3af; padding-top: 12px; margin-top: 16px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; text-align: center; font-size: 8pt;">
+              <div>
+                <div style="border-bottom: 1px solid #000; height: 28px; margin-bottom: 4px;"></div>
+                <span>Separado & Conferido por</span>
+              </div>
+              <div>
+                <div style="border-bottom: 1px solid #000; height: 28px; margin-bottom: 4px;"></div>
+                <span>Entregador / Motoboy</span>
+              </div>
+              <div>
+                <div style="border-bottom: 1px solid #000; height: 28px; margin-bottom: 4px;"></div>
+                <span>Assinatura do Cliente (Recebido)</span>
+              </div>
+            </div>
+            <p style="text-align: center; font-size: 7.5pt; color: #6b7280; margin-top: 12px;">
+              ${storeConfig.storeName || 'Fast Delivery Express'} • Sistema de Pedidos em Tempo Real • Documento impresso em ${orderDate} às ${orderTime}
+            </p>
+          </div>
+
+        </div>
+      `;
+
+      const qrBox = document.getElementById('printQrCodeBox');
+      if (qrBox) {
+        qrBox.innerHTML = '';
+        try {
+          new QRCode(qrBox, {
+            text: gmapsUrl,
+            width: 130,
+            height: 130,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } catch (e) {
+          qrBox.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&margin=0&data=${encodeURIComponent(gmapsUrl)}" width="130" height="130" />`;
+        }
+      }
+
+      window.print();
+    }
+  </script>
+</body>
+</html>

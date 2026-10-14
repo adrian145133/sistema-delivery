@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cardápio Online & Delivery Express</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="qrcode.min.js"></script>
+  <script src="pix-generator.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+  <!-- AVISO DE CHAVE PIX PENDENTE (SE O LOJISTA AINDA NÃO CADASTROU) -->
+  <div id="pixWarningBanner" class="hidden bg-amber-500 text-slate-950 px-4 py-2 text-xs font-bold text-center border-b border-amber-600 shadow-md">
+    <div class="mx-auto max-w-6xl flex items-center justify-center gap-2">
+      <i class="fa-solid fa-triangle-exclamation text-base"></i>
+      <span>Aviso: O lojista ainda não cadastrou a Chave PIX no sistema. O cardápio está em modo de demonstração e os pagamentos estão temporariamente bloqueados.</span>
+    </div>
+  </div>
+
+  <!-- AVISO DE LICENÇA EXPIRADA (APÓS 2 DIAS) -->
+  <div id="saasExpiredBanner" class="hidden bg-rose-600 text-white px-4 py-2 text-xs font-bold text-center border-b border-rose-700 shadow-md">
+    <div class="mx-auto max-w-6xl flex items-center justify-center gap-2">
+      <i class="fa-solid fa-lock text-base"></i>
+      <span>Aviso: O sistema deste restaurante está em processo de renovação da licença. Os pagamentos e pedidos estão temporariamente pausados.</span>
+    </div>
+  </div>
+
+  <!-- HEADER DA LOJA -->
+  <header class="sticky top-0 z-30 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-4 py-3">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm text-xl">
+          <i class="fa-solid fa-bag-shopping"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 id="headerStoreName" class="text-lg md:text-xl font-bold tracking-tight text-white">Fast Delivery Express</h1>
+            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Aberto
+            </span>
+          </div>
+          <p id="headerStoreInfo" class="text-xs text-slate-400 flex items-center gap-1">
+            <i class="fa-solid fa-phone"></i> (11) 99999-8888 • Entrega R$ 5,00
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- CADEADO DO LOJISTA (APENAS O LOJISTA VÊ) -->
+        <button id="lojistaLockBtn" onclick="toggleMenuEditLock()" class="hidden w-fit items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm">
+          <i id="lojistaLockIcon" class="fa-solid fa-lock text-emerald-400"></i>
+          <span id="lojistaLockText">Cardápio Trancado</span>
+        </button>
+
+        <a id="btnGoToPanel" href="pedidos.html" class="hidden w-fit items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors">
+          <i class="fa-solid fa-store text-emerald-400"></i>
+          Painel do Lojista (Pedidos)
+        </a>
+
+        <button id="btnHeaderCart" onclick="openCheckoutModal()" disabled class="w-fit relative inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-all bg-slate-800 text-slate-500 cursor-not-allowed opacity-60">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <span id="headerCartTotal">R$ 0,00</span>
+          <span id="headerCartBadge" class="hidden h-5 w-5 items-center justify-center rounded-full bg-slate-950 text-[11px] font-bold text-emerald-400">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- BARRA DE AVISO DO MODO EDIÇÃO DO LOJISTA (QUANDO CADEADO ESTIVER ABERTO) -->
+  <div id="lojistaEditModeBanner" class="hidden bg-amber-500 text-slate-950 px-4 py-2 text-xs font-bold border-b border-amber-600 shadow-md">
+    <div class="mx-auto max-w-6xl flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-lock-open text-base animate-bounce"></i>
+        <span><strong>Modo Edição do Lojista Ativo:</strong> Clique nos títulos, nas descrições de até 5 linhas, preços ou suba fotos do seu computador. Todas as alterações salvam na hora.</span>
+      </div>
+      <button onclick="toggleMenuEditLock()" class="w-fit rounded-lg bg-slate-950 px-3 py-1 text-xs font-bold text-white hover:bg-slate-800 shadow-sm">
+        <i class="fa-solid fa-lock mr-1"></i> Trancar Cardápio (Concluir)
+      </button>
+    </div>
+  </div>
+
+  <!-- BANNER E BUSCA -->
+  <section class="bg-gradient-to-b from-slate-900 to-slate-950 px-4 pt-6 pb-4 border-b border-slate-800/60">
+    <div class="mx-auto max-w-6xl">
+      <div class="mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex-1 min-w-0 pr-4">
+          <div id="menuTitleContainer">
+            <h2 class="text-2xl md:text-3xl font-extrabold text-white">Cardápio & Pedidos Online</h2>
+          </div>
+          <div id="menuSubtitleContainer">
+            <p class="text-sm text-slate-400 mt-1">Escolha os itens, veja a soma automática e pague via PIX direto para o restaurante!</p>
+          </div>
+        </div>
+        <div class="relative w-full md:w-72">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Buscar produto..." class="w-full rounded-xl border border-slate-800 bg-slate-900/90 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none">
+        </div>
+      </div>
+
+      <!-- CATEGORIAS (SEM ABA 'TODOS' - ATÉ 2 LINHAS DE CATEGORIAS) -->
+      <div id="categoryContainer" class="flex flex-wrap items-center gap-2 overflow-y-auto max-h-[88px] pb-1">
+        <!-- Renderizado dinamicamente via JS (apenas categorias cadastradas) -->
+      </div>
+    </div>
+  </section>
+
+  <!-- CORPO PRINCIPAL: PRODUTOS E CARRINHO -->
+  <main class="mx-auto max-w-6xl flex-1 px-4 py-6 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- VITRINE DE PRODUTOS DA CATEGORIA SELECIONADA -->
+      <div class="lg:col-span-8">
+        <div class="flex items-center justify-between mb-4">
+          <h3 id="currentCategoryTitle" class="text-lg font-bold text-white flex items-center gap-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+            Lanches
+          </h3>
+          <span id="categoryCountLabel" class="text-xs text-slate-400">0 itens disponíveis</span>
+        </div>
+        <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+
+      <!-- CARRINHO LATERAL COM SOMA EM TEMPO REAL -->
+      <div class="hidden lg:block lg:col-span-4 sticky top-20">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-bag-shopping text-emerald-400"></i>
+              <h3 class="font-bold text-white text-base">Seu Pedido</h3>
+            </div>
+            <span id="cartCountLabel" class="text-xs font-semibold text-slate-400">0 itens</span>
+          </div>
+
+          <div id="cartItemsList" class="mt-4 max-h-72 overflow-y-auto space-y-3 pr-1">
+            <p class="text-center text-xs text-slate-500 py-10">Carrinho vazio.<br>Adicione itens do cardápio.</p>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800 space-y-1.5 text-xs">
+            <div class="flex justify-between text-slate-400">
+              <span>Subtotal</span>
+              <span id="cartSubtotalText">R$ 0,00</span>
+            </div>
+            <div class="flex justify-between text-slate-400">
+              <span>Taxa de Entrega</span>
+              <span id="cartDeliveryText">R$ 5,00</span>
+            </div>
+            <div class="flex justify-between text-base font-extrabold text-white pt-2 border-t border-slate-800/60">
+              <span>Total Geral</span>
+              <span id="cartGrandTotalText" class="text-emerald-400">R$ 5,00</span>
+            </div>
+          </div>
+
+          <button id="btnGoToCheckout" onclick="openCheckoutModal()" disabled class="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-slate-800 text-slate-500 py-3 text-sm font-bold cursor-not-allowed opacity-60 transition-all">
+            Ir para o Pagamento
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          
+          <div id="checkoutNoticePixBlock" class="hidden mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+            <p class="text-[11px] text-amber-300 font-semibold">
+              <i class="fa-solid fa-lock mr-1"></i> Pagamento pausado: O lojista precisa cadastrar a Chave PIX no painel.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- BARRA FIXA MOBILE QUANDO HÁ ITENS -->
+  <div id="mobileCartBar" class="hidden lg:hidden sticky bottom-0 z-20 border-t border-slate-800 bg-slate-900/95 backdrop-blur-md p-3">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <span id="mobileCartCount" class="text-xs text-slate-400">0 itens</span>
+        <div id="mobileCartTotal" class="text-base font-extrabold text-emerald-400">R$ 0,00</div>
+      </div>
+      <button onclick="openCheckoutModal()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-slate-950 shadow-md shadow-emerald-500/20">
+        Ir para o Pagamento
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL DE CHECKOUT COM GPS E PIX OFICIAL DO LOJISTA -->
+  <div id="checkoutModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm overflow-y-auto">
+    <div class="relative w-full max-w-xl rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl my-6">
+      <button onclick="closeCheckoutModal()" class="w-fit absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <!-- ÁREA DE SUCESSO -->
+      <div id="checkoutSuccessArea" class="hidden py-6 text-center">
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 mb-4 animate-bounce text-2xl">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <h3 id="successOrderTitle" class="text-xl font-bold text-white">Pedido Confirmado e Pago!</h3>
+        <p id="successOrderDesc" class="mt-2 text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
+          Seu pedido foi recebido com sucesso! A folha de separação com sua localização em tempo real no Google Maps já foi impressa na loja e está em preparação!
+        </p>
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <a href="pedidos.html" class="w-fit inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-slate-950 hover:bg-emerald-400">
+            Acompanhar no Painel da Loja
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+          <button onclick="resetAndNewOrder()" class="w-fit inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-slate-700">
+            Fazer Novo Pedido
+          </button>
+        </div>
+      </div>
+
+      <!-- FORMULÁRIO DE CHECKOUT -->
+      <div id="checkoutFormArea">
+        <div class="flex items-center gap-2 pb-3 border-b border-slate-800">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
+            <i class="fa-solid fa-location-dot"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-white text-base">Checkout Express</h3>
+            <p class="text-xs text-slate-400">Localização em tempo real + Endereço simples</p>
+          </div>
+        </div>
+
+        <div class="mt-4 space-y-4">
+          <!-- GPS EM TEMPO REAL -->
+          <div class="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+                <i class="fa-solid fa-location-crosshairs animate-pulse"></i>
+                <span>Localização Exata via GPS</span>
+              </div>
+              <button type="button" id="btnGpsCapture" onclick="captureRealtimeGps()" class="w-fit inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-emerald-400">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                📍 Usar Minha Localização Atual
+              </button>
+            </div>
+            <div id="gpsStatusArea" class="mt-2 text-[11px] text-slate-400">
+              Clique no botão acima para o motoboy receber a rota direta da sua casa no Google Maps!
+            </div>
+          </div>
+
+          <!-- ENDEREÇO E DADOS (COMPACTOS - REGRA 7) -->
+          <div class="space-y-3 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">Seu Nome Completo *</label>
+                <input type="text" id="custName" placeholder="Ex: Carlos Silva" class="w-full max-w-[40ch] rounded-lg border border-slate-700 bg-slate-800/90 px-3 py-1.5 text-white focus:border-emerald-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">WhatsApp / Telefone *</label>
+                <input type="text" id="custPhone" placeholder="(11) 98765-4321" style="width: 22ch; max-width: 100%;" class="rounded-lg border border-slate-700 bg-slate-800/90 px-3 py-1.5 text-white focus:border-emerald-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="sm:col-span-2">
+                <label class="block text-slate-300 font-medium mb-1">Rua / Avenida *</label>
+                <input type="text" id="custStreet" placeholder="Ex: Rua das Flores" onblur="tryGeocodeAddress()" onchange="tryGeocodeAddress()" class="w-full max-w-[50ch] rounded-lg border border-slate-700 bg-slate-800/90 px-3 py-1.5 text-white focus:border-emerald-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">Número da Casa *</label>
+                <input type="text" id="custNumber" placeholder="Ex: 123" onblur="tryGeocodeAddress()" onchange="tryGeocodeAddress()" style="width: 16ch; max-width: 100%;" class="rounded-lg border border-slate-700 bg-slate-800/90 px-3 py-1.5 text-white focus:border-emerald-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">Bairro</label>
+                <input type="text" id="custNeighborhood" placeholder="Ex: Centro" class="w-full max-w-[35ch] rounded-lg border border-slate-700 bg-slate-800/90 px-3 py-1.5 text-white focus:border-emerald-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-300 font-medium mb-1">Complemento / Ponto de Ref.</label>
+                <input type="text" id="custComplement" placeholder="Ex: Apto 42 ou Ao lado da padaria" class="w-full max-w-[40ch] rounded-lg border border-slate-700 bg-slate-800/90 px-3 py-1.5 text-white focus:border-emerald-500 focus:outline-none">
+              </div>
+            </div>
+          </div>
+
+          <!-- PASSO 1: BOTÃO GERAR PAGAMENTO PIX OFICIAL DO BANCO CENTRAL -->
+          <div id="checkoutStep1Area">
+            <button type="button" id="btnGeneratePix" onclick="generateStorePixPayment()" class="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-sm font-bold text-slate-950 hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 transition-all">
+              <i class="fa-brands fa-pix text-base"></i>
+              <span id="btnGeneratePixText">Gerar Pagamento PIX Oficial</span>
+            </button>
+          </div>
+
+          <!-- PASSO 2: ÁREA DE PAGAMENTO PIX OFICIAL DO LOJISTA COM QR CODE E COPIA E COLA -->
+          <div id="checkoutStep2Area" class="hidden space-y-4">
+            <div class="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 text-center">
+              <div class="flex items-center justify-between pb-2 border-b border-emerald-500/20">
+                <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                  <i class="fa-brands fa-pix"></i> PIX Oficial Banco Central (Direto para o Lojista)
+                </span>
+                <span id="pixOrderValueText" class="text-xs font-black text-white">R$ 0,00</span>
+              </div>
+
+              <!-- QR CODE IMAGEM CLIENT-SIDE BR CODE -->
+              <div class="my-3 flex flex-col items-center justify-center">
+                <div id="pixQrContainer" class="bg-white p-3 rounded-xl border border-slate-700 shadow-md flex items-center justify-center min-w-[200px] min-h-[200px]">
+                  <!-- Renderizado via QRCode -->
+                </div>
+                <p class="text-[11px] text-slate-300 mt-2 font-medium">Aponte a câmera do aplicativo do seu banco para o QR Code acima</p>
+                <p id="pixRecipientInfo" class="text-[10px] text-emerald-400 font-semibold mt-0.5">Recebedor: Loja</p>
+              </div>
+
+              <!-- CHAVE COPIA E COLA -->
+              <div class="mt-2 text-left">
+                <label class="block text-[11px] text-slate-400 mb-1 font-semibold">Ou use o Código PIX Copia e Cola:</label>
+                <div class="flex items-center gap-2">
+                  <input type="text" id="mpPixCopiaColaInput" readonly class="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[11px] font-mono text-slate-300 focus:outline-none">
+                  <button type="button" onclick="copyPixCode()" class="w-fit shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-emerald-400 transition-colors">
+                    <i class="fa-regular fa-copy"></i>
+                    <span id="copyPixBtnText">Copiar</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- BOTÕES DE CONFIRMAÇÃO DE PAGAMENTO -->
+              <div class="mt-4 pt-3 border-t border-emerald-500/20 flex flex-col sm:flex-row items-center justify-between gap-2">
+                <button type="button" onclick="confirmPaymentCompleted()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-emerald-400 shadow-md">
+                  <i class="fa-solid fa-check-circle"></i>
+                  Já Fiz o Pagamento via PIX
+                </button>
+                <button type="button" onclick="confirmPaymentCompleted()" title="Simular aprovação imediata" class="w-fit text-[11px] text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-lg bg-emerald-500/10">
+                  ⚡ Testar Aprovação Instantânea
+                </button>
+              </div>
+            </div>
+
+            <button type="button" onclick="backToStep1()" class="w-fit text-xs text-slate-400 hover:text-white inline-flex items-center gap-1">
+              <i class="fa-solid fa-arrow-left"></i> Alterar dados de entrega
+            </button>
+          </div>
+        </div>
+      </div>
+  <!-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO DO PRODUTO (DIGITANDO 'SIM') -->
+  <div id="deleteProductConfirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="w-full max-w-sm rounded-2xl border border-rose-500/40 bg-slate-900 p-6 shadow-2xl space-y-4 text-white">
+      <div class="flex items-center gap-2.5 text-rose-400">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400 text-lg">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white">Excluir Item do Cardápio</h3>
+          <p class="text-[11px] text-slate-400">Confirmação obrigatória de segurança</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-300">
+        Deseja realmente excluir <strong id="deleteProductTargetName" class="text-white">este produto</strong> do cardápio?
+      </p>
+
+      <div class="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-xs text-rose-200 space-y-1">
+        <p class="font-bold">⚠️ Esta ação removerá o produto permanentemente.</p>
+        <p>Para confirmar a exclusão, digite exatamente a palavra <strong class="text-white uppercase">sim</strong> abaixo:</p>
+      </div>
+
+      <div>
+        <input type="text" id="deleteProductConfirmInput" placeholder="Digite 'sim' para confirmar" style="width: 24ch; max-width: 100%;" class="rounded-xl border border-rose-500/50 bg-slate-950 px-3 py-2 text-xs text-white font-bold focus:border-rose-400 focus:outline-none" onkeyup="checkDeleteProductInput(event)">
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+        <button type="button" onclick="closeDeleteProductModal()" class="w-fit rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700">
+          Cancelar
+        </button>
+        <button type="button" id="btnConfirmDeleteProduct" onclick="executeDeleteProduct()" disabled class="w-fit rounded-lg bg-rose-600 px-4 py-1.5 text-xs font-bold text-white opacity-40 cursor-not-allowed transition-all">
+          Excluir Produto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // PRODUTOS INICIAIS
+    const DEFAULT_PRODUCTS = [
+      { id: 'p1', name: 'Burger Artesanal Clássico', description: 'Pão brioche, hambúrguer 180g, cheddar derretido, bacon crocante, maionese especial.', price: 32.90, category: 'Lanches', imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80' },
+      { id: 'p2', name: 'Double Smash Bacon', description: 'Dois hambúrgueres smash de 100g, dobro de cheddar e fatias generosas de bacon.', price: 36.90, category: 'Lanches', imageUrl: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=80' },
+      { id: 'p3', name: 'Batata Frita Especial Cheddar & Bacon', description: '400g de batatas rústicas com cheddar cremoso e farofa de bacon.', price: 24.90, category: 'Acompanhamentos', imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600&auto=format&fit=crop&q=80' },
+      { id: 'p4', name: 'Pizza Calabresa Especial (Média)', description: 'Massa artesanal, molho de tomate pelado, calabresa, cebola roxa e orégano.', price: 49.90, category: 'Pizzas', imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80' },
+      { id: 'p5', name: 'Pizza 4 Queijos Cremosa (Média)', description: 'Massa leve com mussarela, catupiry autêntico, provolone e parmesão gratinado.', price: 54.90, category: 'Pizzas', imageUrl: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&auto=format&fit=crop&q=80' },
+      { id: 'p6', name: 'Coca-Cola Lata 350ml', description: 'Refrigerante em lata bem gelado.', price: 6.50, category: 'Bebidas', imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80' },
+      { id: 'p7', name: 'Suco Natural de Laranja 500ml', description: 'Suco de laranja natural feito na hora, 100% fruta pura.', price: 11.00, category: 'Bebidas', imageUrl: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?w=600&auto=format&fit=crop&q=80' },
+      { id: 'p8', name: 'Água Mineral com Gás 500ml', description: 'Garrafa bem gelada.', price: 4.50, category: 'Bebidas', imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80' }
+    ];
+
+    let products = JSON.parse(localStorage.getItem('DELIVERY_PRODUCTS')) || DEFAULT_PRODUCTS;
+    let config = JSON.parse(localStorage.getItem('DELIVERY_CONFIG')) || {
+      storeName: 'Fast Delivery Express',
+      storePhone: '(11) 99999-8888',
+      deliveryFee: 5.00,
+      pixKey: 'loja.express@pix.com.br',
+      merchantName: 'FAST DELIVERY',
+      merchantCity: 'SAO PAULO'
+    };
+
+    let cart = [];
+    let selectedCategory = '';
+    let gpsCoords = null;
+    let pendingOrderPayload = null;
+
+    // CONTROLE DE MODO LOJISTA & CADEADO
+    let isMenuUnlocked = false;
+    function isLojista() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('view') === 'cliente' || params.get('mode') === 'cliente') {
+        return false;
+      }
+      return params.get('mode') === 'lojista';
+    }
+
+    function initLojistaControls() {
+      const lockBtn = document.getElementById('lojistaLockBtn');
+      const panelBtn = document.getElementById('btnGoToPanel');
+      if (isLojista()) {
+        if (lockBtn) {
+          lockBtn.classList.remove('hidden');
+          lockBtn.classList.add('inline-flex');
+        }
+        if (panelBtn) {
+          panelBtn.classList.remove('hidden');
+          panelBtn.classList.add('inline-flex');
+        }
+        // Ao clicar em Editar Cardápio, JÁ INICIA ABERTO DIRETAMENTE!
+        isMenuUnlocked = true;
+        updateLockUI();
+      } else {
+        if (lockBtn) {
+          lockBtn.classList.add('hidden');
+          lockBtn.classList.remove('inline-flex');
+        }
+        if (panelBtn) {
+          panelBtn.classList.add('hidden');
+          panelBtn.classList.remove('inline-flex');
+        }
+        isMenuUnlocked = false;
+      }
+    }
+
+    function toggleMenuEditLock() {
+      if (!isLojista()) return;
+      isMenuUnlocked = !isMenuUnlocked;
+      updateLockUI();
+      renderMenuHeader();
+      renderCategories();
+      renderProducts();
+    }
+
+    function autoResizeTextarea(el, maxRows = 4) {
+      if (!el) return;
+      el.style.height = 'auto';
+      const isBadge = maxRows <= 3;
+      const singleLineH = isBadge ? 22 : 34;
+      const lineHeight = isBadge ? 16 : 22;
+      const maxH = isBadge ? (singleLineH + (maxRows - 1) * lineHeight) : (maxRows === 4 ? 96 : (maxRows * 22 + 16));
+      const newH = Math.max(singleLineH, Math.min(el.scrollHeight, maxH));
+      el.style.height = newH + 'px';
+    }
+
+    function autoResizeInputWidth(input, minChars = 15, maxChars = 45) {
+      if (!input) return;
+      const lines = (input.value || '').split('\n');
+      const maxLineLen = Math.max(...lines.map(l => l.length), 0);
+      const isBadge = input.classList && input.classList.contains('category-textarea');
+      const extraPad = isBadge ? 5 : 2;
+      const len = Math.max(minChars, maxLineLen + extraPad);
+      input.style.width = Math.min(len, maxChars) + 'ch';
+    }
+
+    function renderMenuHeader() {
+      const titleContainer = document.getElementById('menuTitleContainer');
+      const subtitleContainer = document.getElementById('menuSubtitleContainer');
+      const currentTitle = config.menuTitle || 'Cardápio & Pedidos Online';
+      const currentSubtitle = config.menuSubtitle || 'Escolha os itens, veja a soma automática e pague via PIX direto para o restaurante!';
+
+      if (isLojista() && isMenuUnlocked) {
+        if (titleContainer) {
+          titleContainer.innerHTML = `
+            <div class="flex items-center gap-2">
+              <input type="text" id="menuTitleInput" value="${escapeHtml(currentTitle)}" oninput="autoResizeInputWidth(this, 18, 40); updateMenuHeaderField('menuTitle', this.value)" style="width: ${Math.min(Math.max(18, (currentTitle || '').length + 2), 40)}ch; max-width: 100%;" class="text-2xl md:text-3xl font-extrabold text-white bg-slate-800/95 border border-emerald-500/60 rounded-xl px-3 py-1 focus:border-emerald-400 focus:outline-none transition-all" placeholder="Título do Cardápio...">
+              <span class="text-[10px] text-emerald-400 font-bold whitespace-nowrap bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-md"><i class="fa-solid fa-pen text-[9px] mr-1"></i> Editável</span>
+            </div>
+          `;
+        }
+        if (subtitleContainer) {
+          subtitleContainer.innerHTML = `
+            <div class="flex flex-col sm:flex-row sm:items-start gap-2 mt-1.5">
+              <textarea id="menuSubtitleInput" rows="1" maxlength="300" oninput="autoResizeTextarea(this, 4); updateMenuHeaderField('menuSubtitle', this.value)" class="text-xs text-slate-200 bg-slate-800/95 border border-emerald-500/60 rounded-xl p-2.5 focus:border-emerald-400 focus:outline-none w-full max-w-[75ch] leading-relaxed resize-none overflow-hidden transition-all" style="min-height: 36px; height: auto;" placeholder="Subtítulo ou mensagem do cardápio (cresce conforme for digitando até 4 linhas)...">${escapeHtml(currentSubtitle)}</textarea>
+              <span class="w-fit text-[10px] text-emerald-400 font-bold whitespace-nowrap bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-md self-start"><i class="fa-solid fa-check text-[9px] mr-1"></i> Salvo na hora</span>
+            </div>
+          `;
+          setTimeout(() => {
+            const el = document.getElementById('menuSubtitleInput');
+            if (el) autoResizeTextarea(el, 4);
+          }, 10);
+        }
+      } else {
+        if (titleContainer) {
+          titleContainer.innerHTML = `<h2 class="text-2xl md:text-3xl font-extrabold text-white">${escapeHtml(currentTitle)}</h2>`;
+        }
+        if (subtitleContainer) {
+          subtitleContainer.innerHTML = `<p class="text-sm text-slate-400 mt-1 whitespace-pre-line leading-relaxed">${escapeHtml(currentSubtitle)}</p>`;
+        }
+      }
+    }
+
+    function updateMenuHeaderField(field, value) {
+      config[field] = value;
+      localStorage.setItem('DELIVERY_CONFIG', JSON.stringify(config));
+      window.dispatchEvent(new Event('storage'));
+    }
+
+    function updateLockUI() {
+      const lockBtn = document.getElementById('lojistaLockBtn');
+      const lockIcon = document.getElementById('lojistaLockIcon');
+      const lockText = document.getElementById('lojistaLockText');
+      const banner = document.getElementById('lojistaEditModeBanner');
+
+      if (isMenuUnlocked) {
+        lockBtn.className = 'w-fit inline-flex items-center gap-1.5 rounded-xl border border-amber-400 bg-amber-400 text-slate-950 px-3.5 py-1.5 text-xs font-extrabold shadow-md ring-2 ring-amber-400/50 transition-all';
+        lockIcon.className = 'fa-solid fa-lock-open text-sm';
+        lockText.textContent = '🔓 Cadeado Aberto (Modo Edição)';
+        if (banner) banner.classList.remove('hidden');
+      } else {
+        lockBtn.className = 'w-fit inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:text-white px-3.5 py-1.5 text-xs font-bold transition-all';
+        lockIcon.className = 'fa-solid fa-lock text-emerald-400 text-sm';
+        lockText.textContent = '🔒 Cardápio Trancado';
+        if (banner) banner.classList.add('hidden');
+      }
+    }
+
+    function isPixKeyValid() {
+      return config && config.pixKey && config.pixKey.trim() !== '' && config.pixKey !== 'chave_pix_pendente';
+    }
+
+    function isLicenseValid() {
+      const now = Date.now();
+      const trialDuration = 2 * 24 * 60 * 60 * 1000; // 2 dias de teste
+      let trialStart = parseInt(localStorage.getItem('SAAS_TRIAL_START') || '0', 10);
+      if (!trialStart) {
+        trialStart = now;
+        localStorage.setItem('SAAS_TRIAL_START', trialStart.toString());
+      }
+      const paidExpires = parseInt(localStorage.getItem('SAAS_PAID_EXPIRES') || '0', 10);
+      if (paidExpires > now) return true;
+      return (trialStart + trialDuration) > now;
+    }
+
+    function init() {
+      // Recarrega produtos e configuração
+      try {
+        const storedProducts = localStorage.getItem('DELIVERY_PRODUCTS');
+        if (storedProducts) products = JSON.parse(storedProducts);
+        const storedConfig = localStorage.getItem('DELIVERY_CONFIG');
+        if (storedConfig) config = JSON.parse(storedConfig);
+      } catch (e) {}
+
+      initLojistaControls();
+
+      // Obter categorias únicas (SEM a aba "Todos")
+      const availableCategories = [...new Set(products.map(p => p.category))];
+      if (!selectedCategory || !availableCategories.includes(selectedCategory)) {
+        selectedCategory = availableCategories[0] || 'Lanches';
+      }
+
+      renderMenuHeader();
+      renderCategories();
+      renderProducts();
+      updateCartUI();
+      checkPixStatus();
+
+      document.getElementById('headerStoreName').textContent = config.storeName || 'Fast Delivery Express';
+      document.getElementById('headerStoreInfo').innerHTML = `<i class="fa-solid fa-phone"></i> ${config.storePhone || ''} • Entrega R$ ${(config.deliveryFee || 5).toFixed(2).replace('.', ',')}`;
+    }
+
+    function checkPixStatus() {
+      const pixBanner = document.getElementById('pixWarningBanner');
+      const saasBanner = document.getElementById('saasExpiredBanner');
+      const noticeBlock = document.getElementById('checkoutNoticePixBlock');
+      const pixValid = isPixKeyValid();
+      const licenseValid = isLicenseValid();
+
+      if (!licenseValid) {
+        if (saasBanner) saasBanner.classList.remove('hidden');
+        if (pixBanner) pixBanner.classList.add('hidden');
+        if (noticeBlock) {
+          noticeBlock.classList.remove('hidden');
+          noticeBlock.innerHTML = `<p class="text-[11px] text-rose-300 font-semibold"><i class="fa-solid fa-lock mr-1"></i> Pedidos pausados: Restaurante em renovação de licença.</p>`;
+        }
+      } else {
+        if (saasBanner) saasBanner.classList.add('hidden');
+        if (!pixValid) {
+          if (pixBanner) pixBanner.classList.remove('hidden');
+          if (noticeBlock) {
+            noticeBlock.classList.remove('hidden');
+            noticeBlock.innerHTML = `<p class="text-[11px] text-amber-300 font-semibold"><i class="fa-solid fa-lock mr-1"></i> Pagamento pausado: O lojista precisa cadastrar a Chave PIX no painel.</p>`;
+          }
+        } else {
+          if (pixBanner) pixBanner.classList.add('hidden');
+          if (noticeBlock) noticeBlock.classList.add('hidden');
+        }
+      }
+    }
+
+    // RENDERIZAR CATEGORIAS (COM SUPORTE A ATÉ 2 LINHAS E ATÉ 3X O TAMANHO)
+    function renderCategories() {
+      const cats = [...new Set(products.map(p => p.category))];
+      const container = document.getElementById('categoryContainer');
+      if (!container) return;
+
+      if (isLojista() && isMenuUnlocked) {
+        // No modo lojista: botões de categoria com ícone de renomear + botão '+ Nova Categoria'
+        const catsHtml = cats.map(c => `
+          <div class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-all max-w-[26ch] ${selectedCategory === c ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm' : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'}">
+            <button type="button" onclick="setCategory('${escapeHtml(c)}')" class="font-bold focus:outline-none text-left leading-tight line-clamp-2 break-words" title="${escapeHtml(c)}">${escapeHtml(c)}</button>
+            <button type="button" onclick="promptRenameCategory('${escapeHtml(c)}')" title="Renomear categoria ${escapeHtml(c)}" class="shrink-0 text-[10px] ${selectedCategory === c ? 'text-slate-900 hover:text-white' : 'text-slate-400 hover:text-white'} p-0.5 rounded hover:bg-slate-800/40">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+          </div>
+        `).join('');
+
+        const addCatBtnHtml = `
+          <button type="button" onclick="promptAddCategory()" class="w-fit inline-flex items-center gap-1 rounded-lg border border-dashed border-emerald-500/70 bg-emerald-950/40 px-3 py-1 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 transition-all whitespace-nowrap shadow-xs shrink-0" title="Adicionar nova categoria">
+            <i class="fa-solid fa-plus text-[10px]"></i> Nova Categoria
+          </button>
+        `;
+
+        container.innerHTML = catsHtml + addCatBtnHtml;
+      } else {
+        // Modo normal do cliente
+        container.innerHTML = cats.map(c => `
+          <button onclick="setCategory('${escapeHtml(c)}')" class="w-fit rounded-lg px-3 py-1.5 text-xs font-semibold transition-all max-w-[26ch] text-left leading-tight line-clamp-2 break-words ${selectedCategory === c ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm' : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'}" title="${escapeHtml(c)}">
+            ${escapeHtml(c)}
+          </button>
+        `).join('');
+      }
+
+      const currentTitleEl = document.getElementById('currentCategoryTitle');
+      if (currentTitleEl) {
+        currentTitleEl.innerHTML = `
+          <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+          ${escapeHtml(selectedCategory)}
+        `;
+      }
+    }
+
+    function promptAddCategory() {
+      const name = prompt('Digite o nome da nova categoria (máximo 24 caracteres - até 3x o tamanho padrão):');
+      if (!name || !name.trim()) return;
+      let catName = name.trim();
+      if (catName.length > 24) {
+        catName = catName.substring(0, 24);
+      }
+      const existing = products.find(p => p.category.toLowerCase() === catName.toLowerCase());
+      if (existing) {
+        selectedCategory = existing.category;
+      } else {
+        products.push({
+          id: 'prod_' + Date.now(),
+          name: 'Novo Item em ' + catName,
+          description: 'Descrição do novo item da categoria ' + catName,
+          price: 15.00,
+          category: catName,
+          imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=60'
+        });
+        saveProductsAndSync();
+        selectedCategory = catName;
+      }
+      renderCategories();
+      renderProducts();
+    }
+
+    function promptRenameCategory(oldCat) {
+      const newName = prompt(`Renomear a categoria "${oldCat}" para (máximo 24 caracteres - até 3x o tamanho padrão):`, oldCat);
+      if (!newName || !newName.trim() || newName.trim() === oldCat) return;
+      let catName = newName.trim();
+      if (catName.length > 24) {
+        catName = catName.substring(0, 24);
+      }
+      products.forEach(p => {
+        if (p.category === oldCat) {
+          p.category = catName;
+        }
+      });
+      saveProductsAndSync();
+      selectedCategory = catName;
+      renderCategories();
+      renderProducts();
+    }
+
+    function setCategory(cat) {
+      selectedCategory = cat;
+      renderCategories();
+      renderProducts();
+    }
+
+    function filterProducts() {
+      renderProducts();
+    }
+
+    function renderProducts() {
+      const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+      // FILTRAGEM ESTRITA POR CATEGORIA SELECIONADA (NUNCA MOSTRA TODOS JUNTOS)
+      const filtered = products.filter(p => {
+        const matchCat = p.category === selectedCategory;
+        const matchSearch = p.name.toLowerCase().includes(search) || p.description.toLowerCase().includes(search);
+        return matchCat && matchSearch;
+      });
+
+      document.getElementById('categoryCountLabel').textContent = `${filtered.length} ${filtered.length === 1 ? 'item disponível' : 'itens disponíveis'}`;
+
+      const grid = document.getElementById('productsGrid');
+      
+      // MODO EDIÇÃO DO LOJISTA ATIVO (QUANDO O CADEADO ESTÁ ABERTO)
+      if (isLojista() && isMenuUnlocked) {
+        const itemsHtml = filtered.map(p => {
+          return `
+            <div class="flex flex-col justify-between rounded-2xl border-2 border-emerald-500/60 bg-slate-900/90 p-4 shadow-lg relative transition-all">
+              <!-- BOTÃO DE EXCLUIR ITEM -->
+              <button onclick="deleteProductItem('${p.id}')" title="Excluir este item" class="w-fit absolute top-3 right-3 text-rose-400 hover:text-rose-300 p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-xs transition-colors">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+
+              <div class="flex gap-3 sm:gap-4">
+                <!-- FOTO DO ITEM COM POSSIBILIDADE DE SUBIR IMAGEM DO COMPUTADOR -->
+                <div class="relative group cursor-pointer h-24 w-24 shrink-0 rounded-xl overflow-hidden border border-emerald-500/50 bg-slate-800" onclick="triggerPhotoUpload('${p.id}')" title="Clique para subir uma foto do seu computador">
+                  <img id="img_preview_${p.id}" src="${p.imageUrl}" alt="${escapeHtml(p.name)}" class="h-full w-full object-cover">
+                  <div class="absolute inset-0 bg-black/65 flex flex-col items-center justify-center text-white text-[10px] font-bold opacity-90 group-hover:opacity-100 transition-opacity p-1 text-center">
+                    <i class="fa-solid fa-camera text-base mb-0.5 text-emerald-400"></i>
+                    <span>Subir Foto</span>
+                  </div>
+                </div>
+                <input type="file" id="file_input_${p.id}" accept="image/*" class="hidden" onchange="handleProductPhotoFile('${p.id}', this)">
+
+                <!-- TEXTOS DO ITEM: CATEGORIA, TÍTULO E ATÉ 5 LINHAS DE DESCRIÇÃO -->
+                <div class="flex-1 min-w-0 pr-6">
+                  <!-- CATEGORIA EDITÁVEL (SÓ CRESCE CONFORME FOR DIGITANDO ATÉ O TRILHO DA FRASE, ATÉ 3X O TAMANHO E ATÉ 2 LINHAS) -->
+                  <div class="w-fit">
+                    <textarea data-max-rows="2" rows="1" maxlength="24" spellcheck="false" autocomplete="off" autocapitalize="off" oninput="autoResizeTextarea(this, 2); autoResizeInputWidth(this, 10, 26); updateProductCategoryField('${p.id}', this.value)" onblur="handleCategoryFieldBlur('${p.id}')" style="min-height: 22px; width: ${Math.min(Math.max(10, Math.max(...((p.category || '').split('\n').map(l => l.length)), 0) + 5), 26)}ch; max-width: 100%; height: auto;" placeholder="Categoria..." title="Clique para editar a categoria deste item" class="category-textarea inline-block rounded-md bg-emerald-500/15 hover:bg-emerald-500/25 focus:bg-slate-900 px-2 py-0.5 text-[11px] font-bold text-emerald-400 border border-emerald-500/40 focus:border-emerald-300 focus:outline-none resize-none overflow-hidden transition-all leading-tight align-middle shadow-xs">${escapeHtml(p.category)}</textarea>
+                  </div>
+                  
+                  <!-- TÍTULO EDITÁVEL DO ITEM (SÓ CRESCE CONFORME FOR DIGITANDO) -->
+                  <div>
+                    <input type="text" value="${escapeHtml(p.name)}" oninput="autoResizeInputWidth(this, 16, 45); updateProductField('${p.id}', 'name', this.value)" style="width: ${Math.min(Math.max(16, (p.name || '').length + 2), 45)}ch; max-width: 100%;" placeholder="Nome do item..." class="mt-1 text-sm font-bold text-white bg-slate-800/95 rounded-lg px-2.5 py-1 border border-emerald-500/40 focus:border-emerald-400 focus:outline-none transition-all">
+                  </div>
+                  
+                  <!-- DESCRIÇÃO EDITÁVEL (SÓ CRESCE CONFORME FOR DIGITANDO EM ATÉ 5 LINHAS) -->
+                  <textarea data-max-rows="5" rows="1" maxlength="320" oninput="autoResizeTextarea(this, 5); updateProductField('${p.id}', 'description', this.value)" style="min-height: 38px; height: auto;" placeholder="Descrição do produto (cresce conforme for digitando)..." class="w-full mt-1.5 text-xs text-slate-200 bg-slate-800/95 rounded-lg p-2 border border-emerald-500/40 focus:border-emerald-400 focus:outline-none leading-relaxed resize-none overflow-hidden transition-all">${escapeHtml(p.description)}</textarea>
+                </div>
+              </div>
+
+              <!-- PREÇO DO ITEM EDITÁVEL -->
+              <div class="mt-3 flex items-center justify-between pt-2.5 border-t border-slate-800">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-bold text-emerald-400">Preço: R$</span>
+                  <input type="number" step="0.50" value="${p.price.toFixed(2)}" oninput="updateProductField('${p.id}', 'price', parseFloat(this.value) || 0)" style="width: 12ch;" class="text-sm font-extrabold text-emerald-400 bg-slate-800/95 border border-emerald-500/40 rounded-lg px-2 py-1 focus:outline-none">
+                </div>
+                <span class="text-[10px] text-emerald-400/90 font-medium flex items-center gap-1">
+                  <i class="fa-solid fa-check"></i> Salvo em tempo real
+                </span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // CARD '+' AO LADO DO ÚLTIMO ITEM PARA ADICIONAR NOVO ITEM EM BRANCO
+        const addCardHtml = `
+          <div onclick="addNewBlankProduct('${selectedCategory}')" class="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-emerald-500/50 bg-slate-900/40 hover:bg-emerald-500/10 hover:border-emerald-400 transition-all cursor-pointer min-h-[190px] text-center group">
+            <div class="h-14 w-14 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-2xl font-bold group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all mb-2.5 shadow-sm">
+              <i class="fa-solid fa-plus"></i>
+            </div>
+            <span class="text-sm font-bold text-white group-hover:text-emerald-300">Adicionar Novo Item em ${selectedCategory}</span>
+            <span class="text-xs text-slate-400 mt-1 max-w-[24ch]">Item em branco com foto, até 5 linhas e preço</span>
+          </div>
+        `;
+
+        grid.innerHTML = itemsHtml + addCardHtml;
+        setTimeout(() => {
+          grid.querySelectorAll('textarea').forEach(t => {
+            const maxRows = parseInt(t.getAttribute('data-max-rows') || '5', 10);
+            autoResizeTextarea(t, maxRows);
+            if (t.classList.contains('category-textarea')) {
+              autoResizeInputWidth(t, 10, 26);
+            }
+          });
+        }, 10);
+        return;
+      }
+
+      // MODO NORMAL DE COMPRA DO CLIENTE (OU LOJISTA COM CADEADO TRANCADO)
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-2 py-12 text-center text-slate-500 text-sm">Nenhum produto cadastrado nesta categoria.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(p => {
+        const inCart = cart.find(i => i.id === p.id);
+        const qty = inCart ? inCart.quantity : 0;
+        return `
+          <div class="flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-4 hover:border-slate-700 transition-all shadow-sm">
+            <div class="flex gap-4">
+              <img src="${p.imageUrl}" alt="${escapeHtml(p.name)}" class="h-24 w-24 rounded-xl object-cover border border-slate-800 shrink-0" loading="lazy">
+              <div class="flex-1 min-w-0">
+                <span class="inline-block max-w-fit rounded-md bg-slate-800/80 px-2 py-0.5 text-[11px] font-medium text-emerald-400 whitespace-pre-line leading-tight">${escapeHtml(p.category)}</span>
+                <h4 class="mt-1 text-sm font-bold text-white truncate">${escapeHtml(p.name)}</h4>
+                <p class="mt-1 text-xs text-slate-400 line-clamp-3 leading-relaxed whitespace-pre-line">${escapeHtml(p.description)}</p>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center justify-between pt-3 border-t border-slate-800/60">
+              <div class="text-base font-extrabold text-emerald-400">R$ ${p.price.toFixed(2).replace('.', ',')}</div>
+              ${qty === 0 ? `
+                <button onclick="addToCart('${p.id}')" class="w-fit inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 px-3 py-1.5 text-xs font-bold transition-all">
+                  <i class="fa-solid fa-plus text-xs"></i> Adicionar
+                </button>
+              ` : `
+                <div class="flex items-center gap-1.5 bg-slate-800 rounded-lg p-0.5 border border-slate-700">
+                  <button onclick="decreaseCart('${p.id}')" class="w-fit flex h-7 w-7 items-center justify-center rounded bg-slate-700 text-white hover:bg-slate-600"><i class="fa-solid fa-minus text-xs"></i></button>
+                  <span class="w-6 text-center text-xs font-bold text-white">${qty}</span>
+                  <button onclick="addToCart('${p.id}')" class="w-fit flex h-7 w-7 items-center justify-center rounded bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-bold"><i class="fa-solid fa-plus text-xs"></i></button>
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // AÇÕES DO MODO EDIÇÃO DO CARDÁPIO (LOJISTA)
+    function addNewBlankProduct(cat) {
+      const newId = 'p_' + Date.now();
+      const blankItem = {
+        id: newId,
+        name: 'Novo Item do Cardápio',
+        description: 'Clique aqui para adicionar a descrição deste item (até 5 linhas)...',
+        price: 15.00,
+        category: cat,
+        imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80'
+      };
+      products.push(blankItem);
+      saveProductsAndSync();
+      renderProducts();
+    }
+
+    function triggerPhotoUpload(id) {
+      const fi = document.getElementById('file_input_' + id);
+      if (fi) fi.click();
+    }
+
+    function handleProductPhotoFile(id, input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Url = e.target.result;
+        const prod = products.find(p => p.id === id);
+        if (prod) {
+          prod.imageUrl = base64Url;
+          saveProductsAndSync();
+          const preview = document.getElementById('img_preview_' + id);
+          if (preview) preview.src = base64Url;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function updateProductField(id, field, value) {
+      const prod = products.find(p => p.id === id);
+      if (!prod) return;
+      prod[field] = value;
+      saveProductsAndSync();
+    }
+
+    function updateProductCategoryField(id, value) {
+      const prod = products.find(p => p.id === id);
+      if (!prod) return;
+      if (value && value.length > 24) value = value.substring(0, 24);
+      prod.category = value;
+      saveProductsAndSync();
+    }
+
+    function handleCategoryFieldBlur(id) {
+      const prod = products.find(p => p.id === id);
+      if (prod) {
+        if (!prod.category || !prod.category.trim()) {
+          prod.category = selectedCategory || 'Lanches';
+        } else {
+          prod.category = prod.category.trim().substring(0, 24);
+        }
+        saveProductsAndSync();
+      }
+      const availableCategories = [...new Set(products.map(p => p.category))];
+      if (!availableCategories.includes(selectedCategory)) {
+        selectedCategory = (prod && prod.category) ? prod.category : (availableCategories[0] || 'Lanches');
+        renderProducts();
+      }
+      renderCategories();
+    }
+
+    let pendingDeleteProductId = null;
+
+    function deleteProductItem(id) {
+      const prod = products.find(p => p.id === id);
+      if (!prod) return;
+      pendingDeleteProductId = id;
+
+      const modal = document.getElementById('deleteProductConfirmModal');
+      const nameTxt = document.getElementById('deleteProductTargetName');
+      const input = document.getElementById('deleteProductConfirmInput');
+      const btn = document.getElementById('btnConfirmDeleteProduct');
+
+      if (nameTxt) nameTxt.textContent = `"${prod.name}"`;
+      if (input) {
+        input.value = '';
+        setTimeout(() => input.focus(), 150);
+      }
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-40', 'cursor-not-allowed');
+      }
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function checkDeleteProductInput(e) {
+      const val = (document.getElementById('deleteProductConfirmInput')?.value || '').trim().toLowerCase();
+      const btn = document.getElementById('btnConfirmDeleteProduct');
+      if (!btn) return;
+
+      if (val === 'sim') {
+        btn.disabled = false;
+        btn.classList.remove('opacity-40', 'cursor-not-allowed');
+        btn.classList.add('hover:bg-rose-700', 'shadow-md');
+        if (e && e.key === 'Enter') {
+          executeDeleteProduct();
+        }
+      } else {
+        btn.disabled = true;
+        btn.classList.add('opacity-40', 'cursor-not-allowed');
+        btn.classList.remove('hover:bg-rose-700', 'shadow-md');
+      }
+    }
+
+    function executeDeleteProduct() {
+      const val = (document.getElementById('deleteProductConfirmInput')?.value || '').trim().toLowerCase();
+      if (val !== 'sim') {
+        alert("Para confirmar a exclusão, você deve digitar exatamente 'sim'.");
+        return;
+      }
+      if (!pendingDeleteProductId) return;
+
+      products = products.filter(p => p.id !== pendingDeleteProductId);
+      saveProductsAndSync();
+      closeDeleteProductModal();
+
+      const availableCategories = [...new Set(products.map(p => p.category))];
+      if (!availableCategories.includes(selectedCategory)) {
+        selectedCategory = availableCategories[0] || 'Lanches';
+      }
+      renderCategories();
+      renderProducts();
+      updateCartUI();
+    }
+
+    function closeDeleteProductModal() {
+      const modal = document.getElementById('deleteProductConfirmModal');
+      if (modal) modal.classList.add('hidden');
+      pendingDeleteProductId = null;
+    }
+
+    function saveProductsAndSync() {
+      localStorage.setItem('DELIVERY_PRODUCTS', JSON.stringify(products));
+      window.dispatchEvent(new Event('storage'));
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function addToCart(productId) {
+      const prod = products.find(p => p.id === productId);
+      if (!prod) return;
+      const exist = cart.find(i => i.id === productId);
+      if (exist) {
+        exist.quantity += 1;
+      } else {
+        cart.push({ ...prod, quantity: 1 });
+      }
+      renderProducts();
+      updateCartUI();
+    }
+
+    function decreaseCart(productId) {
+      const exist = cart.find(i => i.id === productId);
+      if (!exist) return;
+      if (exist.quantity <= 1) {
+        cart = cart.filter(i => i.id !== productId);
+      } else {
+        exist.quantity -= 1;
+      }
+      renderProducts();
+      updateCartUI();
+    }
+
+    function removeCartItem(productId) {
+      cart = cart.filter(i => i.id !== productId);
+      renderProducts();
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+      const fee = cart.length > 0 ? (config.deliveryFee || 5.00) : 0;
+      const grandTotal = subtotal + fee;
+      const totalCount = cart.reduce((acc, i) => acc + i.quantity, 0);
+
+      document.getElementById('headerCartTotal').textContent = `R$ ${grandTotal.toFixed(2).replace('.', ',')}`;
+      const badge = document.getElementById('headerCartBadge');
+      const btnHeader = document.getElementById('btnHeaderCart');
+      const btnCheckout = document.getElementById('btnGoToCheckout');
+      const isAvailable = isPixKeyValid() && isLicenseValid();
+
+      if (totalCount > 0 && isAvailable) {
+        badge.textContent = totalCount;
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+        btnHeader.classList.remove('opacity-60', 'cursor-not-allowed', 'bg-slate-800', 'text-slate-500');
+        btnHeader.classList.add('bg-emerald-500', 'text-slate-950', 'shadow-lg');
+        btnHeader.disabled = false;
+
+        btnCheckout.disabled = false;
+        btnCheckout.classList.remove('bg-slate-800', 'text-slate-500', 'cursor-not-allowed', 'opacity-60');
+        btnCheckout.classList.add('bg-emerald-500', 'text-slate-950', 'hover:bg-emerald-400', 'shadow-lg');
+        btnCheckout.innerHTML = `Ir para o Pagamento <i class="fa-solid fa-arrow-right"></i>`;
+      } else {
+        if (!isLicenseValid()) {
+          btnCheckout.disabled = true;
+          btnCheckout.classList.add('bg-slate-800', 'text-slate-500', 'cursor-not-allowed', 'opacity-60');
+          btnCheckout.classList.remove('bg-emerald-500', 'text-slate-950', 'hover:bg-emerald-400', 'shadow-lg');
+          btnCheckout.innerHTML = `<i class="fa-solid fa-lock mr-1"></i> Sistema em Renovação de Licença`;
+        } else if (!isPixKeyValid()) {
+          btnCheckout.disabled = true;
+          btnCheckout.classList.add('bg-slate-800', 'text-slate-500', 'cursor-not-allowed', 'opacity-60');
+          btnCheckout.classList.remove('bg-emerald-500', 'text-slate-950', 'hover:bg-emerald-400', 'shadow-lg');
+          btnCheckout.innerHTML = `<i class="fa-solid fa-lock mr-1"></i> Aguardando Chave PIX do Lojista`;
+        } else {
+          btnCheckout.disabled = true;
+          btnCheckout.classList.add('bg-slate-800', 'text-slate-500', 'cursor-not-allowed', 'opacity-60');
+          btnCheckout.classList.remove('bg-emerald-500', 'text-slate-950', 'hover:bg-emerald-400', 'shadow-lg');
+          btnCheckout.innerHTML = `Ir para o Pagamento <i class="fa-solid fa-arrow-right"></i>`;
+        }
+        badge.classList.add('hidden');
+        btnHeader.classList.add('opacity-60', 'cursor-not-allowed', 'bg-slate-800', 'text-slate-500');
+        btnHeader.classList.remove('bg-emerald-500', 'text-slate-950', 'shadow-lg');
+        btnHeader.disabled = true;
+      }
+
+      document.getElementById('cartCountLabel').textContent = `${totalCount} ${totalCount === 1 ? 'item' : 'itens'}`;
+      document.getElementById('cartSubtotalText').textContent = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+      document.getElementById('cartDeliveryText').textContent = `R$ ${fee.toFixed(2).replace('.', ',')}`;
+      document.getElementById('cartGrandTotalText').textContent = `R$ ${grandTotal.toFixed(2).replace('.', ',')}`;
+
+      const listContainer = document.getElementById('cartItemsList');
+      if (cart.length === 0) {
+        listContainer.innerHTML = `<p class="text-center text-xs text-slate-500 py-10">Carrinho vazio.<br>Adicione itens do cardápio.</p>`;
+      } else {
+        listContainer.innerHTML = cart.map(i => `
+          <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-950/50 border border-slate-800/80">
+            <div class="min-w-0 flex-1">
+              <h5 class="text-xs font-bold text-white truncate">${i.name}</h5>
+              <p class="text-[11px] text-emerald-400">${i.quantity}x R$ ${i.price.toFixed(2).replace('.', ',')} = R$ ${(i.quantity * i.price).toFixed(2).replace('.', ',')}</p>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="decreaseCart('${i.id}')" class="w-fit flex h-6 w-6 items-center justify-center rounded bg-slate-800 text-slate-300 hover:bg-slate-700"><i class="fa-solid fa-minus text-[10px]"></i></button>
+              <span class="w-5 text-center text-xs font-bold text-white">${i.quantity}</span>
+              <button onclick="addToCart('${i.id}')" class="w-fit flex h-6 w-6 items-center justify-center rounded bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400"><i class="fa-solid fa-plus text-[10px]"></i></button>
+              <button onclick="removeCartItem('${i.id}')" class="w-fit flex h-6 w-6 items-center justify-center rounded text-red-400 hover:bg-red-500/20 ml-1"><i class="fa-solid fa-trash-can text-[10px]"></i></button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const mobileBar = document.getElementById('mobileCartBar');
+      if (cart.length > 0 && isAvailable) {
+        mobileBar.classList.remove('hidden');
+        document.getElementById('mobileCartCount').textContent = `${totalCount} ${totalCount === 1 ? 'item' : 'itens'}`;
+        document.getElementById('mobileCartTotal').textContent = `R$ ${grandTotal.toFixed(2).replace('.', ',')}`;
+      } else {
+        mobileBar.classList.add('hidden');
+      }
+    }
+
+    function openCheckoutModal() {
+      if (!isLicenseValid()) {
+        alert('O sistema deste restaurante está em processo de renovação da licença. Os pagamentos e pedidos estão temporariamente pausados.');
+        return;
+      }
+      if (!isPixKeyValid()) {
+        alert('O lojista ainda não cadastrou a Chave PIX da loja no sistema. O pagamento será liberado assim que o lojista cadastrar sua chave no painel.');
+        return;
+      }
+      if (cart.length === 0) return;
+      document.getElementById('checkoutSuccessArea').classList.add('hidden');
+      document.getElementById('checkoutFormArea').classList.remove('hidden');
+      document.getElementById('checkoutModal').classList.remove('hidden');
+      backToStep1();
+
+      // Inicia captura suave em segundo plano se ainda não capturado
+      if (!gpsCoords) {
+        setTimeout(() => {
+          if (!gpsCoords) captureRealtimeGps(true);
+        }, 300);
+      }
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkoutModal').classList.add('hidden');
+    }
+
+    function applyGpsSuccess(lat, lng, acc, sourceDesc) {
+      gpsCoords = { lat: Number(lat), lng: Number(lng), acc: acc || 20 };
+      const btn = document.getElementById('btnGpsCapture');
+      const statusArea = document.getElementById('gpsStatusArea');
+      if (btn) {
+        btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Localização Confirmada`;
+        btn.classList.remove('bg-emerald-500');
+        btn.classList.add('bg-emerald-600', 'text-white');
+        btn.disabled = false;
+      }
+      if (statusArea) {
+        const mapsLink = `https://www.google.com/maps/search/?api=1&query=${gpsCoords.lat},${gpsCoords.lng}`;
+        statusArea.innerHTML = `<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i> Localização confirmada (${sourceDesc})!</span> <a href="${mapsLink}" target="_blank" class="text-indigo-400 hover:text-indigo-300 underline font-bold ml-1.5 inline-flex items-center gap-1">Ver no Google Maps <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>`;
+      }
+    }
+
+    async function tryGeocodeAddress() {
+      const street = document.getElementById('custStreet')?.value.trim();
+      const num = document.getElementById('custNumber')?.value.trim();
+      const neighborhood = document.getElementById('custNeighborhood')?.value.trim();
+      if (!street || !num) return;
+
+      const cityName = (config && config.merchantCity) ? config.merchantCity : 'Brasil';
+      const query = `${street}, ${num}, ${neighborhood ? neighborhood + ', ' : ''}${cityName}`;
+
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=br&limit=1`, {
+          headers: { 'Accept-Language': 'pt-BR' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            applyGpsSuccess(data[0].lat, data[0].lon, 10, 'Endereço da Residência');
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function captureRealtimeGps(silent = false) {
+      const btn = document.getElementById('btnGpsCapture');
+      const statusArea = document.getElementById('gpsStatusArea');
+
+      if (!silent) {
+        if (btn) {
+          btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Localizando...`;
+          btn.disabled = true;
+        }
+        if (statusArea) {
+          statusArea.innerHTML = `<span class="text-slate-300"><i class="fa-solid fa-location-crosshairs animate-pulse mr-1"></i> Identificando localização exata...</span>`;
+        }
+      }
+
+      // Função de fallback por Rede / IP
+      const fallbackToNetwork = async () => {
+        try {
+          const res = await fetch('https://ipwho.is/');
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.latitude && data.longitude) {
+              applyGpsSuccess(data.latitude, data.longitude, 100, data.city ? `Rede • ${data.city}` : 'Rede');
+              return true;
+            }
+          }
+        } catch (e) {}
+
+        try {
+          const res2 = await fetch('https://ipapi.co/json/');
+          if (res2.ok) {
+            const data2 = await res2.json();
+            if (data2 && data2.latitude && data2.longitude) {
+              applyGpsSuccess(data2.latitude, data2.longitude, 100, data2.city ? `Rede • ${data2.city}` : 'Rede');
+              return true;
+            }
+          }
+        } catch (e) {}
+
+        return false;
+      };
+
+      // Se rua e número já foram informados, tenta geocodificação direta
+      const street = document.getElementById('custStreet')?.value.trim();
+      const num = document.getElementById('custNumber')?.value.trim();
+      if (street && num) {
+        try {
+          const cityName = (config && config.merchantCity) ? config.merchantCity : 'Brasil';
+          const query = `${street}, ${num}, ${cityName}`;
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=br&limit=1`, {
+            headers: { 'Accept-Language': 'pt-BR' }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              applyGpsSuccess(data[0].lat, data[0].lon, 10, 'Endereço da Residência');
+              return;
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Geolocalização nativa
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            applyGpsSuccess(pos.coords.latitude, pos.coords.longitude, Math.round(pos.coords.accuracy), 'GPS do Aparelho');
+          },
+          async () => {
+            const ok = await fallbackToNetwork();
+            if (!ok && btn) {
+              btn.innerHTML = `📍 Usar Minha Localização Atual`;
+              btn.disabled = false;
+              if (statusArea) {
+                statusArea.innerHTML = `<span class="text-emerald-400">Preencha Rua e Número que a localização será definida automaticamente!</span>`;
+              }
+            }
+          },
+          { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
+        );
+      } else {
+        fallbackToNetwork();
+      }
+    }
+
+    function copyPixCode() {
+      const input = document.getElementById('mpPixCopiaColaInput');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      const txt = document.getElementById('copyPixBtnText');
+      txt.textContent = 'Copiado!';
+      setTimeout(() => { txt.textContent = 'Copiar'; }, 2000);
+    }
+
+    function backToStep1() {
+      document.getElementById('checkoutStep2Area').classList.add('hidden');
+      document.getElementById('checkoutStep1Area').classList.remove('hidden');
+    }
+
+    // GERAÇÃO 100% OFFLINE / CLIENT-SIDE DO PIX OFICIAL DO LOJISTA COM SOMA DINÂMICA
+    function generateStorePixPayment() {
+      const name = document.getElementById('custName').value.trim();
+      const phone = document.getElementById('custPhone').value.trim();
+      const street = document.getElementById('custStreet').value.trim();
+      const num = document.getElementById('custNumber').value.trim();
+      const neighborhood = document.getElementById('custNeighborhood').value.trim();
+      const complement = document.getElementById('custComplement').value.trim();
+
+      if (!name) { alert('Por favor, informe seu nome.'); return; }
+      if (!street || !num) { alert('Por favor, informe a Rua e o Número da casa para entrega.'); return; }
+
+      const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+      const total = subtotal + (config.deliveryFee || 5.00);
+
+      let lastNum = parseInt(localStorage.getItem('DELIVERY_LAST_NUM') || '1000', 10);
+      const orderNumber = lastNum + 1;
+
+      const fullAddress = `${street}, ${num}${neighborhood ? ' - ' + neighborhood : ''}`;
+      const mapsUrl = gpsCoords 
+        ? `https://www.google.com/maps/search/?api=1&query=${gpsCoords.lat},${gpsCoords.lng}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+
+      pendingOrderPayload = {
+        id: 'ord-' + Date.now(),
+        orderNumber: `#${orderNumber}`,
+        createdAt: new Date().toISOString(),
+        items: cart.map(it => ({ id: it.id, title: it.name, price: it.price, quantity: it.quantity })),
+        subtotal: subtotal,
+        deliveryFee: config.deliveryFee || 5.00,
+        total: total,
+        paymentMethod: `PIX Direto Loja (${config.pixKey})`,
+        customer: {
+          name: name,
+          phone: phone,
+          street: street,
+          number: num,
+          complement: complement,
+          location: gpsCoords ? { lat: gpsCoords.lat, lng: gpsCoords.lng } : null
+        },
+        status: 'pago'
+      };
+
+      // GERAR BR CODE OFICIAL DO BANCO CENTRAL COM VALOR DINÂMICO
+      const brCode = generatePixBRCode({
+        pixKey: config.pixKey,
+        merchantName: config.merchantName || config.storeName || 'FAST DELIVERY',
+        merchantCity: config.merchantCity || 'BRASIL',
+        amount: total,
+        txid: 'PED' + orderNumber
+      });
+
+      document.getElementById('pixOrderValueText').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+      document.getElementById('mpPixCopiaColaInput').value = brCode;
+      document.getElementById('pixRecipientInfo').textContent = `Chave: ${config.pixKey} • Recebedor: ${config.merchantName || config.storeName || 'Loja'}`;
+
+      // Renderiza QR Code no container
+      const qrContainer = document.getElementById('pixQrContainer');
+      qrContainer.innerHTML = '';
+      try {
+        new QRCode(qrContainer, {
+          text: brCode,
+          width: 200,
+          height: 200,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (e) {
+        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(brCode)}" width="200" height="200" alt="QR Code PIX">`;
+      }
+
+      // Mostra tela de pagamento
+      document.getElementById('checkoutStep1Area').classList.add('hidden');
+      document.getElementById('checkoutStep2Area').classList.remove('hidden');
+    }
+
+    // CONFIRMAÇÃO DO PAGAMENTO
+    function confirmPaymentCompleted() {
+      if (!pendingOrderPayload) return;
+
+      // Incrementa número do pedido
+      let lastNum = parseInt(localStorage.getItem('DELIVERY_LAST_NUM') || '1000', 10);
+      localStorage.setItem('DELIVERY_LAST_NUM', (lastNum + 1).toString());
+
+      // Salva no banco de pedidos da loja (delivery_orders_v1)
+      const orders = JSON.parse(localStorage.getItem('delivery_orders_v1') || '[]');
+      orders.unshift(pendingOrderPayload); // Novo pedido sempre em primeiro
+      localStorage.setItem('delivery_orders_v1', JSON.stringify(orders));
+
+      // Sincroniza com o servidor local /api/orders
+      try {
+        fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pendingOrderPayload)
+        }).catch(() => {});
+      } catch (e) {}
+
+      // Dispara evento para sincronizar com o painel de impressão instantaneamente
+      window.dispatchEvent(new Event('storage'));
+
+      // Limpa carrinho
+      cart = [];
+      updateCartUI();
+      renderProducts();
+
+      // Exibe tela de confirmação
+      document.getElementById('checkoutFormArea').classList.add('hidden');
+      document.getElementById('checkoutSuccessArea').classList.remove('hidden');
+      document.getElementById('successOrderTitle').textContent = `Pedido ${pendingOrderPayload.orderNumber} Confirmado & Pago!`;
+      document.getElementById('successOrderDesc').innerHTML = `Seu PIX de <strong class="text-emerald-400">R$ ${pendingOrderPayload.total.toFixed(2).replace('.', ',')}</strong> foi registrado com sucesso! A folha de separação com sua <strong class="text-emerald-300">localização no Google Maps</strong> já está sendo impressa na loja para entrega imediata!`;
+    }
+
+    function resetAndNewOrder() {
+      closeCheckoutModal();
+      gpsCoords = null;
+      backToStep1();
+    }
+
+    // Monitora atualizações da loja e produtos em tempo real
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'DELIVERY_CONFIG') {
+        try {
+          config = JSON.parse(e.newValue);
+          init();
+        } catch (err) {}
+      }
+      if (e.key === 'DELIVERY_PRODUCTS') {
+        try {
+          products = JSON.parse(e.newValue);
+          renderProducts();
+        } catch (err) {}
+      }
+      if (e.key === 'LOJISTA_SESSION') {
+        initLojistaControls();
+      }
+    });
+
+    window.onload = init;
+  </script>
+</body>
+</html>

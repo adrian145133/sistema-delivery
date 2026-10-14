@@ -1,0 +1,2891 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>App do Motoboy - Rotas & Entregas Inteligentes</title>
+
+  <!-- PWA & MODO TELA CHEIA NATIVO (SEM BARRA DE ENDEREÇO / URL) -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Entregador">
+  <meta name="theme-color" content="#090d16">
+  <link rel="manifest" href="manifest-motoboy.json">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Pro/Free Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- jsQR para leitura ultra rápida de QR Code via Câmera -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+  <style>
+    body {
+      background-color: #090d16;
+      color: #f1f5f9;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      touch-action: manipulation;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- ==================================================== -->
+  <!-- TELA DE BLOQUEIO: LINK INVÁLIDO, EXPIRADO OU JÁ QUEIMADO -->
+  <!-- ==================================================== -->
+  <div id="driverLinkBlockedScreen" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-4">
+    <div class="w-full max-w-sm rounded-2xl border border-rose-500/40 bg-slate-900 p-6 sm:p-8 text-center text-white shadow-2xl space-y-4 my-auto">
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 text-3xl shadow-sm">
+        <i class="fa-solid fa-shield-halved" id="blockedScreenIcon"></i>
+      </div>
+
+      <div class="space-y-2">
+        <h2 class="text-base font-black tracking-tight text-rose-400" id="blockedScreenTitle">Link Já Utilizado e Queimado!</h2>
+        <p class="text-xs text-slate-300 font-medium leading-relaxed" id="blockedScreenMsg">
+          Este link de cadastro já foi utilizado e finalizado.
+        </p>
+      </div>
+
+      <div class="pt-2">
+        <button type="button" onclick="window.location.reload()" class="w-fit mx-auto inline-flex items-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-2 text-xs font-bold text-slate-300 transition-all active:scale-95">
+          <i class="fa-solid fa-arrow-rotate-right"></i> Tentar Novamente
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- TELA DE PAREAMENTO & AUTO-CADASTRO DO MOTOBOY        -->
+  <!-- ==================================================== -->
+  <!-- ==================================================== -->
+  <!-- TELA DE AUTENTICAÇÃO: LOGIN COM DIGITAL OU CADASTRO  -->
+  <!-- ==================================================== -->
+  <div id="unpairedDriverScreen" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-4 overflow-y-auto">
+    <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/95 backdrop-blur-md p-6 text-center text-white shadow-2xl space-y-4 my-auto">
+      
+      <!-- LOGO / ÍCONE SUPERIOR -->
+      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-2xl shadow-sm">
+        <i class="fa-solid fa-motorcycle"></i>
+      </div>
+
+      <!-- ABA 1: LOGIN DO MOTOBOY (COM DIGITAL E IDENTIFICAÇÃO PRIVADA) -->
+      <!-- ABA 1: LOGIN DO MOTOBOY (COM TELEFONE E CÓDIGO DE VERIFICAÇÃO) -->
+      <div id="authTabLogin" class="space-y-4">
+        <div>
+          <h2 class="text-base font-black tracking-tight text-white flex items-center justify-center gap-2">
+            <i class="fa-solid fa-motorcycle text-emerald-400 text-xl"></i>
+            <span>Acesso do Entregador</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Informe seu telefone cadastrado para receber o código de login</p>
+        </div>
+
+        <div class="space-y-3 text-left">
+          <!-- CARD EXIBIDO QUANDO O DISPOSITIVO JÁ TEM O PERFIL DESTE MOTOBOY SALVO -->
+          <div id="savedDriverProfileCard" class="hidden rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-3.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                  <i class="fa-solid fa-circle-check text-xs"></i> Entregador Salvo
+                </span>
+                <h4 id="savedDriverNameText" class="text-sm font-bold text-white truncate">---</h4>
+                <p id="savedDriverVehicleText" class="text-xs text-slate-400 truncate">---</p>
+              </div>
+              <button type="button" onclick="disconnectDriverProfile()" class="w-fit text-xs text-slate-400 hover:text-red-400 transition-colors p-1" title="Entrar com outro entregador">
+                <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Trocar
+              </button>
+            </div>
+          </div>
+
+          <form id="driverLoginForm" onsubmit="handleDriverPhoneLogin(event)" class="space-y-3">
+            <!-- 1. CAMPO DE TELEFONE -->
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Seu WhatsApp / Telefone Cadastrado *</label>
+              <div class="flex gap-2">
+                <input type="tel" id="loginDriverPhoneInput" required placeholder="(92) 99999-9999" maxlength="15" class="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white font-medium focus:border-emerald-500 focus:outline-none">
+                <button type="button" id="btnSendPhoneCode" onclick="handleSendDriverPhoneCode()" class="w-fit shrink-0 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold px-3 py-2 text-xs transition-all active:scale-95 flex items-center gap-1 shadow-sm">
+                  <i class="fa-regular fa-paper-plane text-xs"></i>
+                  <span>Enviar Código</span>
+                </button>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1">Coloque seu telefone e clique em "Enviar Código" para receber seu código de acesso.</p>
+            </div>
+
+            <!-- NOTIFICAÇÃO DO CÓDIGO RECEBIDO -->
+            <div id="phoneCodeNotificationBox" class="hidden p-3 rounded-xl bg-indigo-950/60 border border-indigo-500/50 space-y-1 text-center">
+              <div class="flex items-center justify-center gap-1.5 text-indigo-300 font-bold text-xs">
+                <i class="fa-solid fa-bell text-amber-400"></i>
+                <span>Código de Acesso Recebido:</span>
+              </div>
+              <div class="inline-block py-1 px-3 bg-slate-900 border border-indigo-400/50 rounded-lg">
+                <span id="receivedCodeDisplay" class="font-mono text-xl font-black text-white tracking-widest">--- ---</span>
+              </div>
+              <p class="text-[10px] text-slate-400">Digite este código abaixo para concluir seu login</p>
+            </div>
+
+            <!-- 2. CÓDIGO RECEBIDO NO TELEFONE -->
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Código de 6 Dígitos Enviado ao Celular *</label>
+              <input type="text" id="loginDriverPhoneCodeInput" required maxlength="7" placeholder="000-000" inputmode="numeric" style="width: 16ch; max-width: 100%;" class="font-mono text-center text-base tracking-widest font-black rounded-xl border border-indigo-500/50 bg-slate-900 px-3 py-2 text-indigo-300 focus:border-indigo-400 focus:outline-none">
+            </div>
+
+            <!-- ALERTA DE STATUS / ERRO -->
+            <div id="loginDriverAlert" class="hidden text-xs p-2.5 rounded-xl font-bold"></div>
+
+            <!-- BOTÃO DE ENTRAR -->
+            <button type="submit" id="btnDriverSubmitLogin" class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 py-3 text-xs font-black text-slate-950 shadow-lg shadow-emerald-950/40 active:scale-95 transition-all flex items-center justify-center gap-2">
+              <i class="fa-solid fa-arrow-right-to-bracket text-sm"></i>
+              <span>Entrar / Iniciar Turno</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800/80 text-center">
+          <p class="text-xs text-slate-400">
+            Ainda não está cadastrado? Peça o <strong class="text-indigo-400">link de cadastro de 5 minutos</strong> ao restaurante.
+          </p>
+        </div>
+      </div>
+
+      <!-- ABA 3: CADASTRO DO ENTREGADOR (FRENTE E VERSO DO RG, E-MAIL E SENHA) -->
+      <div id="authTabRegister" class="hidden space-y-3.5 text-left text-xs">
+        <div class="text-center pb-2 border-b border-slate-800">
+          <h3 class="text-base font-black text-white">Cadastro de Entregador</h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">Preencha seus dados com RG frente e verso, e-mail e senha para registrar seu perfil.</p>
+        </div>
+
+        <form onsubmit="handleSaveDriverRegistration(event)" class="space-y-3">
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">Seu Nome Completo *</label>
+            <input type="text" id="regDriverName" required placeholder="Ex: Roberto Carlos" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">WhatsApp / Telefone *</label>
+              <input type="text" id="regDriverPhone" required placeholder="(11) 99999-8888" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Moto / Placa *</label>
+              <input type="text" id="regDriverVehicle" required placeholder="Ex: CG 160 (ABC-1234)" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+            </div>
+          </div>
+
+          <!-- E-MAIL E CONFIRMAÇÃO DE E-MAIL -->
+          <div class="p-2.5 rounded-xl border border-emerald-500/40 bg-emerald-950/20 space-y-2">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+              <i class="fa-solid fa-envelope text-xs"></i> Dados de Acesso (E-mail e Senha)
+            </span>
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Cadastrar E-mail *</label>
+              <input type="email" id="regDriverEmail" required placeholder="seu-email@exemplo.com" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Confirmar E-mail *</label>
+              <input type="email" id="regDriverEmailConfirm" required placeholder="Repita seu e-mail" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <div>
+                <label class="block font-bold text-slate-300 mb-1">Criar Senha *</label>
+                <input type="password" id="regDriverPassword" required minlength="4" placeholder="Mínimo 4 dígitos" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-300 mb-1">Confirmar Senha *</label>
+                <input type="password" id="regDriverPasswordConfirm" required minlength="4" placeholder="Repita a senha" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-emerald-500 focus:outline-none">
+              </div>
+            </div>
+          </div>
+
+          <!-- FOTO DA FRENTE DO RG / CNH -->
+          <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/80 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="block font-bold text-slate-200">
+                <i class="fa-solid fa-id-card text-indigo-400 mr-1"></i> Foto da FRENTE do RG / CNH *
+              </label>
+              <span id="regRgFrenteStatusTag" class="hidden text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-md">✓ Frente Anexada</span>
+            </div>
+
+            <label class="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2.5 px-3 text-xs font-bold text-white shadow-sm cursor-pointer active:scale-95 transition-all">
+              <i class="fa-solid fa-camera"></i>
+              <span>📷 Tirar Foto da Frente ou Galeria</span>
+              <input type="file" id="regDriverRgFrenteInput" accept="image/*" onchange="handlePreviewRegRgFrente(event)" class="hidden">
+            </label>
+
+            <div id="regRgFrentePreviewBox" class="hidden mt-1 flex items-center gap-2 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
+              <img id="regRgFrentePreviewImg" src="" alt="Frente RG" class="h-10 w-14 object-cover rounded-md border border-indigo-500/50">
+              <span class="text-[10px] text-emerald-400 font-bold">Frente carregada ✓</span>
+            </div>
+          </div>
+
+          <!-- FOTO DO VERSO DO RG / CNH -->
+          <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-950/80 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="block font-bold text-slate-200">
+                <i class="fa-solid fa-id-card-clip text-indigo-400 mr-1"></i> Foto do VERSO do RG / CNH *
+              </label>
+              <span id="regRgVersoStatusTag" class="hidden text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-md">✓ Verso Anexado</span>
+            </div>
+
+            <label class="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-2.5 px-3 text-xs font-bold text-white shadow-sm cursor-pointer active:scale-95 transition-all">
+              <i class="fa-solid fa-camera"></i>
+              <span>📷 Tirar Foto do Verso ou Galeria</span>
+              <input type="file" id="regDriverRgVersoInput" accept="image/*" onchange="handlePreviewRegRgVerso(event)" class="hidden">
+            </label>
+
+            <div id="regRgVersoPreviewBox" class="hidden mt-1 flex items-center gap-2 bg-slate-900 p-1.5 rounded-lg border border-slate-800">
+              <img id="regRgVersoPreviewImg" src="" alt="Verso RG" class="h-10 w-14 object-cover rounded-md border border-indigo-500/50">
+              <span class="text-[10px] text-emerald-400 font-bold">Verso carregado ✓</span>
+            </div>
+          </div>
+
+          <div id="regErrorAlert" class="hidden text-xs text-rose-400 font-bold bg-rose-500/10 border border-rose-500/30 p-2 rounded-xl"></div>
+
+          <div class="pt-2">
+            <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 py-3 text-xs font-black text-slate-950 shadow-lg shadow-emerald-950/40 active:scale-95 transition-all">
+              <i class="fa-solid fa-circle-check mr-1"></i> Concluir Cadastro & Bater Ponto
+            </button>
+          </div>
+
+          <div class="text-center pt-2">
+            <button type="button" onclick="showDriverLoginTab()" class="text-xs text-slate-400 hover:text-slate-200 underline">
+              Já possui cadastro? Fazer Login
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <p class="text-[10px] text-slate-500 pt-1 cursor-pointer hover:text-emerald-400 transition-colors" onclick="configureServerUrl()" title="Clique para configurar o IP da Central"><i class="fa-solid fa-server mr-1"></i>Conexão segura direta com a central do restaurante</p>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- TOPO / CABEÇALHO DO MOTOBOY                          -->
+  <!-- ==================================================== -->
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 shadow-md">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+          <i class="fa-solid fa-motorcycle text-base"></i>
+        </div>
+        <div>
+          <h1 id="storeNameHeader" class="text-xs font-black uppercase tracking-wider text-slate-100">Delivery Express</h1>
+          <p class="text-[11px] text-emerald-400 font-bold flex items-center gap-1">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Modo Entregador Ativo
+          </p>
+        </div>
+      </div>
+
+      <!-- BADGE DO MOTOBOY PAREADO E CONTROLES DE TURNO -->
+      <div id="driverPairedBadge" class="flex items-center gap-2 flex-wrap justify-end">
+        <span class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs font-bold text-slate-200">
+          <i class="fa-solid fa-user text-emerald-400"></i>
+          <span id="currentDriverNameBadge">Motoboy</span>
+        </span>
+
+        <!-- STATUS DO TURNO COM BOTÃO DE ENCERRAR -->
+        <div id="shiftHeaderControls">
+          <button id="headerCloseShiftBtn" onclick="openCloseShiftModal()" class="hidden w-fit inline-flex items-center gap-1 rounded-lg border border-rose-500/50 bg-rose-950/70 hover:bg-rose-900 px-2 py-1 text-[11px] font-bold text-rose-300 transition-colors shadow-xs" title="Bater ponto de saída e encerrar o turno de hoje">
+            <i class="fa-solid fa-power-off text-rose-400"></i> Encerrar Turno
+          </button>
+        </div>
+
+
+        <button onclick="handleLogoutDriver()" class="w-fit text-[11px] text-slate-400 hover:text-slate-200 bg-slate-800/80 border border-slate-700 px-2 py-1 rounded transition-colors" title="Fazer logout da sessão">
+          Sair
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================================================== -->
+  <!-- CONTEÚDO PRINCIPAL (MOBILE FIRST)                    -->
+  <!-- ==================================================== -->
+  <main class="flex-1 max-w-md mx-auto w-full p-4 space-y-4">
+
+    <!-- ÁREA ATIVA DO MOTOBOY (SCANNER E ROTAS) -->
+    <div id="inShiftArea" class="space-y-4">
+
+    <!-- PAINEL DE CONTROLE DE ESCANEAMENTO -->
+    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl text-center space-y-3">
+      
+      <div class="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/80 pb-2.5">
+        <span class="flex items-center gap-1.5 font-bold text-slate-300">
+          <i class="fa-solid fa-box-archive text-emerald-400"></i> Pedidos Coletados:
+        </span>
+        <span id="collectedBadgeCount" class="font-mono font-bold text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-emerald-400 border border-slate-700">
+          0 pedidos
+        </span>
+      </div>
+
+      <!-- BOTÕES DE ESCANEAR CÂMERA -->
+      <div class="space-y-2">
+        <button onclick="startQrScanner()" class="w-full flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 py-3.5 text-sm font-black text-slate-950 shadow-lg shadow-emerald-950/40 active:scale-98 transition-all">
+          <i class="fa-solid fa-camera text-base"></i>
+          <span>Escanear QR Code da Comanda</span>
+        </button>
+
+        <label class="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-800/90 hover:bg-slate-800 border border-slate-700 py-2.5 text-xs font-bold text-slate-200 cursor-pointer active:scale-98 transition-all">
+          <i class="fa-solid fa-camera-rotate text-emerald-400"></i>
+          <span>📷 Tirar Foto da Comanda (Celular)</span>
+          <input type="file" accept="image/*" capture="environment" onchange="handleQrPhotoCapture(event)" class="hidden">
+        </label>
+      </div>
+
+      <p class="text-[10px] text-slate-500 text-center pt-0.5">
+        <i class="fa-solid fa-shield-check text-emerald-400/80 mr-1"></i>
+        Validação física obrigatória: aponte a câmera para o QR Code da folha A4.
+      </p>
+    </div>
+
+    <!-- ================================================== -->
+    <!-- ÁREA DA ROTA OTIMIZADA E LISTA DE PARADAS          -->
+    <!-- ================================================== -->
+    <div id="routeSection" class="space-y-3 hidden">
+      
+      <!-- CARD DE ROTA PRONTA / BOTAO GOOGLE MAPS COMPLETO -->
+      <div class="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/40 to-slate-900 p-4 shadow-xl space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400 text-xs font-black">
+              <i class="fa-solid fa-route"></i>
+            </span>
+            <h2 class="text-xs font-black uppercase tracking-wider text-indigo-200">Melhor Rota Calculada</h2>
+          </div>
+          <span id="routeTotalStops" class="text-[11px] font-bold text-indigo-400 bg-indigo-950/80 px-2 py-0.5 rounded-md border border-indigo-800/50">
+            1 parada
+          </span>
+        </div>
+
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Os pedidos foram organizados na sequência mais rápida e inteligente pelo sistema.
+        </p>
+
+        <!-- BOTÃO PARA INICIAR NAVEGAÇÃO COMPLETA NO GOOGLE MAPS -->
+        <a id="openFullGmapsRouteBtn" href="#" target="_blank" rel="noopener noreferrer" class="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 py-3.5 text-xs font-black text-slate-950 shadow-lg shadow-emerald-950/50 active:scale-95 transition-all">
+          <i class="fa-solid fa-diamond-turn-right text-sm"></i>
+          <span>Abrir Rota Otimizada no Google Maps</span>
+        </a>
+      </div>
+
+      <!-- LISTAGEM ORDENADA DAS PARADAS -->
+      <div class="space-y-2">
+        <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1">Sequência de Entregas:</h3>
+        <div id="stopsListContainer" class="space-y-2.5">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+
+      <!-- BOTÃO LIMPAR / FINALIZAR VIAGEM -->
+      <div class="pt-2">
+        <button onclick="handleFinishTrip()" class="w-full text-center text-xs font-semibold text-slate-500 hover:text-slate-300 py-2 underline">
+          Finalizar / Limpar Esta Viagem
+        </button>
+      </div>
+
+    </div>
+
+    <!-- LISTA DE PEDIDOS COLETADOS (ENQUANTO ADICIONA) -->
+    <div id="pendingStopsSection" class="space-y-2">
+      <div id="pendingStopsList" class="space-y-2">
+        <!-- Renderizado dinamicamente -->
+      </div>
+    </div>
+
+    </div> <!-- FIM inShiftArea -->
+
+  </main>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: CONFIRMAÇÃO OBRIGATÓRIA DE FECHAMENTO (DIGITAR 'SIM') -->
+  <!-- ==================================================== -->
+  <div id="closeShiftModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+    <div class="w-full max-w-sm rounded-2xl border border-rose-500/40 bg-slate-950 p-6 shadow-2xl text-center space-y-4">
+      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 text-2xl">
+        <i class="fa-solid fa-power-off"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-black text-white">Encerrar Turno de Hoje?</h3>
+        <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+          Para evitar encerramento acidental, digite <strong>sim</strong> no campo abaixo para bater o ponto de saída:
+        </p>
+      </div>
+      <div>
+        <input type="text" id="confirmCloseShiftInput" placeholder="Digite 'sim' para encerrar" style="width: 25ch; max-width: 100%;" class="mx-auto text-center font-bold text-sm rounded-xl border border-rose-500/50 bg-slate-900 py-2.5 text-white focus:outline-none focus:border-rose-400">
+        <p id="closeShiftErrorMsg" class="hidden text-xs text-rose-400 font-bold mt-1.5">Digite exatamente "sim" para prosseguir.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-900">
+        <button onclick="closeCloseShiftModal()" type="button" class="rounded-xl border border-slate-700 bg-slate-900 py-2.5 text-xs font-bold text-slate-300 hover:bg-slate-800">
+          Cancelar
+        </button>
+        <button onclick="handleConfirmCloseShift()" type="button" class="rounded-xl bg-rose-600 hover:bg-rose-500 py-2.5 text-xs font-black text-white shadow-md active:scale-95 transition-all">
+          Confirmar Saída
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: RECONHECIMENTO FACIAL AO VIVO (LOGIN / PONTO) -->
+  <!-- ==================================================== -->
+  <div id="faceLoginModal" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-between bg-black/95 p-4 overflow-y-auto">
+    <!-- BARRA SUPERIOR DO SCANNER FACIAL -->
+    <div class="w-full max-w-md flex items-center justify-between pb-3 border-b border-slate-800">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-face-smile text-emerald-400 text-lg"></i>
+        <div>
+          <h3 class="text-sm font-bold text-white leading-tight">Reconhecimento Facial</h3>
+          <p class="text-[10px] text-slate-400">Olhe para a câmera para autenticar seu ponto</p>
+        </div>
+      </div>
+      <button onclick="stopFaceLoginScanner()" class="w-fit text-slate-400 hover:text-white p-2 text-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- FEEDBACK FLUTUANTE DE RECONHECIMENTO -->
+    <div id="faceLoginBanner" class="hidden w-full max-w-md my-2 p-3 bg-emerald-600 text-slate-950 font-black rounded-xl text-center text-xs shadow-xl transition-all">
+      ✅ ROSTO RECONHECIDO COM SUCESSO!
+    </div>
+
+    <!-- ÁREA DE VÍDEO DO SCANNER FACIAL (FRONTAL) -->
+    <div id="faceVideoContainerBox" class="relative w-full max-w-xs aspect-square mx-auto my-auto rounded-full overflow-hidden border-4 border-emerald-500/70 shadow-[0_0_35px_rgba(16,185,129,0.4)] flex items-center justify-center bg-black">
+      <video id="faceLiveVideo" playsinline webkit-playsinline muted autoplay class="w-full h-full object-cover scale-x-[-1]"></video>
+      <canvas id="faceCaptureCanvas" class="hidden"></canvas>
+
+      <!-- MOLDURA BIOMÉTRICA OVAL / CÍRCULO HUD E LASER -->
+      <div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+        <div class="w-48 h-56 border-2 border-dashed border-emerald-400/90 rounded-[50%] relative shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+          <div id="faceScanLaserLine" class="w-full h-0.5 bg-emerald-300 animate-pulse absolute top-1/2 left-0 shadow-[0_0_10px_#34d399]"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROLES DO RECONHECIMENTO FACIAL -->
+    <div class="w-full max-w-md text-center space-y-2.5 pt-3 border-t border-slate-900">
+      <p id="faceLoginStatusText" class="text-xs text-emerald-400 font-bold">Posicione seu rosto dentro da moldura circular:</p>
+
+      <!-- BOTÃO PRINCIPAL: CAPTURAR E RECONHECER ROSTO -->
+      <button id="btnCaptureFaceLive" onclick="handleCaptureAndVerifyFace()" class="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 py-3.5 text-xs font-black text-slate-950 shadow-lg shadow-emerald-950/50 active:scale-95 transition-all">
+        <i class="fa-solid fa-camera text-sm"></i>
+        <span>📸 Capturar e Validar Rosto</span>
+      </button>
+
+      <!-- BOTÃO DIRETO DE FOTO / FALLBACK DE ARQUIVO (PARA SMARTPHONES SEM WEBRTC HTTP) -->
+      <label class="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-800/90 hover:bg-slate-800 border border-slate-700 py-2.5 text-xs font-bold text-slate-200 cursor-pointer active:scale-95 transition-all">
+        <i class="fa-solid fa-id-badge text-emerald-400"></i>
+        <span>📷 Tirar Selfie com Câmera do Aparelho</span>
+        <input type="file" id="facePhotoFileInput" accept="image/*" capture="user" onchange="handleFacePhotoUpload(event)" class="hidden">
+      </label>
+
+      <button onclick="stopFaceLoginScanner()" class="w-fit mx-auto rounded-xl bg-slate-800 px-5 py-2 text-xs font-bold text-slate-200">
+        Cancelar
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: CÂMERA SCANNER DE QR CODE (FLUXO ÁGIL CONTÍNUO) -->
+  <!-- ==================================================== -->
+  <div id="scannerModal" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-between bg-black/95 p-3 sm:p-4 overflow-y-auto">
+    <!-- BARRA SUPERIOR DO SCANNER -->
+    <div class="w-full max-w-md flex items-center justify-between pb-2.5 border-b border-slate-800 shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-base">
+          <i class="fa-solid fa-qrcode"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-black text-white leading-tight">Leitor Rápido de Comandas</h3>
+          <p class="text-[10px] text-slate-400">Bipe as folhas A4 para adicionar à viagem</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- BOTÃO LANTERNA / FLASH -->
+        <button id="scannerTorchBtn" type="button" onclick="toggleTorch()" class="w-fit text-slate-400 hover:text-amber-400 p-2 rounded-xl text-base transition-colors" title="Ligar/Desligar Lanterna">
+          <i class="fa-solid fa-bolt"></i>
+        </button>
+        <span id="scannerTripCounterBadge" class="font-mono text-xs font-black px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+          0 na rota
+        </span>
+        <button onclick="stopQrScanner()" class="w-fit text-slate-400 hover:text-white p-2 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- BANNER INSTANTÂNEO DE CONFIRMAÇÃO FLUTUANTE -->
+    <div id="scannerInstantBanner" class="hidden w-full max-w-md my-1.5 p-2.5 bg-emerald-600 text-slate-950 font-black rounded-xl text-center text-xs shadow-xl transition-all shrink-0">
+      ✅ PEDIDO BIPADO COM SUCESSO!
+    </div>
+
+    <!-- ÁREA DE VÍDEO DO SCANNER -->
+    <div id="videoContainerBox" class="relative w-full max-w-xs aspect-square mx-auto my-1.5 rounded-3xl overflow-hidden border-2 border-emerald-500/60 shadow-2xl flex items-center justify-center bg-black shrink-0">
+      <video id="qrVideo" playsinline webkit-playsinline muted autoplay class="w-full h-full object-cover"></video>
+      <canvas id="qrCanvas" class="hidden"></canvas>
+
+      <!-- MIRA LASER ANIMADA -->
+      <div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+        <div class="w-52 h-52 border-2 border-emerald-400/80 rounded-2xl relative shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+          <div class="w-full h-0.5 bg-emerald-400 animate-pulse absolute top-1/2 left-0 shadow-[0_0_8px_#34d399]"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTA VISUAL AO VIVO DOS PEDIDOS BIPADOS NESTA SAÍDA -->
+    <div class="w-full max-w-md flex-1 flex flex-col min-h-0 my-1">
+      <div class="flex items-center justify-between pb-1 px-1">
+        <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-boxes-stacked text-emerald-400"></i> Pedidos na Viagem:
+        </span>
+        <span id="scannerScannedCountMini" class="text-[11px] font-mono font-bold text-emerald-400">0 coletados</span>
+      </div>
+      <div id="scannerScannedItemsList" class="flex-1 overflow-y-auto custom-scroll space-y-1.5 max-h-36 p-1">
+        <!-- Renderizado dinamicamente via JS sem fechar a câmera -->
+      </div>
+    </div>
+
+    <!-- CONTROLES ADICIONAIS DO SCANNER -->
+    <div class="w-full max-w-md text-center space-y-2 pt-2 border-t border-slate-900 shrink-0">
+      <p id="scannerStatusText" class="text-[11px] text-slate-400">Aponte para o QR Code da comanda. Ao concluir todos, clique abaixo:</p>
+
+      <!-- BOTÃO PRINCIPAL: OK • INICIAR ENTREGAS (ROTEIRIZAR) -->
+      <button id="btnFinishScanAndRoute" onclick="confirmTripAndOrganizeRoute()" class="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 py-3.5 px-4 text-xs sm:text-sm font-black text-slate-950 shadow-xl shadow-emerald-950/60 active:scale-95 transition-all cursor-pointer">
+        <i class="fa-solid fa-circle-check text-base"></i>
+        <span>OK • Iniciar Entregas (<span id="btnFinishScanCountText">0 Pedidos</span>)</span>
+      </button>
+
+      <!-- BOTÕES SECUNDÁRIOS: FOTO OU DIGITAR -->
+      <div class="flex items-center justify-between gap-2 text-xs">
+        <label class="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 py-2 text-[11px] font-bold text-slate-300 cursor-pointer active:scale-95 transition-all">
+          <i class="fa-solid fa-camera text-emerald-400"></i>
+          <span>Tirar Foto</span>
+          <input type="file" id="qrPhotoFileInput" accept="image/*" capture="environment" onchange="handleQrPhotoCapture(event)" class="hidden">
+        </label>
+        <button type="button" onclick="promptManualOrder()" class="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 py-2 text-[11px] font-bold text-slate-300 active:scale-95 transition-all">
+          <i class="fa-solid fa-keyboard text-indigo-400"></i>
+          <span>Digitar Número</span>
+        </button>
+      </div>
+
+      <button onclick="stopQrScanner()" class="w-fit mx-auto text-xs text-slate-500 hover:text-slate-300 py-1">
+        Fechar Câmera
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL: ROTA PRONTA • ABRIR NO GOOGLE MAPS            -->
+  <!-- ==================================================== -->
+  <div id="routeReadyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-xs">
+    <div class="w-full max-w-sm rounded-3xl border border-emerald-500/40 bg-gradient-to-b from-slate-900 to-slate-950 p-6 text-center space-y-4 shadow-2xl shadow-emerald-950/60 animate-in fade-in zoom-in-95 duration-200">
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 text-3xl border border-emerald-500/30">
+        <i class="fa-solid fa-map-location-dot"></i>
+      </div>
+      
+      <div>
+        <h3 class="text-base font-black text-white">Rota Otimizada com Sucesso!</h3>
+        <p id="routeReadyModalSubtitle" class="text-xs text-slate-300 mt-1">
+          Suas entregas foram organizadas na melhor sequência.
+        </p>
+      </div>
+
+      <!-- BOTÃO GIGANTE DE ABERTURA NO GOOGLE MAPS -->
+      <a id="modalOpenGmapsBtn" href="#" target="_blank" rel="noopener noreferrer" onclick="closeRouteReadyModal()" class="w-full flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 py-4 px-4 text-sm font-black text-slate-950 shadow-xl shadow-emerald-950/60 active:scale-95 transition-all cursor-pointer">
+        <i class="fa-solid fa-diamond-turn-right text-base"></i>
+        <span>Abrir no Google Maps Agora</span>
+      </a>
+
+      <button type="button" onclick="closeRouteReadyModal()" class="w-full py-2.5 text-xs font-bold text-slate-400 hover:text-white transition-colors">
+        Ver Lista de Paradas no Painel
+      </button>
+    </div>
+  </div>
+
+  <!-- RODAPÉ COMPACTO -->
+  <footer class="p-3 text-center text-[10px] text-slate-600 border-t border-slate-900">
+    Sistema de Logística e Despacho Direto • Lojista & Motoboy Integrados
+  </footer>
+
+  <!-- ==================================================== -->
+  <!-- JAVASCRIPT: LÓGICA DO MOTOBOY & ROTA INTELIGENTE     -->
+  <!-- ==================================================== -->
+  <script>
+    const ORDERS_STORAGE_KEY = 'delivery_orders_v1';
+    const CONFIG_KEY = 'DELIVERY_CONFIG';
+    const DRIVERS_KEY = 'DELIVERY_DRIVERS';
+    const CURRENT_TRIP_KEY = 'MOTOBOY_CURRENT_TRIP_ORDERS';
+    const DRIVER_PAIRING_STORAGE_KEY = 'DELIVERY_DRIVER_PAIRING_CODE';
+    const PAIRED_DRIVERS_STORAGE_KEY = 'DELIVERY_PAIRED_DRIVERS';
+    const CURRENT_DRIVER_AUTH_KEY = 'MOTOBOY_AUTH_TOKEN';
+
+    let currentDriver = null;
+    let validatedPairingData = null;
+    let tripOrderIds = [];
+    let videoStream = null;
+    let isScanning = false;
+    let scanInterval = null;
+
+    function configureServerUrl() {
+      const current = localStorage.getItem('DELIVERY_SERVER_URL') || 'http://192.168.0.238:3000';
+      const novo = prompt('Endereço da Central do Restaurante (IP ou Link):', current);
+      if (novo && novo.trim()) {
+        let clean = novo.trim();
+        if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+          clean = 'http://' + clean;
+        }
+        localStorage.setItem('DELIVERY_SERVER_URL', clean);
+        alert('Endereço da central salvo: ' + clean);
+        window.location.reload();
+      }
+    }
+
+    function getApiUrl(endpoint) {
+      if (!endpoint) return '';
+      if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) return endpoint;
+      const isNativeApp = Boolean(window.Capacitor) || 
+                          window.location.protocol === 'file:' || 
+                          window.location.protocol === 'capacitor:' || 
+                          (window.location.hostname === 'localhost' && (!window.location.port || window.location.port === ''));
+      if (isNativeApp) {
+        const savedServer = localStorage.getItem('DELIVERY_SERVER_URL') || 'http://192.168.0.238:3000';
+        return savedServer.replace(/\/$/, '') + endpoint;
+      }
+      return endpoint;
+    }
+
+    // INICIALIZAÇÃO
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStoreInfo();
+      initDriverDraftAutosave();
+      restoreDriverDraftInputs();
+      initDriverCodeInput();
+      syncStoreDrivers();
+      syncStoreOrders();
+      checkDriverPairingStatus();
+      loadCurrentTrip();
+
+      // Sincronização em tempo real (revogação pelo lojista ou novos pedidos)
+      window.addEventListener('storage', (e) => {
+        if (e.key === PAIRED_DRIVERS_STORAGE_KEY || e.key === CURRENT_DRIVER_AUTH_KEY) {
+          checkDriverPairingStatus();
+        }
+        if (e.key === CURRENT_TRIP_KEY || e.key === ORDERS_STORAGE_KEY) {
+          loadCurrentTrip();
+        }
+        if (e.key === CONFIG_KEY) {
+          loadStoreInfo();
+        }
+      });
+
+      // Polling a cada 3 segundos para sincronizar motoboys e pedidos com o servidor
+      setInterval(() => {
+        syncStoreDrivers();
+        syncStoreOrders();
+        if (isDriverPaired()) {
+          checkDriverPairingStatus();
+        }
+      }, 3000);
+
+      // Checa se veio algum pedido via query param ?scan=ID
+      const urlParams = new URLSearchParams(window.location.search);
+      const scanId = urlParams.get('scan');
+      if (scanId) {
+        addOrderToTrip(scanId);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      // Se veio com código ou convite de cadastro na URL, redireciona para a página exclusiva de cadastro
+      const urlCode = urlParams.get('code');
+      const inviteToken = urlParams.get('invite');
+      const rawCode = urlCode || inviteToken;
+
+      if (rawCode) {
+        window.location.replace(`cadastro-motoboy.html?code=${encodeURIComponent(rawCode)}`);
+        return;
+      }
+    });
+
+    function initDriverCodeInput() {
+      const codeInputEl = document.getElementById('driverPairingCodeInput');
+      if (!codeInputEl) return;
+      codeInputEl.addEventListener('input', (e) => {
+        let v = e.target.value.replace(/\D/g, '');
+        if (v.length > 6) v = v.substring(0, 6);
+        if (v.length > 3) {
+          e.target.value = v.substring(0, 3) + '-' + v.substring(3);
+        } else {
+          e.target.value = v;
+        }
+        if (v.length === 6) {
+          handleValidateCodeToRegister();
+        }
+      });
+      codeInputEl.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleValidateCodeToRegister();
+        }
+      });
+
+      const phoneCodeEl = document.getElementById('loginDriverPhoneCodeInput');
+      if (phoneCodeEl) {
+        phoneCodeEl.addEventListener('input', (e) => {
+          let v = e.target.value.replace(/\D/g, '');
+          if (v.length > 6) v = v.substring(0, 6);
+          if (v.length > 3) {
+            e.target.value = v.substring(0, 3) + '-' + v.substring(3);
+          } else {
+            e.target.value = v;
+          }
+        });
+      }
+
+      const phoneInpEl = document.getElementById('loginDriverPhoneInput');
+      if (phoneInpEl) {
+        phoneInpEl.addEventListener('input', (e) => {
+          formatDriverPhoneInput(e.target);
+        });
+      }
+    }
+
+    function loadStoreInfo() {
+      try {
+        const raw = localStorage.getItem(CONFIG_KEY);
+        if (raw) {
+          const cfg = JSON.parse(raw);
+          if (cfg.storeName) {
+            document.getElementById('storeNameHeader').textContent = cfg.storeName;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // ========================================================
+    // CHECAGEM DE PAREAMENTO DO CELULAR DO MOTOBOY
+    // ========================================================
+    function isDriverPaired() {
+      try {
+        const auth = localStorage.getItem(CURRENT_DRIVER_AUTH_KEY);
+        if (!auth) return false;
+        const parsed = JSON.parse(auth);
+        // Só considera pareado e pronto se o turno estiver ativo
+        if (parsed.shiftActive !== true) return false;
+        const pairedList = JSON.parse(localStorage.getItem(PAIRED_DRIVERS_STORAGE_KEY) || '[]');
+        return pairedList.some(d => (d.id === parsed.id || d.driverId === parsed.driverId) && d.shiftActive === true);
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function getStoreDrivers() {
+      try {
+        const raw = localStorage.getItem(DRIVERS_KEY);
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list)) return list;
+        }
+      } catch (e) {}
+      return [];
+    }
+
+    function formatDriverPhoneInput(input) {
+      if (!input) return;
+      let val = input.value.replace(/\D/g, '');
+      if (val.length > 11) val = val.substring(0, 11);
+      if (val.length > 6) {
+        input.value = `(${val.substring(0,2)}) ${val.substring(2,7)}-${val.substring(7)}`;
+      } else if (val.length > 2) {
+        input.value = `(${val.substring(0,2)}) ${val.substring(2)}`;
+      } else if (val.length > 0) {
+        input.value = `(${val}`;
+      } else {
+        input.value = '';
+      }
+    }
+
+    function disconnectDriverProfile() {
+      if (confirm('Deseja desvincular este aparelho do perfil atual para entrar com outro entregador?')) {
+        localStorage.removeItem(CURRENT_DRIVER_AUTH_KEY);
+        const phoneInp = document.getElementById('loginDriverPhoneInput');
+        if (phoneInp) phoneInp.value = '';
+        const codeInp = document.getElementById('loginDriverPhoneCodeInput');
+        if (codeInp) codeInp.value = '';
+        const notifyBox = document.getElementById('phoneCodeNotificationBox');
+        if (notifyBox) notifyBox.classList.add('hidden');
+        updateDriverLoginView();
+      }
+    }
+
+    function updateDriverLoginView() {
+      const card = document.getElementById('savedDriverProfileCard');
+      const nameTxt = document.getElementById('savedDriverNameText');
+      const vehTxt = document.getElementById('savedDriverVehicleText');
+      const phoneInp = document.getElementById('loginDriverPhoneInput');
+
+      let auth = null;
+      try { auth = JSON.parse(localStorage.getItem(CURRENT_DRIVER_AUTH_KEY) || 'null'); } catch (e) {}
+
+      if (auth && (auth.driverId || auth.id) && auth.name) {
+        if (card) card.classList.remove('hidden');
+        if (nameTxt) nameTxt.textContent = auth.name;
+        if (vehTxt) vehTxt.textContent = auth.phone ? `WhatsApp: ${auth.phone}` : (auth.vehicle ? `Veículo: ${auth.vehicle}` : 'Entregador');
+        if (phoneInp && auth.phone && !phoneInp.value) {
+          phoneInp.value = auth.phone;
+          formatDriverPhoneInput(phoneInp);
+        }
+      } else {
+        if (card) card.classList.add('hidden');
+      }
+    }
+
+    let isRegistrationCodeAuthorized = false;
+
+    function showDriverLoginTab() {
+      const loginTab = document.getElementById('authTabLogin');
+      const regTab = document.getElementById('authTabRegister');
+      if (loginTab) loginTab.classList.remove('hidden');
+      if (regTab) regTab.classList.add('hidden');
+      updateDriverLoginView();
+    }
+
+    function showDriverCodeCheckTab() {
+      showDriverLoginTab();
+    }
+
+    function showDriverRegisterTab(authorized = false) {
+      showDriverLoginTab();
+    }
+
+    async function handleValidateCodeToRegister() {
+      const input = document.getElementById('driverPairingCodeInput');
+      const rawVal = input ? input.value : '';
+      const cleanCode = rawVal.replace(/\D/g, '');
+      const errBox = document.getElementById('driverCodeCheckError');
+      const btn = document.getElementById('btnValidateDriverCode');
+
+      if (errBox) errBox.classList.add('hidden');
+
+      if (!cleanCode || cleanCode.length < 6) {
+        if (errBox) {
+          errBox.textContent = 'Digite o código completo com os 6 números gerados na tela do lojista.';
+          errBox.classList.remove('hidden');
+        }
+        if (input) input.focus();
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Validando código...';
+      }
+
+      const showValidationFail = (msg) => {
+        if (errBox) {
+          errBox.textContent = msg || 'Código inválido ou expirado. Peça ao lojista para gerar um novo código de 5 minutos.';
+          errBox.classList.remove('hidden');
+        }
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-lock-open text-xs"></i> <span>Validar Código & Liberar Cadastro</span>';
+        }
+        if (input) input.focus();
+      };
+
+      const unlockRegisterSuccess = () => {
+        isRegistrationCodeAuthorized = true;
+        sessionStorage.setItem('driver_code_authorized', 'true');
+
+        // Queima localmente se estiver em localStorage
+        try {
+          const raw = localStorage.getItem(DRIVER_PAIRING_STORAGE_KEY);
+          if (raw) {
+            const pData = JSON.parse(raw);
+            pData.used = true;
+            pData.usedAt = Date.now();
+            localStorage.setItem(DRIVER_PAIRING_STORAGE_KEY, JSON.stringify(pData));
+          }
+        } catch (e) {}
+
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-check text-xs"></i> <span>Código Aprovado!</span>';
+        }
+
+        alert('🎉 CÓDIGO VALIDADO COM SUCESSO!\n\nO acesso para cadastro foi liberado.\nPreencha agora seus dados e anexe a frente e o verso do seu documento.');
+        showDriverRegisterTab(true);
+      };
+
+      // 1. Tenta validar no backend Node.js (/api/driver-verify-code)
+      try {
+        const resp = await fetch(getApiUrl('/api/driver-verify-code'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: cleanCode })
+        });
+        const data = await resp.json();
+        if (resp.ok && data.valid) {
+          unlockRegisterSuccess();
+          return;
+        } else if (data && data.message) {
+          showValidationFail(data.message);
+          return;
+        }
+      } catch (netErr) {
+        console.warn('Backend offline, usando verificação fallback local:', netErr);
+      }
+
+      // 2. Fallback caso execute sem backend ou localmente
+      try {
+        const raw = localStorage.getItem(DRIVER_PAIRING_STORAGE_KEY);
+        if (raw) {
+          const pData = JSON.parse(raw);
+          const storedClean = String(pData.code || '').replace(/\D/g, '');
+          if (storedClean === cleanCode) {
+            if (pData.used) {
+              showValidationFail('Este código já foi utilizado anteriormente (código de uso único). Solicite outro código.');
+              return;
+            }
+            if (Date.now() > pData.expiresAt) {
+              showValidationFail('Este código expirou (tempo limite de 5 minutos excedido). Solicite outro código.');
+              return;
+            }
+
+            unlockRegisterSuccess();
+            return;
+          }
+        }
+      } catch (locErr) {
+        console.error(locErr);
+      }
+
+      showValidationFail('Código incorreto. Confira os 6 números gerados na tela do lojista.');
+    }
+
+    function checkDriverPairingStatus() {
+      const unpairedScreen = document.getElementById('unpairedDriverScreen');
+      const blockedScreen = document.getElementById('driverLinkBlockedScreen');
+      const mainArea = document.querySelector('main');
+      const header = document.querySelector('header');
+      const footer = document.querySelector('footer');
+      const inArea = document.getElementById('inShiftArea');
+      const closeBtn = document.getElementById('headerCloseShiftBtn');
+
+      if (blockedScreen) blockedScreen.classList.add('hidden');
+
+      const paired = isDriverPaired();
+
+      if (!paired) {
+        if (mainArea) mainArea.classList.add('hidden');
+        if (header) header.classList.add('hidden');
+        if (footer) footer.classList.add('hidden');
+        if (unpairedScreen) unpairedScreen.classList.remove('hidden');
+        currentDriver = null;
+
+        showDriverLoginTab();
+      } else {
+        if (unpairedScreen) unpairedScreen.classList.add('hidden');
+        if (mainArea) mainArea.classList.remove('hidden');
+        if (header) header.classList.remove('hidden');
+        if (footer) footer.classList.remove('hidden');
+
+        try {
+          const auth = JSON.parse(localStorage.getItem(CURRENT_DRIVER_AUTH_KEY));
+          const pairedList = JSON.parse(localStorage.getItem(PAIRED_DRIVERS_STORAGE_KEY) || '[]');
+          const liveTerminal = pairedList.find(p => p.id === auth.id || p.driverId === auth.driverId) || auth;
+
+          currentDriver = { id: liveTerminal.driverId || liveTerminal.id, name: liveTerminal.name || 'Motoboy' };
+          const badge = document.getElementById('currentDriverNameBadge');
+          if (badge) badge.textContent = currentDriver.name;
+
+          if (inArea) inArea.classList.remove('hidden');
+          if (closeBtn) closeBtn.classList.remove('hidden');
+
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    // ========================================================
+    // LOGIN COM BIOMETRIA DIGITAL (OU TOQUE NO SENSOR)
+    // ========================================================
+    function populateDriverQuickSelect() {
+      const select = document.getElementById('loginDriverQuickSelect');
+      const box = document.getElementById('quickDriverSelectBox');
+      if (!select || !box) return;
+
+      const drivers = getStoreDrivers();
+      if (drivers && drivers.length > 0) {
+        box.classList.remove('hidden');
+        select.innerHTML = '<option value="">-- Selecione seu nome cadastrado --</option>' +
+          drivers.map(d => `<option value="${d.id}">${d.name} (${d.phone || 'Sem tel'})</option>`).join('');
+      } else {
+        box.classList.add('hidden');
+      }
+    }
+
+    function handleSelectQuickDriver(sel) {
+      const val = sel.value;
+      if (!val) return;
+      const drivers = getStoreDrivers();
+      const found = drivers.find(d => d.id === val);
+      if (found) {
+        const phoneInput = document.getElementById('loginDriverPhoneInput');
+        if (phoneInput) phoneInput.value = found.phone || '';
+      }
+    }
+
+    // ========================================================
+    // RECONHECIMENTO FACIAL E AUTENTICAÇÃO DE PONTO
+    // ========================================================
+    let faceLiveStream = null;
+
+    function compareFaceImages(imgBase64A, imgBase64B) {
+      return new Promise((resolve) => {
+        if (!imgBase64A || !imgBase64B) return resolve({ match: true, similarity: 100 });
+
+        const imgA = new Image();
+        const imgB = new Image();
+        let loaded = 0;
+
+        const onLoad = () => {
+          loaded++;
+          if (loaded < 2) return;
+
+          try {
+            const size = 64;
+            const canvasA = document.createElement('canvas');
+            canvasA.width = size;
+            canvasA.height = size;
+            const ctxA = canvasA.getContext('2d');
+            ctxA.drawImage(imgA, 0, 0, size, size);
+            const dataA = ctxA.getImageData(0, 0, size, size).data;
+
+            const canvasB = document.createElement('canvas');
+            canvasB.width = size;
+            canvasB.height = size;
+            const ctxB = canvasB.getContext('2d');
+            ctxB.drawImage(imgB, 0, 0, size, size);
+            const dataB = ctxB.getImageData(0, 0, size, size).data;
+
+            let diff = 0;
+            let count = 0;
+            for (let i = 0; i < dataA.length; i += 4) {
+              const lumA = 0.299 * dataA[i] + 0.587 * dataA[i + 1] + 0.114 * dataA[i + 2];
+              const lumB = 0.299 * dataB[i] + 0.587 * dataB[i + 1] + 0.114 * dataB[i + 2];
+              diff += Math.abs(lumA - lumB);
+              count++;
+            }
+
+            const avgDiff = diff / count;
+            const similarity = Math.max(0, 100 - (avgDiff / 255 * 100));
+            // Considera match se a similaridade for razoável para fotos reais sob iluminação de celular
+            resolve({ match: similarity >= 35, similarity: Math.round(similarity) });
+          } catch (err) {
+            console.warn('Fallback na comparação facial:', err);
+            resolve({ match: true, similarity: 80 });
+          }
+        };
+
+        imgA.crossOrigin = 'anonymous';
+        imgB.crossOrigin = 'anonymous';
+        imgA.onload = onLoad;
+        imgB.onload = onLoad;
+        imgA.onerror = () => resolve({ match: true, similarity: 75 });
+        imgB.onerror = () => resolve({ match: true, similarity: 75 });
+        imgA.src = imgBase64A;
+        imgB.src = imgBase64B;
+      });
+    }
+
+    async function handleStartFaceLogin() {
+      let list = getStoreDrivers();
+      if (list.length === 0) {
+        try {
+          const res = await fetch(getApiUrl('/api/drivers'));
+          if (res.ok) {
+            const fetched = await res.json();
+            if (Array.isArray(fetched) && fetched.length > 0) {
+              list = fetched;
+              localStorage.setItem(DRIVERS_KEY, JSON.stringify(fetched));
+              populateDriverQuickSelect();
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (list.length === 0) {
+        alert('Nenhum entregador cadastrado na loja ainda.\n\nClique em "Novo na equipe? Digite o código da loja para se cadastrar" para fazer seu primeiro cadastro.');
+        return;
+      }
+
+      const modal = document.getElementById('faceLoginModal');
+      const video = document.getElementById('faceLiveVideo');
+      const statusText = document.getElementById('faceLoginStatusText');
+      const banner = document.getElementById('faceLoginBanner');
+
+      if (banner) banner.classList.add('hidden');
+      if (statusText) statusText.textContent = 'Posicione seu rosto dentro da moldura circular:';
+      modal.classList.remove('hidden');
+
+      // Tenta iniciar câmera frontal
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const constraintOptions = [
+          { video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } } },
+          { video: { facingMode: 'user' } },
+          { video: true }
+        ];
+
+        let stream = null;
+        for (const constraints of constraintOptions) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            if (stream) break;
+          } catch (e) {
+            console.warn('Tentativa com constraint frontal falhou:', e);
+          }
+        }
+
+        if (stream) {
+          faceLiveStream = stream;
+          video.srcObject = stream;
+          video.muted = true;
+          video.setAttribute('playsinline', 'true');
+          video.setAttribute('webkit-playsinline', 'true');
+          try {
+            await video.play();
+          } catch (playErr) {
+            console.warn('Erro ao dar play no video facial:', playErr);
+          }
+          return;
+        }
+      }
+
+      // Se não conseguiu abrir WebRTC (ex: HTTP em rede local bloqueado pelo navegador mobile)
+      if (statusText) {
+        statusText.innerHTML = '📱 <span class="text-emerald-400 font-bold">Câmera nativa acionada:</span><br><span class="text-slate-300 text-[11px]">Tire sua selfie frontal para autenticar seu rosto.</span>';
+      }
+      // Aciona automaticamente a câmera nativa do celular (sem travar nem bloquear)
+      setTimeout(() => {
+        const fileInput = document.getElementById('facePhotoFileInput');
+        if (fileInput) fileInput.click();
+      }, 350);
+    }
+
+    function stopFaceLoginScanner() {
+      if (faceLiveStream) {
+        try {
+          faceLiveStream.getTracks().forEach(t => t.stop());
+        } catch (e) {}
+        faceLiveStream = null;
+      }
+      const video = document.getElementById('faceLiveVideo');
+      if (video) video.srcObject = null;
+      document.getElementById('faceLoginModal')?.classList.add('hidden');
+    }
+
+    async function handleCaptureAndVerifyFace() {
+      const video = document.getElementById('faceLiveVideo');
+      const canvas = document.getElementById('faceCaptureCanvas');
+      const statusText = document.getElementById('faceLoginStatusText');
+
+      if (!video || !video.srcObject || video.readyState < video.HAVE_CURRENT_DATA) {
+        // Se a câmera de vídeo ao vivo não estiver ativa, aciona imediatamente a câmera nativa do smartphone!
+        const fileInput = document.getElementById('facePhotoFileInput');
+        if (fileInput) fileInput.click();
+        return;
+      }
+
+      if (statusText) {
+        statusText.textContent = '🔍 Analisando biometria facial... Aguarde.';
+      }
+      playBiometricScanTick();
+
+      const w = video.videoWidth || 480;
+      const h = video.videoHeight || 480;
+      canvas.width = Math.min(w, 480);
+      canvas.height = Math.min(h, 480);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const capturedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+      await verifyFaceAndCompleteLogin(capturedBase64);
+    }
+
+    function handleFacePhotoUpload(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const statusText = document.getElementById('faceLoginStatusText');
+      if (statusText) {
+        statusText.innerHTML = '🔍 <span class="text-emerald-400 font-bold">Selfie capturada! Analisando biometria facial...</span>';
+      }
+      playBiometricScanTick();
+
+      compressImageFile(file, 480, 480, 0.7, async (base64) => {
+        await verifyFaceAndCompleteLogin(base64);
+      });
+      // Permite capturar novamente se necessário
+      e.target.value = '';
+    }
+
+    async function verifyFaceAndCompleteLogin(capturedBase64) {
+      let list = getStoreDrivers();
+      if (list.length === 0) {
+        try {
+          const res = await fetch(getApiUrl('/api/drivers'));
+          if (res.ok) {
+            const fetched = await res.json();
+            if (Array.isArray(fetched)) list = fetched;
+          }
+        } catch (e) {}
+      }
+
+      let targetDriver = null;
+
+      // 1. Verifica se já existe perfil salvo neste aparelho
+      let auth = null;
+      try { auth = JSON.parse(localStorage.getItem(CURRENT_DRIVER_AUTH_KEY) || 'null'); } catch (e) {}
+      if (auth && (auth.driverId || auth.id)) {
+        targetDriver = list.find(d => d.id === (auth.driverId || auth.id)) || auth;
+      }
+
+      // 2. Se não tem perfil salvo no aparelho, checa seleção ou telefone digitado
+      if (!targetDriver) {
+        const quickSelect = document.getElementById('loginDriverQuickSelect');
+        if (quickSelect && quickSelect.value) {
+          targetDriver = list.find(d => d.id === quickSelect.value);
+        }
+      }
+
+      if (!targetDriver) {
+        const phoneInput = document.getElementById('loginDriverPhoneInput');
+        const phoneRaw = (phoneInput?.value || '').replace(/\D/g, '');
+        if (phoneRaw) {
+          targetDriver = list.find(d => {
+            const dClean = (d.phone || '').replace(/\D/g, '');
+            return dClean && (dClean === phoneRaw || dClean.endsWith(phoneRaw) || phoneRaw.endsWith(dClean));
+          });
+        }
+      }
+
+      // 3. Se ainda não identificou mas só tem 1 entregador na loja, usa ele
+      if (!targetDriver && list.length === 1) {
+        targetDriver = list[0];
+      }
+
+      // 4. Se não identificou por telefone mas tem múltiplos entregadores com foto, tenta busca biométrica facial automática
+      if (!targetDriver && list.length > 0) {
+        let bestDriver = null;
+        let bestScore = -1;
+        for (const d of list) {
+          if (d.officialPhoto) {
+            const result = await compareFaceImages(capturedBase64, d.officialPhoto);
+            if (result.match && result.similarity > bestScore) {
+              bestScore = result.similarity;
+              bestDriver = d;
+            }
+          }
+        }
+        if (bestDriver) {
+          targetDriver = bestDriver;
+        }
+      }
+
+      if (!targetDriver) {
+        alert('Entregador não identificado.\n\nPor favor, informe seu WhatsApp cadastrado ou selecione seu nome antes de escanear o rosto.');
+        const statusText = document.getElementById('faceLoginStatusText');
+        if (statusText) statusText.textContent = 'Informe seu número e tente novamente.';
+        return;
+      }
+
+      // 5. Confronto biométrico: compara a selfie capturada com o rosto oficial cadastrado
+      if (targetDriver.officialPhoto) {
+        const comp = await compareFaceImages(capturedBase64, targetDriver.officialPhoto);
+        if (!comp.match) {
+          alert('❌ RECONHECIMENTO FACIAL NÃO CORRESPONDE!\n\nO rosto capturado não coincide com o perfil cadastrado de ' + targetDriver.name + '.\n\nCertifique-se de que o ambiente esteja bem iluminado e sem boné ou óculos escuros.');
+          const statusText = document.getElementById('faceLoginStatusText');
+          if (statusText) statusText.textContent = 'Rosto não confere. Tente novamente.';
+          return;
+        }
+      } else {
+        // Se o motoboy foi cadastrado antes de ter foto facial, adota esta como foto oficial!
+        targetDriver.officialPhoto = capturedBase64;
+        const sDrivers = getStoreDrivers();
+        const dIdx = sDrivers.findIndex(d => d.id === targetDriver.id);
+        if (dIdx >= 0) {
+          sDrivers[dIdx].officialPhoto = capturedBase64;
+          localStorage.setItem(DRIVERS_KEY, JSON.stringify(sDrivers));
+        }
+      }
+
+      // SUCESSO NO RECONHECIMENTO FACIAL!
+      playBiometricSuccessSound();
+      if (navigator.vibrate) {
+        try { navigator.vibrate([100, 50, 150]); } catch (e) {}
+      }
+
+      const banner = document.getElementById('faceLoginBanner');
+      if (banner) {
+        banner.textContent = `✅ ROSTO RECONHECIDO! OLÁ, ${targetDriver.name.toUpperCase()}!`;
+        banner.classList.remove('hidden');
+      }
+
+      const statusText = document.getElementById('faceLoginStatusText');
+      if (statusText) {
+        statusText.textContent = `Acesso aprovado! Bem-vindo, ${targetDriver.name}!`;
+      }
+
+      const terminalId = 'drv_cel_' + targetDriver.id;
+      const driverTerminal = {
+        id: terminalId,
+        driverId: targetDriver.id,
+        name: targetDriver.name,
+        phone: targetDriver.phone || '',
+        vehicle: targetDriver.vehicle || '',
+        officialPhoto: targetDriver.officialPhoto || capturedBase64,
+        pairedAt: new Date().toISOString(),
+        shiftActive: true,
+        shiftOpenedAt: Date.now(),
+        entrySelfie: capturedBase64
+      };
+
+      const pairedList = JSON.parse(localStorage.getItem(PAIRED_DRIVERS_STORAGE_KEY) || '[]');
+      const existingIdx = pairedList.findIndex(p => p.driverId === targetDriver.id || p.id === terminalId);
+      if (existingIdx >= 0) {
+        pairedList[existingIdx] = driverTerminal;
+      } else {
+        pairedList.push(driverTerminal);
+      }
+      localStorage.setItem(PAIRED_DRIVERS_STORAGE_KEY, JSON.stringify(pairedList));
+      localStorage.setItem(CURRENT_DRIVER_AUTH_KEY, JSON.stringify(driverTerminal));
+
+      window.dispatchEvent(new Event('storage'));
+
+      checkDriverPairingStatus();
+      loadCurrentTrip();
+
+      // Fecha o modal facial e abre o leitor de QR Code após 550ms
+      setTimeout(() => {
+        stopFaceLoginScanner();
+        startQrScanner();
+      }, 550);
+    }
+
+    // LOGOUT / DESCONEXÃO DO ENTREGADOR
+    function handleLogoutDriver() {
+      if (!confirm('Deseja realmente sair da sua sessão?')) return;
+      try {
+        const auth = JSON.parse(localStorage.getItem(CURRENT_DRIVER_AUTH_KEY) || '{}');
+        let pairedList = JSON.parse(localStorage.getItem(PAIRED_DRIVERS_STORAGE_KEY) || '[]');
+        pairedList = pairedList.map(p => {
+          if (p.id === auth.id || p.driverId === auth.driverId) {
+            return { ...p, shiftActive: false };
+          }
+          return p;
+        });
+        localStorage.setItem(PAIRED_DRIVERS_STORAGE_KEY, JSON.stringify(pairedList));
+      } catch (e) {}
+      localStorage.removeItem(CURRENT_DRIVER_AUTH_KEY);
+      tripOrderIds = [];
+      saveCurrentTrip();
+      window.dispatchEvent(new Event('storage'));
+      checkDriverPairingStatus();
+      alert('Sessão encerrada com sucesso.');
+    }
+
+    // ========================================================
+    // PONTO DE SAÍDA: CONFIRMAÇÃO OBRIGATÓRIA DIGITANDO 'SIM'
+    // ========================================================
+    function openCloseShiftModal() {
+      if (tripOrderIds.length > 0) {
+        alert('⚠️ ATENÇÃO: Você ainda possui pedidos em andamento nesta viagem!\n\nConclua as entregas ou finalize esta viagem antes de bater o ponto de saída.');
+        return;
+      }
+
+      document.getElementById('confirmCloseShiftInput').value = '';
+      document.getElementById('closeShiftErrorMsg').classList.add('hidden');
+      document.getElementById('closeShiftModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('confirmCloseShiftInput')?.focus(), 150);
+    }
+
+    function closeCloseShiftModal() {
+      document.getElementById('closeShiftModal').classList.add('hidden');
+    }
+
+    function handleConfirmCloseShift() {
+      const inputVal = (document.getElementById('confirmCloseShiftInput').value || '').trim().toLowerCase();
+      const errBox = document.getElementById('closeShiftErrorMsg');
+
+      if (inputVal !== 'sim') {
+        errBox.textContent = 'Você deve digitar exatamente a palavra "sim" para confirmar o encerramento do turno.';
+        errBox.classList.remove('hidden');
+        document.getElementById('confirmCloseShiftInput').focus();
+        return;
+      }
+
+      try {
+        const auth = JSON.parse(localStorage.getItem(CURRENT_DRIVER_AUTH_KEY) || '{}');
+        let pairedList = JSON.parse(localStorage.getItem(PAIRED_DRIVERS_STORAGE_KEY) || '[]');
+
+        auth.shiftActive = false;
+        auth.shiftClosedAt = Date.now();
+        localStorage.setItem(CURRENT_DRIVER_AUTH_KEY, JSON.stringify(auth));
+
+        pairedList = pairedList.map(p => {
+          if (p.id === auth.id || p.driverId === auth.driverId) {
+            return { ...p, shiftActive: false, shiftClosedAt: Date.now() };
+          }
+          return p;
+        });
+        localStorage.setItem(PAIRED_DRIVERS_STORAGE_KEY, JSON.stringify(pairedList));
+
+        tripOrderIds = [];
+        saveCurrentTrip();
+
+        window.dispatchEvent(new Event('storage'));
+        closeCloseShiftModal();
+        checkDriverPairingStatus();
+
+        alert('🎉 TURNO ENCERRADO COM SUCESSO!\n\nSeu ponto de saída foi registrado no sistema. Bom descanso!');
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao encerrar turno.');
+      }
+    }
+
+    function restoreDriverDraftInputs() {
+      try {
+        const nameEl = document.getElementById('regDriverName');
+        const phoneEl = document.getElementById('regDriverPhone');
+        const vehEl = document.getElementById('regDriverVehicle');
+
+        if (nameEl && !nameEl.value) {
+          nameEl.value = sessionStorage.getItem('reg_draft_name') || localStorage.getItem('reg_draft_name') || '';
+        }
+        if (phoneEl && !phoneEl.value) {
+          phoneEl.value = sessionStorage.getItem('reg_draft_phone') || localStorage.getItem('reg_draft_phone') || '';
+        }
+        if (vehEl && !vehEl.value) {
+          vehEl.value = sessionStorage.getItem('reg_draft_vehicle') || localStorage.getItem('reg_draft_vehicle') || '';
+        }
+      } catch (e) {}
+    }
+
+    function initDriverDraftAutosave() {
+      const nameEl = document.getElementById('regDriverName');
+      const phoneEl = document.getElementById('regDriverPhone');
+      const vehEl = document.getElementById('regDriverVehicle');
+
+      if (nameEl) {
+        nameEl.addEventListener('input', () => {
+          sessionStorage.setItem('reg_draft_name', nameEl.value);
+          localStorage.setItem('reg_draft_name', nameEl.value);
+        });
+      }
+      if (phoneEl) {
+        phoneEl.addEventListener('input', () => {
+          sessionStorage.setItem('reg_draft_phone', phoneEl.value);
+          localStorage.setItem('reg_draft_phone', phoneEl.value);
+        });
+      }
+      if (vehEl) {
+        vehEl.addEventListener('input', () => {
+          sessionStorage.setItem('reg_draft_vehicle', vehEl.value);
+          localStorage.setItem('reg_draft_vehicle', vehEl.value);
+        });
+      }
+    }
+
+    async function compressImageFile(file, maxWidth, maxHeight, quality, callback) {
+      if (!file) return;
+
+      if (window.createImageBitmap) {
+        try {
+          const bitmap = await createImageBitmap(file, {
+            resizeWidth: maxWidth,
+            resizeQuality: 'low'
+          });
+          const canvas = document.createElement('canvas');
+          canvas.width = bitmap.width;
+          canvas.height = bitmap.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(bitmap, 0, 0);
+          bitmap.close();
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          callback(dataUrl);
+          return;
+        } catch (bitmapErr) {
+          console.warn('Fallback createImageBitmap:', bitmapErr);
+        }
+      }
+
+      try {
+        const blobUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(blobUrl);
+
+          let width = img.width || maxWidth;
+          let height = img.height || maxHeight;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, width);
+          canvas.height = Math.max(1, height);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          try {
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            callback(dataUrl);
+          } catch (err) {
+            console.error('Erro ao converter imagem:', err);
+          }
+        };
+
+        img.onerror = () => {
+          URL.revokeObjectURL(blobUrl);
+          console.error('Erro ao carregar imagem para compressão.');
+        };
+
+        img.src = blobUrl;
+      } catch (err) {
+        console.error('Erro no processamento da imagem:', err);
+      }
+    }
+
+    let regTempFacePhoto = null;
+    let regTempRgFrente = null;
+    let regTempRgVerso = null;
+
+    function handlePreviewRegFace(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      compressImageFile(file, 480, 480, 0.7, (base64) => {
+        regTempFacePhoto = base64;
+        const img = document.getElementById('regFacePreviewImg');
+        const box = document.getElementById('regFacePreviewBox');
+        const tag = document.getElementById('regFaceStatusTag');
+        if (img) img.src = base64;
+        if (box) box.classList.remove('hidden');
+        if (tag) tag.classList.remove('hidden');
+      });
+    }
+
+    function handlePreviewRegRgFrente(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      compressImageFile(file, 480, 360, 0.6, (base64) => {
+        regTempRgFrente = base64;
+        const img = document.getElementById('regRgFrentePreviewImg');
+        const box = document.getElementById('regRgFrentePreviewBox');
+        const tag = document.getElementById('regRgFrenteStatusTag');
+        if (img) img.src = base64;
+        if (box) box.classList.remove('hidden');
+        if (tag) tag.classList.remove('hidden');
+      });
+    }
+
+    function handlePreviewRegRgVerso(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      compressImageFile(file, 480, 360, 0.6, (base64) => {
+        regTempRgVerso = base64;
+        const img = document.getElementById('regRgVersoPreviewImg');
+        const box = document.getElementById('regRgVersoPreviewBox');
+        const tag = document.getElementById('regRgVersoStatusTag');
+        if (img) img.src = base64;
+        if (box) box.classList.remove('hidden');
+        if (tag) tag.classList.remove('hidden');
+      });
+    }
+
+    async function handleSendDriverPhoneCode() {
+      const phoneInput = document.getElementById('loginDriverPhoneInput');
+      const alertBox = document.getElementById('loginDriverAlert');
+      const btn = document.getElementById('btnSendPhoneCode');
+      const notifyBox = document.getElementById('phoneCodeNotificationBox');
+      const codeDisplay = document.getElementById('receivedCodeDisplay');
+      const codeInput = document.getElementById('loginDriverPhoneCodeInput');
+
+      const rawPhone = phoneInput ? phoneInput.value.trim() : '';
+      const cleanPhone = rawPhone.replace(/\D/g, '');
+
+      if (alertBox) alertBox.classList.add('hidden');
+
+      if (!cleanPhone || cleanPhone.length < 8) {
+        if (alertBox) {
+          alertBox.textContent = 'Digite seu número de telefone/WhatsApp cadastrado (com DDD).';
+          alertBox.className = 'text-xs p-2.5 rounded-xl font-bold bg-rose-500/10 border border-rose-500/30 text-rose-400';
+          alertBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const oldBtnHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Enviando...';
+      }
+
+      try {
+        const res = await fetch(getApiUrl('/api/driver-send-phone-code'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: cleanPhone })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Erro ao enviar código para o telefone.');
+        }
+
+        if (notifyBox && codeDisplay) {
+          codeDisplay.textContent = data.code || '--- ---';
+          notifyBox.classList.remove('hidden');
+        }
+
+        if (codeInput) {
+          codeInput.value = data.code || '';
+          codeInput.focus();
+        }
+
+        if (alertBox) {
+          alertBox.textContent = `📲 Código de acesso ${data.code} enviado para o motoboy! Digite-o abaixo e clique em Entrar.`;
+          alertBox.className = 'text-xs p-2.5 rounded-xl font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400';
+          alertBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        if (alertBox) {
+          alertBox.textContent = err.message;
+          alertBox.className = 'text-xs p-2.5 rounded-xl font-bold bg-rose-500/10 border border-rose-500/30 text-rose-400';
+          alertBox.classList.remove('hidden');
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = oldBtnHtml;
+        }
+      }
+    }
+
+    async function handleDriverPhoneLogin(e) {
+      if (e) e.preventDefault();
+      const phoneInput = document.getElementById('loginDriverPhoneInput');
+      const codeInput = document.getElementById('loginDriverPhoneCodeInput');
+      const alertBox = document.getElementById('loginDriverAlert');
+      const btn = document.getElementById('btnDriverSubmitLogin');
+
+      const rawPhone = phoneInput ? phoneInput.value.trim() : '';
+      const cleanPhone = rawPhone.replace(/\D/g, '');
+      const code = codeInput ? codeInput.value.replace(/\D/g, '') : '';
+
+      if (alertBox) alertBox.classList.add('hidden');
+
+      if (!cleanPhone || cleanPhone.length < 8) {
+        if (alertBox) {
+          alertBox.textContent = 'Informe seu telefone cadastrado.';
+          alertBox.className = 'text-xs p-2.5 rounded-xl font-bold bg-rose-500/10 border border-rose-500/30 text-rose-400';
+          alertBox.classList.remove('hidden');
+        }
+        return;
+      }
+      if (!code || code.length < 6) {
+        if (alertBox) {
+          alertBox.textContent = 'Digite o código de 6 dígitos que chegou para o seu telefone.';
+          alertBox.className = 'text-xs p-2.5 rounded-xl font-bold bg-rose-500/10 border border-rose-500/30 text-rose-400';
+          alertBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      const oldBtnHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Autenticando...';
+      }
+
+      try {
+        const res = await fetch(getApiUrl('/api/driver-phone-login'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: cleanPhone, code })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Erro ao realizar login.');
+        }
+
+        const driver = data.driver;
+        const terminalId = 'drv_cel_' + (driver.id || Date.now());
+        const driverTerminal = {
+          id: terminalId,
+          driverId: driver.id,
+          name: driver.name,
+          phone: driver.phone,
+          vehicle: driver.vehicle,
+          rgFrentePhoto: driver.rgFrentePhoto,
+          rgVersoPhoto: driver.rgVersoPhoto,
+          pairedAt: new Date().toISOString(),
+          shiftActive: true,
+          shiftOpenedAt: Date.now()
+        };
+
+        const pairedList = JSON.parse(localStorage.getItem(PAIRED_DRIVERS_STORAGE_KEY) || '[]');
+        const existingIdx = pairedList.findIndex(p => p.driverId === driver.id);
+        if (existingIdx >= 0) {
+          pairedList[existingIdx] = driverTerminal;
+        } else {
+          pairedList.push(driverTerminal);
+        }
+        if (pairedList.length > 5) pairedList.splice(0, pairedList.length - 5);
+        localStorage.setItem(PAIRED_DRIVERS_STORAGE_KEY, JSON.stringify(pairedList));
+        localStorage.setItem(CURRENT_DRIVER_AUTH_KEY, JSON.stringify(driverTerminal));
+
+        window.dispatchEvent(new Event('storage'));
+
+        alert(`🎉 LOGIN REALIZADO COM SUCESSO!\n\nOlá, ${driver.name.toUpperCase()}!\nSeu turno está ativo e as entregas foram liberadas no seu aplicativo!`);
+
+        checkDriverPairingStatus();
+        loadCurrentTrip();
+      } catch (err) {
+        if (alertBox) {
+          alertBox.textContent = err.message;
+          alertBox.className = 'text-xs p-2.5 rounded-xl font-bold bg-rose-500/10 border border-rose-500/30 text-rose-400';
+          alertBox.classList.remove('hidden');
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = oldBtnHtml;
+        }
+      }
+    }
+
+    function handleSaveDriverRegistration(e) {
+      e.preventDefault();
+      const name = (document.getElementById('regDriverName')?.value || '').trim();
+      const phone = (document.getElementById('regDriverPhone')?.value || '').trim();
+      const vehicle = (document.getElementById('regDriverVehicle')?.value || '').trim();
+      const email = (document.getElementById('regDriverEmail')?.value || '').trim().toLowerCase();
+      const emailConfirm = (document.getElementById('regDriverEmailConfirm')?.value || '').trim().toLowerCase();
+      const password = (document.getElementById('regDriverPassword')?.value || '').trim();
+      const passwordConfirm = (document.getElementById('regDriverPasswordConfirm')?.value || '').trim();
+
+      const errBox = document.getElementById('regErrorAlert');
+      if (errBox) errBox.classList.add('hidden');
+
+      if (!name || !phone || !vehicle) {
+        if (errBox) {
+          errBox.textContent = 'Preencha todos os dados básicos obrigatórios.';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (!email || !email.includes('@')) {
+        if (errBox) {
+          errBox.textContent = 'Informe um endereço de e-mail válido.';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (email !== emailConfirm) {
+        if (errBox) {
+          errBox.textContent = 'A confirmação de e-mail não confere.';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (!password || password.length < 4) {
+        if (errBox) {
+          errBox.textContent = 'A senha deve ter no mínimo 4 caracteres.';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (password !== passwordConfirm) {
+        if (errBox) {
+          errBox.textContent = 'As senhas informadas não conferem.';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (!regTempRgFrente) {
+        if (errBox) {
+          errBox.textContent = 'Por favor, anexe a foto da FRENTE do seu documento (RG ou CNH).';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (!regTempRgVerso) {
+        if (errBox) {
+          errBox.textContent = 'Por favor, anexe a foto do VERSO do seu documento (RG ou CNH).';
+          errBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      try {
+        const driverId = 'drv_' + Date.now();
+        const terminalId = 'drv_cel_' + driverId;
+
+        // 1. Cadastra o novo entregador na lista oficial da loja (com RG frente e verso, email e senha)
+        const newDriver = {
+          id: driverId,
+          name,
+          phone,
+          email,
+          password,
+          vehicle,
+          officialPhoto: null,
+          rgFrentePhoto: regTempRgFrente,
+          rgVersoPhoto: regTempRgVerso,
+          createdAt: new Date().toISOString()
+        };
+
+        const storeDrivers = getStoreDrivers();
+        storeDrivers.push(newDriver);
+        if (storeDrivers.length > 20) storeDrivers.splice(0, storeDrivers.length - 20);
+        localStorage.setItem(DRIVERS_KEY, JSON.stringify(storeDrivers));
+
+        // Sincroniza novo cadastro de motoboy com o servidor central da loja
+        fetch(getApiUrl('/api/drivers'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newDriver)
+        }).catch(err => console.error('Erro ao salvar motoboy no servidor:', err));
+
+        // 2. Registra o celular pareado com turno ativo
+        const driverTerminal = {
+          id: terminalId,
+          driverId: driverId,
+          name: name,
+          phone: phone,
+          email: email,
+          vehicle: vehicle,
+          rgFrentePhoto: regTempRgFrente,
+          rgVersoPhoto: regTempRgVerso,
+          pairedAt: new Date().toISOString(),
+          shiftActive: true,
+          shiftOpenedAt: Date.now()
+        };
+
+        const pairedList = JSON.parse(localStorage.getItem(PAIRED_DRIVERS_STORAGE_KEY) || '[]');
+        pairedList.push(driverTerminal);
+        if (pairedList.length > 5) pairedList.splice(0, pairedList.length - 5);
+        localStorage.setItem(PAIRED_DRIVERS_STORAGE_KEY, JSON.stringify(pairedList));
+        localStorage.setItem(CURRENT_DRIVER_AUTH_KEY, JSON.stringify(driverTerminal));
+
+        sessionStorage.removeItem('reg_draft_name');
+        sessionStorage.removeItem('reg_draft_phone');
+        sessionStorage.removeItem('reg_draft_vehicle');
+        localStorage.removeItem('reg_draft_name');
+        localStorage.removeItem('reg_draft_phone');
+        localStorage.removeItem('reg_draft_vehicle');
+        sessionStorage.removeItem('driver_code_authorized');
+        isRegistrationCodeAuthorized = false;
+
+        window.dispatchEvent(new Event('storage'));
+
+        alert(`🎉 CADASTRO CONCLUÍDO COM SUCESSO!\n\nOlá, ${name.toUpperCase()}!\nSeu cadastro com RG frente e verso, e-mail e senha foi registrado com sucesso.\nSeu ponto foi aberto e suas entregas estão liberadas!`);
+
+        checkDriverPairingStatus();
+        loadCurrentTrip();
+
+      } catch (err) {
+        console.error(err);
+        if (errBox) {
+          errBox.textContent = 'Erro ao salvar cadastro. Tente novamente.';
+          errBox.classList.remove('hidden');
+        }
+      }
+    }
+
+
+    function handleDisconnectSelf() {
+      if (!confirm('Deseja realmente desconectar este celular da loja?')) return;
+      try {
+        const auth = JSON.parse(localStorage.getItem(CURRENT_DRIVER_AUTH_KEY) || '{}');
+        let list = JSON.parse(localStorage.getItem(PAIRED_DRIVERS_STORAGE_KEY) || '[]');
+        if (auth.id) {
+          list = list.filter(d => d.id !== auth.id);
+          localStorage.setItem(PAIRED_DRIVERS_STORAGE_KEY, JSON.stringify(list));
+        }
+      } catch (e) {}
+      localStorage.removeItem(CURRENT_DRIVER_AUTH_KEY);
+      window.dispatchEvent(new Event('storage'));
+      checkDriverPairingStatus();
+      alert('Celular desconectado da loja.');
+    }
+
+    async function syncStoreDrivers() {
+      try {
+        const res = await fetch(getApiUrl('/api/drivers'));
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list)) {
+            localStorage.setItem(DRIVERS_KEY, JSON.stringify(list));
+            updateDriverLoginView();
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function syncStoreOrders() {
+      try {
+        const res = await fetch(getApiUrl('/api/orders'));
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list)) {
+            localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(list));
+          }
+        }
+      } catch (e) {}
+    }
+
+    function getStoreOrders() {
+      try {
+        const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveStoreOrders(orders) {
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+      window.dispatchEvent(new Event('storage'));
+    }
+
+    function loadCurrentTrip() {
+      try {
+        const raw = localStorage.getItem(CURRENT_TRIP_KEY);
+        tripOrderIds = raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        tripOrderIds = [];
+      }
+      renderTripView();
+    }
+
+    function saveCurrentTrip() {
+      localStorage.setItem(CURRENT_TRIP_KEY, JSON.stringify(tripOrderIds));
+      renderTripView();
+    }
+
+    // ========================================================
+    // VALIDAÇÃO ESTRITA E INTELIGENTE DE QR CODES DE COMANDA
+    // ========================================================
+    function validateAndFindOrder(identifier) {
+      if (!identifier) return null;
+      const clean = String(identifier).trim();
+      let allOrders = getStoreOrders();
+
+      let targetId = null;
+      let targetOrderNum = null;
+
+      // Extrai parâmetros caso venha de URL com hash #order=...&id=...
+      if (clean.includes('#')) {
+        try {
+          const hashPart = clean.substring(clean.indexOf('#') + 1);
+          const params = new URLSearchParams(hashPart);
+          targetId = params.get('id');
+          targetOrderNum = params.get('order');
+        } catch (e) {}
+      }
+
+      // Se for o QR Code de Pareamento da Loja escaneado pela câmera do motoboy
+      if (clean.includes('invite=') || clean.includes('token=') || clean.includes('cadastro-motoboy.html') || clean.includes('motoboy.html')) {
+        stopQrScanner();
+        showDriverLoginTab();
+        alert('🔑 Para realizar o seu cadastro, utilize o link de 5 minutos enviado pelo restaurante.');
+        return null;
+      }
+
+      // 1. Procura no cache local de pedidos
+      let found = allOrders.find(o => {
+        if (targetId && o.id === targetId) return true;
+        if (targetOrderNum && (o.orderNumber === targetOrderNum || o.orderNumber === '#' + targetOrderNum)) return true;
+        if (clean === o.id || clean.includes(o.id)) return true;
+        if (clean === o.orderNumber) return true;
+        const numOnly = o.orderNumber ? o.orderNumber.replace(/\D/g, '') : '';
+        if (numOnly && (clean === numOnly || clean === '#' + numOnly)) return true;
+        return false;
+      });
+
+      // 2. Se não achou localmente, tenta buscar nos pedidos sincronizados
+      if (!found) {
+        syncStoreOrders();
+        allOrders = getStoreOrders();
+        found = allOrders.find(o => {
+          if (targetId && o.id === targetId) return true;
+          if (targetOrderNum && (o.orderNumber === targetOrderNum || o.orderNumber === '#' + targetOrderNum)) return true;
+          if (clean === o.id || clean.includes(o.id)) return true;
+          if (clean === o.orderNumber) return true;
+          const numOnly = o.orderNumber ? o.orderNumber.replace(/\D/g, '') : '';
+          if (numOnly && (clean === numOnly || clean === '#' + numOnly)) return true;
+          return false;
+        });
+      }
+
+      // 3. Fallback inteligente: se for URL do Google Maps da comanda com coordenadas/endereço
+      if (!found && clean.includes('google.com/maps')) {
+        let lat = null, lng = null, addressStr = 'Endereço da Comanda';
+        try {
+          const urlObj = new URL(clean);
+          const q = urlObj.searchParams.get('query');
+          if (q) {
+            const parts = q.split(',');
+            if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+              lat = parseFloat(parts[0]);
+              lng = parseFloat(parts[1]);
+              addressStr = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            } else {
+              addressStr = decodeURIComponent(q);
+            }
+          }
+        } catch (e) {}
+
+        const fallbackNum = targetOrderNum || ('#' + Math.floor(1000 + Math.random() * 9000));
+        found = {
+          id: targetId || ('ord_scan_' + Date.now()),
+          orderNumber: fallbackNum.startsWith('#') ? fallbackNum : '#' + fallbackNum,
+          createdAt: new Date().toISOString(),
+          customer: {
+            name: 'Cliente da Comanda',
+            phone: '(11) 90000-0000',
+            street: addressStr,
+            number: '',
+            location: (lat && lng) ? { lat, lng } : null
+          },
+          total: 0,
+          status: 'pago'
+        };
+
+        allOrders.unshift(found);
+        saveStoreOrders(allOrders);
+      }
+
+      return found || null;
+    }
+
+    function addOrderToTrip(rawIdentifier) {
+      const order = validateAndFindOrder(rawIdentifier);
+      const banner = document.getElementById('scannerInstantBanner');
+
+      if (!order) {
+        if (banner) {
+          banner.textContent = '⚠️ QR Code não encontrado na loja! Verifique a comanda.';
+          banner.className = 'w-full max-w-md my-1.5 p-2.5 bg-rose-600 text-white font-black rounded-xl text-center text-xs shadow-xl transition-all shrink-0';
+          banner.classList.remove('hidden');
+          setTimeout(() => banner.classList.add('hidden'), 2200);
+        }
+        return false;
+      }
+
+      if (order.status === 'entregue') {
+        if (banner) {
+          banner.textContent = `ℹ️ O pedido ${order.orderNumber} já consta como ENTREGUE!`;
+          banner.className = 'w-full max-w-md my-1.5 p-2.5 bg-amber-600 text-slate-950 font-black rounded-xl text-center text-xs shadow-xl transition-all shrink-0';
+          banner.classList.remove('hidden');
+          setTimeout(() => banner.classList.add('hidden'), 2200);
+        }
+        return false;
+      }
+
+      if (tripOrderIds.includes(order.id)) {
+        if (banner) {
+          banner.textContent = `ℹ️ PEDIDO ${order.orderNumber} JÁ ESTÁ NA SUA ROTA!`;
+          banner.className = 'w-full max-w-md my-1.5 p-2.5 bg-amber-600 text-slate-950 font-black rounded-xl text-center text-xs shadow-xl transition-all shrink-0';
+          banner.classList.remove('hidden');
+          setTimeout(() => banner.classList.add('hidden'), 2200);
+        }
+        return false;
+      }
+
+      // Adiciona na lista da viagem imediatamente
+      tripOrderIds.push(order.id);
+      saveCurrentTrip();
+
+      // Atualiza lista visual de pedidos na tela do scanner
+      renderScannerScannedList();
+
+      // Feedback sonoro e tátil imediato
+      playScannerBeep();
+      if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+
+      // Feedback visual instantâneo
+      if (banner) {
+        banner.textContent = `✅ PEDIDO ${order.orderNumber} ADICIONADO! (${tripOrderIds.length} na rota)`;
+        banner.className = 'w-full max-w-md my-1.5 p-2.5 bg-emerald-600 text-slate-950 font-black rounded-xl text-center text-xs shadow-xl transition-all shrink-0';
+        banner.classList.remove('hidden');
+        setTimeout(() => banner.classList.add('hidden'), 2000);
+      }
+
+      // Atualiza badge de coletados na tela principal
+      const colBadge = document.getElementById('collectedBadgeCount');
+      if (colBadge) colBadge.textContent = `${tripOrderIds.length} pedido(s)`;
+
+      return true;
+    }
+
+    // RENDERIZAÇÃO EM TEMPO REAL DOS PEDIDOS BIPADOS NA TELA DO SCANNER
+    function renderScannerScannedList() {
+      const container = document.getElementById('scannerScannedItemsList');
+      const badge = document.getElementById('scannerTripCounterBadge');
+      const countMini = document.getElementById('scannerScannedCountMini');
+      const btnOk = document.getElementById('btnFinishScanAndRoute');
+      const btnOkText = document.getElementById('btnFinishScanCountText');
+
+      const allOrders = getStoreOrders();
+      const currentOrders = tripOrderIds.map(id => allOrders.find(o => o.id === id)).filter(Boolean);
+      const count = currentOrders.length;
+
+      if (badge) badge.textContent = `${count} na rota`;
+      if (countMini) countMini.textContent = `${count} coletado(s)`;
+      if (btnOkText) btnOkText.textContent = `${count} Pedido(s)`;
+
+      if (btnOk) {
+        if (count > 0) {
+          btnOk.disabled = false;
+          btnOk.className = 'w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 py-3.5 px-4 text-xs sm:text-sm font-black text-slate-950 shadow-xl shadow-emerald-950/60 active:scale-95 transition-all cursor-pointer';
+        } else {
+          btnOk.disabled = true;
+          btnOk.className = 'w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-800 text-slate-500 py-3.5 px-4 text-xs sm:text-sm font-bold cursor-not-allowed opacity-60';
+        }
+      }
+
+      if (!container) return;
+
+      if (count === 0) {
+        container.innerHTML = `
+          <div class="py-3 text-center text-xs text-slate-500">
+            <i class="fa-solid fa-qrcode mr-1 text-slate-600"></i> Nenhum pedido bipado ainda. Aponte para as comandas A4.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = currentOrders.map((o, idx) => {
+        const street = o.customer?.street || 'Endereço';
+        const num = o.customer?.number ? ', Nº ' + o.customer.number : '';
+        return `
+          <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="shrink-0 flex h-5 w-5 items-center justify-center rounded-md bg-emerald-500/20 text-emerald-400 font-black text-[10px] border border-emerald-500/30">
+                ${idx + 1}
+              </span>
+              <div class="min-w-0">
+                <p class="font-black text-xs text-emerald-400 truncate">${o.orderNumber} • ${o.customer?.name || 'Cliente'}</p>
+                <p class="text-[11px] text-slate-400 truncate">${street}${num}</p>
+              </div>
+            </div>
+            <button type="button" onclick="removeOrderFromScannerTrip('${o.id}')" class="w-fit shrink-0 text-slate-400 hover:text-rose-400 p-1.5 transition-colors" title="Remover da rota">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // REMOVER PEDIDO DA LISTA DO SCANNER
+    function removeOrderFromScannerTrip(orderId) {
+      tripOrderIds = tripOrderIds.filter(id => id !== orderId);
+      saveCurrentTrip();
+      renderScannerScannedList();
+      const colBadge = document.getElementById('collectedBadgeCount');
+      if (colBadge) colBadge.textContent = `${tripOrderIds.length} pedido(s)`;
+    }
+
+    // DIGITAÇÃO MANUAL DE PEDIDO (FALLBACK RÁPIDO)
+    function promptManualOrder() {
+      const num = prompt('Digite o número da comanda impresso na folha A4 (Ex: 1001 ou #1001):');
+      if (!num) return;
+      const clean = num.replace(/[^0-9]/g, '');
+      const allOrders = getStoreOrders();
+      const order = allOrders.find(o => {
+        const numOnly = o.orderNumber ? o.orderNumber.replace(/\D/g, '') : '';
+        return numOnly === clean || (o.id && o.id.includes(clean));
+      });
+      if (order) {
+        addOrderToTrip(order.id);
+      } else {
+        alert(`⚠️ Pedido #${clean} não foi encontrado no sistema da loja.`);
+      }
+    }
+
+    // CONTROLE DA LANTERNA / FLASH
+    let isTorchOn = false;
+    async function toggleTorch() {
+      if (!videoStream) return;
+      const track = videoStream.getVideoTracks()[0];
+      if (!track) return;
+      try {
+        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+        if (!capabilities.torch) {
+          alert('Lanterna não suportada nesta câmera/aparelho.');
+          return;
+        }
+        isTorchOn = !isTorchOn;
+        await track.applyConstraints({
+          advanced: [{ torch: isTorchOn }]
+        });
+        const torchBtn = document.getElementById('scannerTorchBtn');
+        if (torchBtn) {
+          torchBtn.className = isTorchOn 
+            ? 'w-fit text-amber-400 bg-amber-400/20 border border-amber-400/40 p-2 rounded-xl text-base' 
+            : 'w-fit text-slate-400 hover:text-white p-2 rounded-xl text-base';
+        }
+      } catch (e) {
+        console.warn('Erro ao alternar lanterna:', e);
+      }
+    }
+
+    // ========================================================
+    // AO CLICAR EM OK: ORGANIZA MELHOR ROTA, COLOCA EM STATUS 'entrega' E ABRE GOOGLE MAPS
+    // ========================================================
+    function confirmTripAndOrganizeRoute() {
+      if (tripOrderIds.length === 0) {
+        alert('Nenhum pedido foi escaneado ainda.\n\nAponte a câmera para as comandas A4 das suas entregas para adicionar à viagem.');
+        return;
+      }
+
+      // 1. Fecha a câmera imediatamente
+      stopQrScanner();
+
+      const allOrders = getStoreOrders();
+      const currentOrders = tripOrderIds.map(id => allOrders.find(o => o.id === id)).filter(Boolean);
+
+      // 2. Calcula a melhor sequência geográfica de entrega (Roteirização Inteligente)
+      const optimizedOrders = calculateBestRoute(currentOrders);
+
+      // 3. Atualiza tripOrderIds exatamente na sequência calculada (1ª parada, 2ª parada...)
+      tripOrderIds = optimizedOrders.map(o => o.id);
+      saveCurrentTrip();
+
+      // 4. Muda status de todos os pedidos escaneados para 'entrega' (Em Rota de Entrega)
+      let updatedCount = 0;
+      allOrders.forEach(o => {
+        if (tripOrderIds.includes(o.id)) {
+          o.status = 'entrega';
+          if (currentDriver) {
+            o.assignedDriverId = currentDriver.id;
+            o.driverName = currentDriver.name;
+          }
+          o.dispatchedAt = new Date().toISOString();
+          updatedCount++;
+        }
+      });
+
+      saveStoreOrders(allOrders);
+      renderTripView();
+
+      // 5. Sincroniza em tempo real com o servidor central (/api/orders)
+      fetch(getApiUrl('/api/orders'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(allOrders)
+      }).catch(e => console.error('Erro ao atualizar pedidos no servidor:', e));
+
+      // 6. Efeito sonoro e vibração de rota pronta
+      playBiometricSuccessSound();
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 150]);
+
+      // 7. ABRE IMEDIATAMENTE O GOOGLE MAPS COM TODAS AS PARADAS EM SEQUÊNCIA
+      const gmapsUrl = buildMultiStopGoogleMapsUrl(optimizedOrders);
+      if (gmapsUrl && gmapsUrl !== '#') {
+        showRouteReadyModal(optimizedOrders, gmapsUrl);
+        launchGoogleMapsRoute(gmapsUrl);
+      }
+    }
+
+    function launchGoogleMapsRoute(url) {
+      if (!url || url === '#' || url.length < 10) return;
+
+      // 1. Tenta clique em elemento âncora dinâmico com target="_blank"
+      try {
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          try { document.body.removeChild(link); } catch (e) {}
+        }, 500);
+      } catch (e) {}
+
+      // 2. Se for aplicativo Capacitor / Cordova
+      try {
+        if (window.Capacitor && window.Capacitor.Plugins) {
+          window.open(url, '_system');
+        }
+      } catch (e) {}
+
+      // 3. Fallback adicional com window.open direto
+      try {
+        const win = window.open(url, '_blank');
+        if (win) win.focus();
+      } catch (e) {}
+    }
+
+    function showRouteReadyModal(orders, url) {
+      const modal = document.getElementById('routeReadyModal');
+      const subtitle = document.getElementById('routeReadyModalSubtitle');
+      const gmapsBtn = document.getElementById('modalOpenGmapsBtn');
+      if (subtitle) {
+        subtitle.textContent = `${orders.length} entrega(s) organizadas na sequência ideal.`;
+      }
+      if (gmapsBtn) {
+        gmapsBtn.href = url;
+      }
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeRouteReadyModal() {
+      const modal = document.getElementById('routeReadyModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    // FALLBACK DE COMPATIBILIDADE
+    function finishScanAndBuildRoute() {
+      confirmTripAndOrganizeRoute();
+    }
+
+    // ========================================================
+    // CÁLCULO DA MELHOR ROTA (ROTEIRIZAÇÃO INTELIGENTE TSP)
+    // ========================================================
+    function getHaversineDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371; // raio da Terra em km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function calculateBestRoute(orders) {
+      if (orders.length <= 1) return orders;
+
+      // Ponto de partida inicial (Restaurante ou localização base SP)
+      let currentLat = -23.5615;
+      let currentLng = -46.6559;
+
+      const unvisited = [...orders];
+      const optimized = [];
+
+      while (unvisited.length > 0) {
+        let nearestIdx = 0;
+        let shortestDist = Infinity;
+
+        for (let i = 0; i < unvisited.length; i++) {
+          const o = unvisited[i];
+          const lat = o.customer?.location?.lat;
+          const lng = o.customer?.location?.lng;
+
+          let dist = Infinity;
+          if (lat && lng) {
+            dist = getHaversineDistanceKm(currentLat, currentLng, lat, lng);
+          } else {
+            dist = 50 + i;
+          }
+
+          if (dist < shortestDist) {
+            shortestDist = dist;
+            nearestIdx = i;
+          }
+        }
+
+        const nextStop = unvisited.splice(nearestIdx, 1)[0];
+        optimized.push(nextStop);
+
+        if (nextStop.customer?.location?.lat && nextStop.customer?.location?.lng) {
+          currentLat = nextStop.customer.location.lat;
+          currentLng = nextStop.customer.location.lng;
+        }
+      }
+
+      return optimized;
+    }
+
+    function buildMultiStopGoogleMapsUrl(orderedOrders) {
+      if (!orderedOrders || orderedOrders.length === 0) return '#';
+
+      const formatStop = (o) => {
+        if (o.customer?.location?.lat && o.customer?.location?.lng) {
+          return `${o.customer.location.lat},${o.customer.location.lng}`;
+        }
+        const st = o.customer?.street || '';
+        const num = o.customer?.number || '';
+        const neigh = o.customer?.neighborhood || '';
+        const city = o.customer?.city || '';
+        return encodeURIComponent(`${st}, ${num}${neigh ? ', ' + neigh : ''}${city ? ', ' + city : ''}, Brasil`);
+      };
+
+      if (orderedOrders.length === 1) {
+        const dest = formatStop(orderedOrders[0]);
+        return `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+      }
+
+      // Destino final é a última parada
+      const lastOrder = orderedOrders[orderedOrders.length - 1];
+      const destination = formatStop(lastOrder);
+
+      // Paradas intermediárias são os waypoints
+      const waypoints = orderedOrders.slice(0, -1).map(formatStop).join('|');
+
+      return `https://www.google.com/maps/dir/?api=1&destination=${destination}&waypoints=${waypoints}&travelmode=driving`;
+    }
+
+    // RENDERIZAR TELA DE ROTAS
+    function renderTripView() {
+      const allOrders = getStoreOrders();
+      const currentOrders = tripOrderIds.map(id => allOrders.find(o => o.id === id)).filter(Boolean);
+
+      document.getElementById('collectedBadgeCount').textContent = `${currentOrders.length} pedido(s)`;
+
+      const routeSection = document.getElementById('routeSection');
+      const stopsContainer = document.getElementById('stopsListContainer');
+
+      if (currentOrders.length === 0) {
+        routeSection.classList.add('hidden');
+        document.getElementById('pendingStopsSection').innerHTML = `
+          <div class="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-8 text-center text-xs text-slate-500">
+            <i class="fa-solid fa-qrcode text-3xl mb-2 text-slate-700"></i>
+            <p>Nenhum pedido escaneado para esta viagem.</p>
+            <p class="text-[11px] text-slate-600 mt-1">Aponte a câmera para as comandas A4 das entregas que vai levar.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Calcula a melhor rota
+      const optimizedOrders = calculateBestRoute(currentOrders);
+      routeSection.classList.remove('hidden');
+      document.getElementById('pendingStopsSection').innerHTML = '';
+      document.getElementById('routeTotalStops').textContent = `${optimizedOrders.length} parada(s)`;
+
+      // Link geral do Google Maps
+      const fullUrl = buildMultiStopGoogleMapsUrl(optimizedOrders);
+      document.getElementById('openFullGmapsRouteBtn').href = fullUrl;
+
+      // Renderiza cada parada
+      stopsContainer.innerHTML = optimizedOrders.map((o, idx) => {
+        const isDelivered = o.status === 'entregue';
+        const singleGmapsUrl = o.customer?.location?.lat 
+          ? `https://www.google.com/maps/search/?api=1&query=${o.customer.location.lat},${o.customer.location.lng}` 
+          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.customer.street + ', ' + o.customer.number + ', Brasil')}`;
+
+        return `
+          <div class="rounded-xl border ${isDelivered ? 'border-slate-800 bg-slate-900/30 opacity-60' : 'border-slate-800 bg-slate-900/80'} p-3.5 space-y-2.5 transition-all">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="flex h-6 w-6 items-center justify-center rounded-lg ${isDelivered ? 'bg-slate-800 text-slate-500' : 'bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30'} text-xs">
+                  ${idx + 1}º
+                </span>
+                <span class="font-black text-xs ${isDelivered ? 'text-slate-400 line-through' : 'text-white'}">
+                  ${o.orderNumber} • ${o.customer.name}
+                </span>
+              </div>
+              <span class="text-xs font-bold ${isDelivered ? 'text-slate-500' : 'text-emerald-400'}">
+                R$ ${o.total.toFixed(2).replace('.', ',')}
+              </span>
+            </div>
+
+            <div class="text-xs text-slate-400 pl-8 space-y-0.5">
+              <p class="text-slate-300 font-medium">📍 ${o.customer.street}, Nº ${o.customer.number} ${o.customer.complement ? '(' + o.customer.complement + ')' : ''}</p>
+              <p class="text-[11px] text-slate-500">📞 ${o.customer.phone}</p>
+              ${o.customer.notes ? `<p class="text-[10px] text-amber-400/90 font-medium bg-amber-950/30 p-1.5 rounded-lg border border-amber-900/30">Obs: ${o.customer.notes}</p>` : ''}
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+              <a href="${singleGmapsUrl}" target="_blank" class="w-fit inline-flex items-center gap-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 text-xs font-bold transition-colors">
+                <i class="fa-solid fa-map-location-dot text-emerald-400"></i> Navegar
+              </a>
+
+              ${!isDelivered ? `
+                <button onclick="markOrderDelivered('${o.id}')" class="w-fit inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 px-3 py-1.5 text-xs font-black shadow-md shadow-emerald-950 transition-all active:scale-95">
+                  <i class="fa-solid fa-check"></i> Confirmar Entrega
+                </button>
+              ` : `
+                <span class="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
+                  <i class="fa-solid fa-circle-check"></i> Entregue
+                </span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function markOrderDelivered(orderId) {
+      if (!confirm('Confirmar a entrega deste pedido ao cliente?')) return;
+
+      const allOrders = getStoreOrders();
+      const order = allOrders.find(o => o.id === orderId);
+      if (order) {
+        order.status = 'entregue';
+        order.deliveredAt = new Date().toISOString();
+        saveStoreOrders(allOrders);
+        renderTripView();
+        alert(`✅ Pedido ${order.orderNumber} marcado como Entregue!`);
+      }
+    }
+
+    function handleFinishTrip() {
+      if (!confirm('Deseja finalizar esta viagem e limpar a lista de entregas?')) return;
+      tripOrderIds = [];
+      saveCurrentTrip();
+      alert('🎉 Viagem finalizada com sucesso! Você está pronto para a próxima saída.');
+    }
+
+    // ========================================================
+    // ========================================================
+    // SCANNER DE CÂMERA DE QR CODE COM jsQR (VÍDEO + FOTO NATIVA)
+    // ========================================================
+    function handleQrPhotoCapture(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          if (window.jsQR) {
+            const code = jsQR(imgData.data, imgData.width, imgData.height, {
+              inversionAttempts: 'dontInvert'
+            });
+            if (code && code.data) {
+              playScannerBeep();
+              if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+              addOrderToTrip(code.data);
+              return;
+            }
+          }
+          alert('⚠️ Nenhum QR Code legível foi detectado na foto.\n\nAproxime mais a câmera do QR Code da folha A4 e certifique-se de que a imagem esteja nítida.');
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleManualOrderAdd() {
+      const input = document.getElementById('manualOrderInput');
+      const val = input ? input.value.trim() : '';
+      if (!val) {
+        alert('Digite o número da comanda impresso na folha A4 (Ex: 1001).');
+        return;
+      }
+      const cleanNum = val.replace(/[^0-9]/g, '');
+      const allOrders = getStoreOrders();
+      const order = allOrders.find(o => {
+        const numOnly = o.orderNumber ? o.orderNumber.replace(/\D/g, '') : '';
+        return numOnly === cleanNum || (o.id && o.id.includes(cleanNum));
+      });
+
+      if (order) {
+        playScannerBeep();
+        if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+        if (input) input.value = '';
+        addOrderToTrip(order.id);
+      } else {
+        alert(`⚠️ Pedido #${cleanNum} não foi encontrado no sistema da loja.`);
+      }
+    }
+
+    // ========================================================
+    // EFEITOS SONOROS (WEB AUDIO API): SCANNER & BIOMETRIA
+    // ========================================================
+    function playScannerBeep() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(2200, ctx.currentTime);
+        gain.gain.setValueAtTime(0.35, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.12);
+      } catch (e) {}
+    }
+
+    function playBiometricScanTick() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(950, ctx.currentTime);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.08);
+      } catch (e) {}
+    }
+
+    function playBiometricSuccessSound() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const now = ctx.currentTime;
+        [523.25, 659.25, 783.99].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+          gain.gain.setValueAtTime(0.25, now + idx * 0.09);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.28);
+          osc.start(now + idx * 0.09);
+          osc.stop(now + idx * 0.09 + 0.28);
+        });
+      } catch (e) {}
+    }
+
+    // ========================================================
+    // LEITOR DE CÂMERA AO VIVO COM MULTI-SCAN CONTÍNUO
+    // ========================================================
+    let isProcessingScan = false;
+    let barcodeDetectorInstance = null;
+
+    async function startQrScanner() {
+      const modal = document.getElementById('scannerModal');
+      const video = document.getElementById('qrVideo');
+      const statusText = document.getElementById('scannerStatusText');
+      const videoBox = document.getElementById('videoContainerBox');
+
+      modal.classList.remove('hidden');
+      if (videoBox) videoBox.classList.remove('hidden');
+      statusText.textContent = 'Iniciando câmera ao vivo...';
+
+      // Sincroniza pedidos da loja antes de escanear
+      try {
+        await syncStoreOrders();
+      } catch (e) {}
+
+      // Atualiza lista visual de pedidos na tela do scanner
+      renderScannerScannedList();
+
+      isProcessingScan = false;
+      isTorchOn = false;
+      const torchBtn = document.getElementById('scannerTorchBtn');
+      if (torchBtn) {
+        torchBtn.className = 'w-fit text-slate-400 hover:text-amber-400 p-2 rounded-xl text-base transition-colors';
+      }
+
+      // 1. Inicializa o detector nativo do navegador se suportado (Chrome/Android aceleração GPU)
+      if ('BarcodeDetector' in window && !barcodeDetectorInstance) {
+        try {
+          barcodeDetectorInstance = new window.BarcodeDetector({ formats: ['qr_code'] });
+        } catch (e) {}
+      }
+
+      // 2. Tenta inicializar a câmera com preferência pela lente traseira
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const constraintOptions = [
+          { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
+          { video: { facingMode: 'environment' } },
+          { video: true }
+        ];
+
+        let stream = null;
+        for (const constraints of constraintOptions) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            if (stream) break;
+          } catch (e) {
+            console.warn('Tentativa com constraint falhou:', e);
+          }
+        }
+
+        if (stream) {
+          videoStream = stream;
+          video.srcObject = stream;
+          video.muted = true;
+          video.setAttribute('playsinline', 'true');
+          video.setAttribute('webkit-playsinline', 'true');
+          try {
+            await video.play();
+          } catch (playErr) {
+            console.warn('Erro ao dar play no video:', playErr);
+          }
+
+          isScanning = true;
+          statusText.textContent = 'Aponte para as comandas A4 (leitura contínua ativa):';
+          requestAnimationFrame(tickQrScan);
+          return;
+        }
+      }
+
+      // 3. Fallback se estiver bloqueado em HTTP no celular:
+      const isHttp = (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1');
+      if (isHttp) {
+        const httpsUrl = `https://${location.hostname}:3443${location.pathname}${location.search}`;
+        statusText.innerHTML = `
+          <div class="space-y-1.5 p-2 bg-indigo-950/80 border border-indigo-500/40 rounded-xl text-xs text-indigo-200">
+            <p><strong>Câmera contínua bloqueada em HTTP pelo navegador.</strong></p>
+            <p>Abra em HTTPS para usar o leitor ao vivo ou use o botão de foto abaixo:</p>
+            <a href="${httpsUrl}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-lg transition-all text-xs">
+              <i class="fa-solid fa-lock text-xs"></i> Abrir em HTTPS (Ativar Leitor ao Vivo)
+            </a>
+          </div>
+        `;
+      } else {
+        statusText.textContent = 'Permissão de câmera não concedida. Use a opção de foto abaixo:';
+      }
+    }
+
+    function stopQrScanner() {
+      isScanning = false;
+      isProcessingScan = false;
+      if (videoStream) {
+        try {
+          videoStream.getTracks().forEach(t => t.stop());
+        } catch (e) {}
+        videoStream = null;
+      }
+      const video = document.getElementById('qrVideo');
+      if (video) video.srcObject = null;
+      document.getElementById('scannerModal').classList.add('hidden');
+    }
+
+    let lastScannedCode = null;
+    let lastScannedTime = 0;
+
+    // MULTI-SCAN TICK: PROCESSA EM TEMPO REAL COM DEDUPLICAÇÃO E SEM TRAVAMENTO
+    async function tickQrScan() {
+      if (!isScanning) return;
+
+      if (!isProcessingScan) {
+        const video = document.getElementById('qrVideo');
+        const canvas = document.getElementById('qrCanvas');
+
+        if (video && video.readyState >= video.HAVE_CURRENT_DATA) {
+          let detectedCode = null;
+
+          // 1. Prioriza BarcodeDetector nativo (ultra-rápido por aceleração de GPU)
+          if (barcodeDetectorInstance) {
+            try {
+              const barcodes = await barcodeDetectorInstance.detect(video);
+              if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                detectedCode = barcodes[0].rawValue;
+              }
+            } catch (e) {}
+          }
+
+          // 2. Fallback universal via jsQR (otimizado sem realocação frequente de canvas)
+          if (!detectedCode && window.jsQR && canvas) {
+            const scale = Math.min(1, 640 / (video.videoWidth || 640));
+            const w = Math.floor((video.videoWidth || 640) * scale);
+            const h = Math.floor((video.videoHeight || 480) * scale);
+            if (canvas.width !== w || canvas.height !== h) {
+              canvas.width = w;
+              canvas.height = h;
+            }
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(video, 0, 0, w, h);
+            const imageData = ctx.getImageData(0, 0, w, h);
+
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: 'attemptBoth'
+            });
+            if (code && code.data) {
+              detectedCode = code.data;
+            }
+          }
+
+          // Quando um QR code é detectado:
+          if (detectedCode) {
+            const cleanD = String(detectedCode).trim();
+
+            // BLOQUEIO TOTAL DE REPETIÇÃO: se for o mesmo QR code lido nos últimos 15s, ignore completamente!
+            if (cleanD === lastScannedCode && (Date.now() - lastScannedTime < 15000)) {
+              if (isScanning) requestAnimationFrame(tickQrScan);
+              return;
+            }
+
+            // Se este pedido já foi adicionado à viagem, apenas ignore para não ficar apitando em looping
+            const existingOrder = validateAndFindOrder(cleanD);
+            if (existingOrder && tripOrderIds.includes(existingOrder.id)) {
+              lastScannedCode = cleanD;
+              lastScannedTime = Date.now();
+              if (isScanning) requestAnimationFrame(tickQrScan);
+              return;
+            }
+
+            isProcessingScan = true;
+            lastScannedCode = cleanD;
+            lastScannedTime = Date.now();
+
+            addOrderToTrip(cleanD);
+
+            const statusText = document.getElementById('scannerStatusText');
+            if (statusText) {
+              statusText.innerHTML = '<span class="text-emerald-400 font-bold">✅ Comanda bipada! Afaste e aponte para a próxima...</span>';
+            }
+
+            // Cooldown de 2.2s dando tempo suficiente para o motoboy afastar a comanda
+            setTimeout(() => {
+              isProcessingScan = false;
+              if (statusText) {
+                statusText.textContent = 'Aponte para as comandas A4 (leitura contínua ativa):';
+              }
+              if (isScanning) requestAnimationFrame(tickQrScan);
+            }, 2200);
+            return;
+          }
+        }
+      }
+
+      if (isScanning) {
+        requestAnimationFrame(tickQrScan);
+      }
+    }
+  </script>
+</body>
+</html>

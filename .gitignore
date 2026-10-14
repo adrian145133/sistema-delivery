@@ -1,0 +1,13 @@
+node_modules/
+cloudflared.exe
+*.log
+scratch_edge_*
+edge_profile/
+kiosk_profile/
+motoboy-android-app/android/.gradle/
+motoboy-android-app/android/app/build/
+motoboy-android-app/android/build/
+motoboy-android-app/android/capacitor-android/build/
+motoboy-android-app/android/capacitor-cordova-android-plugins/build/
+ssl_cert.pem
+ssl_key.pem
