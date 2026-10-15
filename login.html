@@ -62,12 +62,17 @@
         <div id="loginFormArea" class="space-y-4">
           
           <div class="space-y-2">
-            <label class="block text-xs font-bold text-slate-700 text-center">Entrar com sua Conta Google</label>
-            <!-- CONTAINER DO BOTÃO OFICIAL DO GOOGLE IDENTITY -->
-            <div id="googleBtnContainer" class="flex justify-center min-h-[44px]">
-              <div class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-500">
-                <i class="fa-solid fa-spinner animate-spin text-emerald-600"></i> Carregando Google Login...
-              </div>
+            <!-- BOTÃO OFICIAL GOOGLE SIGN-IN PADRÃO (SEM EXIBIR E-MAILS DE SESSÕES ANTERIORES) -->
+            <div class="flex justify-center">
+              <button onclick="handleGoogleLoginClick()" type="button" class="w-full max-w-[320px] flex items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold py-2.5 px-4 shadow-sm transition-all active:scale-95 cursor-pointer">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z" />
+                  <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                  <path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z" />
+                  <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z" />
+                </svg>
+                <span>Fazer login com Google</span>
+              </button>
             </div>
           </div>
 
@@ -179,42 +184,76 @@
       }
     }
 
-    function initGoogleIdentity(attempt = 0) {
-      const container = document.getElementById('googleBtnContainer');
-      if (!container) return;
+    let tokenClient = null;
 
-      if (window.google && window.google.accounts && window.google.accounts.id) {
+    function initGoogleClient(attempt = 0) {
+      if (window.google && window.google.accounts && window.google.accounts.oauth2) {
         try {
-          if (!gisInitialized) {
-            google.accounts.id.initialize({
-              client_id: GOOGLE_CLIENT_ID,
-              callback: handleGoogleCredentialResponse,
-              auto_select: false,
-              cancel_on_tap_outside: true
-            });
-            gisInitialized = true;
-          }
-          container.innerHTML = '';
-          google.accounts.id.renderButton(container, {
-            theme: 'outline',
-            size: 'large',
-            type: 'standard',
-            text: 'signin_with',
-            shape: 'rectangular',
-            logo_alignment: 'left',
-            width: 320
+          tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: 'email profile openid',
+            callback: async (tokenResponse) => {
+              if (tokenResponse && tokenResponse.access_token) {
+                try {
+                  const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+                  });
+                  const profile = await res.json();
+                  if (!profile || !profile.email) {
+                    alert('Não foi possível identificar o e-mail da sua Conta Google.');
+                    return;
+                  }
+                  const realEmail = profile.email.trim().toLowerCase();
+                  const realName = profile.name || profile.given_name || realEmail.split('@')[0];
+                  const realAvatar = profile.picture || null;
+
+                  const session = {
+                    email: realEmail,
+                    name: realName,
+                    avatar: realAvatar,
+                    provider: 'google',
+                    role: 'lojista',
+                    loginAt: Date.now()
+                  };
+
+                  localStorage.setItem('LOJISTA_SESSION', JSON.stringify(session));
+                  localStorage.setItem('LOJISTA_SESSION_default_store', JSON.stringify(session));
+                  window.location.href = 'pedidos.html';
+                } catch (err) {
+                  console.error('Erro ao buscar dados do Google:', err);
+                  alert('Erro ao processar login com Google.');
+                }
+              }
+            }
           });
           return;
         } catch (e) {
-          console.warn('Erro ao renderizar botão do Google:', e);
+          console.warn('Erro ao inicializar Google OAuth:', e);
         }
       }
 
       if (attempt < 15) {
-        setTimeout(() => initGoogleIdentity(attempt + 1), 250);
+        setTimeout(() => initGoogleClient(attempt + 1), 250);
       }
     }
 
+    function handleGoogleLoginClick() {
+      if (!tokenClient) {
+        initGoogleClient();
+      }
+      if (tokenClient) {
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+      } else if (window.google && window.google.accounts && window.google.accounts.id) {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCredentialResponse,
+          auto_select: false
+        });
+        google.accounts.id.prompt();
+      } else {
+        alert('Carregando serviço de login do Google. Por favor, tente novamente em 2 segundos.');
+      }
+    }
 
     function handleEmailLogin(e) {
       e.preventDefault();
@@ -235,8 +274,8 @@
       window.location.href = 'pedidos.html';
     }
 
-    // Inicializa botão oficial do Google
-    window.addEventListener('load', () => initGoogleIdentity());
+    // Inicializa cliente oficial do Google OAuth
+    window.addEventListener('load', () => initGoogleClient());
   </script>
 </body>
 </html>
