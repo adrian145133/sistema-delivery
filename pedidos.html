@@ -319,17 +319,17 @@
 
           <div>
             <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Chave PIX (CPF, CNPJ, Celular ou E-mail):</label>
-            <input type="text" id="cfgPixKey" readonly required placeholder="Ex: 11987654321 ou loja@pix.com.br" class="w-full max-w-[60ch] font-mono rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-slate-700 focus:outline-none transition-all">
+            <input type="text" id="cfgPixKey" readonly required placeholder="Ex: 11987654321 ou loja@pix.com.br" style="width: 36ch; max-width: 100%;" class="font-mono rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-slate-700 focus:outline-none transition-all">
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Nome do Titular da Conta PIX *</label>
-              <input type="text" id="cfgMerchantName" readonly required placeholder="Ex: CARLOS ALBERTO SILVA" class="w-full max-w-[40ch] uppercase rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-slate-700 focus:outline-none transition-all">
+              <input type="text" id="cfgMerchantName" readonly required placeholder="Ex: CARLOS ALBERTO SILVA" style="width: 40ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-slate-700 focus:outline-none transition-all">
             </div>
             <div>
               <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Cidade da Conta Bancária *</label>
-              <input type="text" id="cfgMerchantCity" readonly required placeholder="Ex: SAO PAULO" class="w-full max-w-[30ch] uppercase rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-slate-700 focus:outline-none transition-all">
+              <input type="text" id="cfgMerchantCity" readonly required placeholder="Ex: SAO PAULO" style="width: 28ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-slate-700 focus:outline-none transition-all">
             </div>
           </div>
 
@@ -343,7 +343,7 @@
                 Alterar PIN
               </button>
               <button type="button" onclick="openRecoverPinModal()" class="w-fit text-[11px] text-amber-700 hover:text-amber-900 underline font-bold">
-                Recuperar PIN por E-mail
+                Recuperar Senha / PIN
               </button>
             </div>
           </div>
@@ -682,63 +682,55 @@
           </div>
         </div>
 
-        <!-- CAMPO DA CHAVE PIX DO LOJISTA (PROTEGIDO POR PIN MESTRE DO PROPRIETÁRIO) -->
+        <!-- CAMPO DA CHAVE PIX DO LOJISTA (TOTALMENTE LIBERADO NO CADASTRO INICIAL) -->
         <div class="rounded-xl border border-emerald-400 bg-emerald-50/70 p-3.5 space-y-3 shadow-xs">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-2">
               <i class="fa-brands fa-pix text-emerald-600 text-base"></i>
               <span class="font-bold text-emerald-950 text-sm">Chave PIX de Recebimento da Loja *</span>
             </div>
-            <!-- INDICADOR DE STATUS DO PIN -->
-            <div id="setupPixLockStatusBadge" class="flex items-center gap-1.5">
-              <span id="setupPixLockedBadge" class="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 text-[10px] font-bold">
-                <i class="fa-solid fa-lock text-[9px]"></i> Trancado por PIN
-              </span>
-              <span id="setupPixUnlockedBadge" class="hidden inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 text-[10px] font-bold">
-                <i class="fa-solid fa-lock-open text-[9px]"></i> Liberado para o Dono
+            <!-- INDICADOR DE STATUS DO CADASTRO -->
+            <div class="flex items-center gap-1.5">
+              <span id="setupPixUnlockedBadge" class="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 text-[10px] font-bold">
+                <i class="fa-solid fa-lock-open text-[9px]"></i> Liberado para Cadastro
               </span>
             </div>
           </div>
 
-          <!-- AVISO DE BLINDAGEM DE SEGURANÇA CONTRA FRAUDES DE CAIXA -->
-          <div class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
+          <!-- AVISO DE RECEBIMENTO DIRETO SEM TAXAS -->
+          <div class="p-2.5 rounded-lg bg-emerald-100/70 border border-emerald-300 text-emerald-950 text-[11px] leading-relaxed">
             <div class="flex items-start gap-2">
-              <i class="fa-solid fa-shield-halved text-amber-600 text-sm mt-0.5 shrink-0"></i>
+              <i class="fa-solid fa-circle-check text-emerald-700 text-sm mt-0.5 shrink-0"></i>
               <div>
-                <strong>Trava Anti-Fraude do Dono:</strong> Para evitar que funcionários no computador do caixa alterem o PIX para uma conta pessoal, os dados bancários ficam trancados. Apenas o proprietário com o PIN de Segurança pode alterar a Chave PIX (com recuperação exclusiva pelo e-mail do lojista).
+                <strong>Recebimento Direto na sua Conta:</strong> Digite a Chave PIX do seu negócio. Os clientes pagarão 100% dos pedidos diretamente para você, com taxa ZERO.
               </div>
             </div>
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Chave PIX (CPF, CNPJ, Celular ou E-mail):</label>
-            <input type="text" id="setupPixKeyInput" readonly placeholder="Ex: 11987654321 ou loja@pix.com.br" class="w-full max-w-[60ch] font-mono rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-slate-700 focus:outline-none transition-all">
+            <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Chave PIX (CPF, CNPJ, Celular ou E-mail) *</label>
+            <input type="text" id="setupPixKeyInput" required placeholder="Ex: 11987654321 ou loja@pix.com.br" style="width: 36ch; max-width: 100%;" class="font-mono rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Nome do Titular da Conta PIX *</label>
-              <input type="text" id="setupMerchantNameInput" readonly placeholder="Ex: CARLOS ALBERTO SILVA" class="w-full max-w-[40ch] uppercase rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-slate-700 focus:outline-none transition-all">
+              <input type="text" id="setupMerchantNameInput" required placeholder="Ex: CARLOS ALBERTO SILVA" style="width: 40ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
             </div>
             <div>
               <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Cidade da Conta Bancária *</label>
-              <input type="text" id="setupMerchantCityInput" readonly placeholder="Ex: SAO PAULO" class="w-full max-w-[30ch] uppercase rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-slate-700 focus:outline-none transition-all">
+              <input type="text" id="setupMerchantCityInput" required placeholder="Ex: SAO PAULO" style="width: 28ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
             </div>
           </div>
 
-          <!-- BOTÃO PARA DESTRAVAR COM PIN DO DONO & RECUPERAÇÃO -->
-          <div id="setupPixLockedControls" class="pt-2 flex items-center justify-between border-t border-emerald-200/60 flex-wrap gap-2">
-            <button type="button" onclick="openPixPinModal()" class="w-fit inline-flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 text-xs shadow-sm transition-all active:scale-95">
-              <i class="fa-solid fa-lock"></i> Desbloquear Edição (Digitar PIN do Dono)
-            </button>
-            <div class="flex items-center gap-3">
-              <button type="button" onclick="openChangePinModal()" class="w-fit text-[11px] text-slate-600 hover:text-slate-900 underline font-medium">
-                Alterar PIN
-              </button>
-              <button type="button" onclick="openRecoverPinModal()" class="w-fit text-[11px] text-amber-700 hover:text-amber-900 underline font-bold">
-                Recuperar PIN por E-mail
-              </button>
-            </div>
+          <!-- CAMPO OPCIONAL: PIN DO DONO JÁ NO CADASTRO -->
+          <div class="pt-2 border-t border-emerald-200/60">
+            <label class="block font-semibold text-slate-700 mb-1 text-[11px] flex items-center gap-1.5">
+              <i class="fa-solid fa-key text-emerald-700"></i>
+              Criar PIN de Segurança do Dono (Opcional - 4 a 6 dígitos numéricos):
+            </label>
+            <input type="password" id="setupOwnerPinInput" maxlength="6" placeholder="Ex: 1234" style="width: 18ch; max-width: 100%;" class="font-mono text-center rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
+            <p class="text-[10px] text-slate-500 mt-0.5">Use este PIN no caixa caso deseje proteger a chave PIX de alterações futuras por funcionários.</p>
           </div>
         </div>
 
@@ -764,13 +756,13 @@
         <i class="fa-solid fa-key"></i>
       </div>
       <div>
-        <h3 class="text-base font-bold text-slate-900">PIN do Dono da Loja</h3>
-        <p class="text-xs text-slate-500 mt-1">Digite o seu PIN de segurança para autorizar a alteração da Chave PIX</p>
+        <h3 id="pixPinModalTitle" class="text-base font-bold text-slate-900">PIN do Dono da Loja</h3>
+        <p id="pixPinModalDesc" class="text-xs text-slate-500 mt-1">Digite o seu PIN de segurança para autorizar a alteração da Chave PIX</p>
       </div>
 
       <form onsubmit="handleVerifyOwnerPin(event)" class="space-y-4">
         <div>
-          <input type="password" id="ownerPinInput" required maxlength="6" placeholder="••••" style="width: 14ch;" class="mx-auto text-center font-mono text-2xl tracking-[0.5em] rounded-xl border-2 border-slate-300 bg-slate-50 py-2 text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none">
+          <input type="password" id="ownerPinInput" required maxlength="6" placeholder="••••" style="width: 14ch; max-width: 100%;" class="mx-auto text-center font-mono text-2xl tracking-[0.5em] rounded-xl border-2 border-slate-300 bg-slate-50 py-2 text-slate-900 focus:border-amber-500 focus:bg-white focus:outline-none">
         </div>
 
         <div id="pinErrorMsg" class="hidden text-xs text-rose-600 font-bold bg-rose-50 p-2 rounded-lg border border-rose-200">
@@ -779,7 +771,7 @@
 
         <div class="pt-0.5">
           <button type="button" onclick="openRecoverPinModal()" class="w-fit text-xs text-amber-700 hover:text-amber-900 font-bold underline">
-            Esqueceu o PIN? Recuperar por e-mail
+            Esqueceu o PIN? Recuperar Senha / PIN
           </button>
         </div>
 
@@ -787,7 +779,7 @@
           <button type="button" onclick="closePixPinModal()" class="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
             Cancelar
           </button>
-          <button type="submit" class="w-fit inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-5 py-2 text-xs font-bold text-slate-950 shadow-sm">
+          <button type="submit" id="pixPinModalSubmitBtn" class="w-fit inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-5 py-2 text-xs font-bold text-slate-950 shadow-sm">
             <i class="fa-solid fa-unlock"></i> Confirmar PIN
           </button>
         </div>
@@ -811,15 +803,15 @@
       <form onsubmit="handleSaveNewPin(event)" class="space-y-3 text-left text-xs">
         <div>
           <label class="block font-semibold text-slate-700 mb-1">PIN Atual</label>
-          <input type="password" id="currentPinInput" required maxlength="6" placeholder="Ex: PIN atual" class="w-full text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-indigo-500">
+          <input type="password" id="currentPinInput" required maxlength="6" placeholder="Ex: PIN atual" style="width: 18ch; max-width: 100%;" class="text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-indigo-500">
         </div>
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Novo PIN (4 a 6 dígitos)</label>
-          <input type="password" id="newPinInput" required maxlength="6" placeholder="Novo PIN" class="w-full text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-indigo-500">
+          <input type="password" id="newPinInput" required maxlength="6" placeholder="Novo PIN" style="width: 18ch; max-width: 100%;" class="text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-indigo-500">
         </div>
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Confirme o Novo PIN</label>
-          <input type="password" id="confirmNewPinInput" required maxlength="6" placeholder="Repita o novo PIN" class="w-full text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-indigo-500">
+          <input type="password" id="confirmNewPinInput" required maxlength="6" placeholder="Repita o novo PIN" style="width: 18ch; max-width: 100%;" class="text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-indigo-500">
         </div>
 
         <div id="changePinErrorMsg" class="hidden text-xs text-rose-600 font-bold bg-rose-50 p-2 rounded-lg border border-rose-200">
@@ -828,7 +820,7 @@
 
         <div class="pt-1 text-center">
           <button type="button" onclick="openRecoverPinModal()" class="w-fit text-xs text-indigo-700 hover:text-indigo-900 font-bold underline">
-            Esqueceu o PIN atual? Recuperar por e-mail
+            Esqueceu o PIN atual? Recuperar Senha / PIN
           </button>
         </div>
 
@@ -845,76 +837,101 @@
   </div>
 
   <!-- ==================================================== -->
-  <!-- MODAL: RECUPERAR O PIN POR E-MAIL DO LOJISTA         -->
+  <!-- MODAL: RECUPERAR SENHA / PIN (MODO SIMPLES & E-MAIL) -->
   <!-- ==================================================== -->
   <div id="recoverPinModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 no-print">
     <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl text-center space-y-4">
-      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 text-xl shadow-sm">
-        <i class="fa-solid fa-envelope-circle-check"></i>
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 text-xl shadow-sm">
+        <i class="fa-solid fa-shield-halved"></i>
       </div>
       <div>
-        <h3 class="text-base font-bold text-slate-900">Recuperar PIN de Segurança</h3>
-        <p class="text-xs text-slate-500 mt-1">O código de autorização será enviado para o seu e-mail cadastrado de lojista</p>
+        <h3 class="text-base font-bold text-slate-900">Recuperar PIN / Senha de Segurança</h3>
+        <p class="text-xs text-slate-500 mt-1">Escolha como deseja redefinir o seu PIN do Dono:</p>
       </div>
 
-      <!-- ETAPA 1: SOLICITAR CÓDIGO POR E-MAIL -->
-      <div id="recoverStep1" class="space-y-3">
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 text-left">
-          <p class="text-slate-500 text-[11px]">E-mail de recuperação do proprietário:</p>
-          <p class="font-bold text-slate-900 text-sm mt-0.5 flex items-center gap-1.5">
-            <i class="fa-solid fa-envelope text-emerald-600"></i>
-            <span id="recoverLojistaEmailDisplay">lojista@delivery.com</span>
-          </p>
+      <!-- OPÇÃO 1: MODO SIMPLES (DONO AUTENTICADO COM CONTA GOOGLE) -->
+      <div id="simpleRecoverSection" class="rounded-xl border border-emerald-400 bg-emerald-50/70 p-3.5 text-left space-y-2.5 shadow-xs">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-emerald-950 text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-check text-emerald-600"></i>
+            Modo Simples (Conta Google Conectada)
+          </span>
+          <span class="inline-flex items-center gap-1 rounded-full bg-emerald-200/80 text-emerald-900 px-2 py-0.5 text-[10px] font-bold">
+            Recomendado
+          </span>
         </div>
-
-        <button type="button" onclick="sendPinRecoveryCode()" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 py-2.5 text-xs font-bold text-white shadow-sm transition-all">
-          <i class="fa-solid fa-paper-plane"></i> Enviar Código de Recuperação para meu E-mail
-        </button>
-      </div>
-
-      <!-- ETAPA 2: VALIDAR CÓDIGO E DEFINIR NOVO PIN -->
-      <div id="recoverStep2" class="hidden space-y-3">
-        <form onsubmit="handleResetPinWithCode(event)" class="space-y-3 text-left text-xs">
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Código de 6 Dígitos recebido por E-mail</label>
-            <input type="text" id="recoverCodeInput" required maxlength="6" placeholder="000000" class="w-full text-center font-mono text-lg tracking-widest rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-emerald-500">
+        <p class="text-[11px] text-emerald-900 leading-relaxed">
+          Você já está conectado como <strong id="simpleRecoverUserEmail" class="text-emerald-950">dono@gmail.com</strong>. Crie um novo PIN diretamente sem burocracia:
+        </p>
+        <form onsubmit="handleDirectPinReset(event)" class="space-y-2 pt-1">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="block font-semibold text-emerald-900 text-[10px] mb-0.5">Novo PIN (4-6 dígitos):</label>
+              <input type="password" id="simpleNewPinInput" required maxlength="6" placeholder="Novo PIN" style="width: 14ch; max-width: 100%;" class="font-mono text-center rounded-xl border border-emerald-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-emerald-900 text-[10px] mb-0.5">Confirme o Novo PIN:</label>
+              <input type="password" id="simpleConfirmPinInput" required maxlength="6" placeholder="Repita o PIN" style="width: 14ch; max-width: 100%;" class="font-mono text-center rounded-xl border border-emerald-300 bg-white px-3 py-1.5 text-xs text-slate-900 focus:border-emerald-600 focus:outline-none">
+            </div>
           </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Novo PIN (4 a 6 dígitos numéricos)</label>
-            <input type="password" id="recoverNewPinInput" required maxlength="6" placeholder="Novo PIN" class="w-full text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-emerald-500">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1">Confirme o Novo PIN</label>
-            <input type="password" id="recoverConfirmPinInput" required maxlength="6" placeholder="Repita o novo PIN" class="w-full text-center font-mono rounded-xl border border-slate-300 bg-slate-50 py-2 text-slate-900 focus:outline-none focus:border-emerald-500">
-          </div>
-
-          <div class="flex items-center justify-between gap-2 pt-2">
-            <button type="button" onclick="sendPinRecoveryCode()" class="w-fit text-[11px] text-slate-600 hover:text-slate-900 underline font-medium">
-              Reenviar código
-            </button>
-            <button type="submit" class="w-fit inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm">
-              <i class="fa-solid fa-check"></i> Redefinir PIN
+          <div class="pt-1">
+            <button type="submit" class="w-fit inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-xs transition-all active:scale-95">
+              <i class="fa-solid fa-check"></i> Salvar Novo PIN e Liberar PIX
             </button>
           </div>
         </form>
       </div>
 
-      <div id="recoverPinSuccessMsg" class="hidden text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 text-left"></div>
-      <div id="recoverPinErrorMsg" class="hidden text-xs text-rose-600 font-bold bg-rose-50 p-2 rounded-lg border border-rose-200 text-left"></div>
-
-      <!-- CASO O LOJISTA TENHA PERDIDO O E-MAIL: CONTATO DE SUPORTE -->
-      <div class="rounded-xl border border-rose-200 bg-rose-50/90 p-3.5 text-left text-xs text-rose-950 space-y-1.5">
-        <div class="flex items-center gap-1.5 font-bold text-rose-800 text-xs">
-          <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Perdeu o acesso a este e-mail?
+      <!-- OPÇÃO 2: NO ÚLTIMO CASO COM RECUPERAÇÃO POR E-MAIL -->
+      <div class="rounded-xl border border-amber-300 bg-amber-50/60 p-3.5 text-left space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-amber-950 text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-envelope text-amber-600"></i>
+            No Último Caso: Recuperação por E-mail
+          </span>
+          <span class="text-[10px] text-amber-800 font-medium">Código de 6 dígitos</span>
         </div>
-        <p class="text-[11px] text-rose-800 leading-relaxed">
-          Se você não tem mais acesso a esta conta de e-mail, entre em contato imediatamente com o nosso suporte técnico para autenticação e redefinição manual:
+        <p class="text-[11px] text-amber-900 leading-relaxed">
+          Enviar código de segurança para o e-mail cadastrado da loja:
+          <span id="recoverLojistaEmailDisplay" class="font-bold text-amber-950 block mt-0.5">lojista@delivery.com</span>
         </p>
-        <div class="pt-0.5">
-          <a href="mailto:elfo145133@gmail.com?subject=Suporte:%20Perdi%20meu%20e-mail%20de%20recuperacao%20do%20PIN" class="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-bold text-rose-900 hover:bg-rose-100 shadow-xs transition-all">
-            <i class="fa-solid fa-envelope text-rose-600"></i> elfo145133@gmail.com
-          </a>
+
+        <!-- ETAPA 1 DO E-MAIL: ENVIAR CÓDIGO -->
+        <div id="emailRecoverStep1">
+          <button type="button" onclick="sendPinRecoveryCode()" class="w-fit inline-flex items-center gap-1.5 rounded-xl border border-amber-400 bg-amber-500 hover:bg-amber-600 px-3.5 py-1.5 text-xs font-bold text-slate-950 shadow-xs transition-all active:scale-95">
+            <i class="fa-solid fa-paper-plane"></i> Enviar Código para meu E-mail
+          </button>
         </div>
+
+        <!-- ETAPA 2 DO E-MAIL: DIGITAR CÓDIGO E NOVO PIN -->
+        <div id="emailRecoverStep2" class="hidden space-y-2 pt-2 border-t border-amber-200">
+          <div id="recoverPinSuccessMsg" class="text-[11px] text-emerald-800 bg-white p-2 rounded-lg border border-emerald-300 shadow-xs"></div>
+          <form onsubmit="handleResetPinWithCode(event)" class="space-y-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label class="block font-semibold text-slate-700 text-[10px] mb-0.5">Código de 6 Dígitos:</label>
+                <input type="text" id="recoverCodeInput" required maxlength="6" placeholder="000000" style="width: 14ch; max-width: 100%;" class="font-mono text-center tracking-widest rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 focus:border-amber-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 text-[10px] mb-0.5">Novo PIN (4-6 dígitos):</label>
+                <input type="password" id="recoverNewPinInput" required maxlength="6" placeholder="Novo PIN" style="width: 14ch; max-width: 100%;" class="font-mono text-center rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 focus:border-amber-500 focus:outline-none">
+              </div>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 text-[10px] mb-0.5">Confirme o Novo PIN:</label>
+              <input type="password" id="recoverConfirmPinInput" required maxlength="6" placeholder="Repita o novo PIN" style="width: 14ch; max-width: 100%;" class="font-mono text-center rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 focus:border-amber-500 focus:outline-none">
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+              <button type="submit" class="w-fit inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-1.5 text-xs font-bold text-slate-950 shadow-xs">
+                <i class="fa-solid fa-check"></i> Redefinir PIN com Código
+              </button>
+              <button type="button" onclick="sendPinRecoveryCode()" class="w-fit text-[11px] text-slate-600 hover:text-slate-900 underline font-medium">
+                Reenviar código
+              </button>
+            </div>
+          </form>
+        </div>
+        <div id="recoverPinErrorMsg" class="hidden text-xs text-rose-600 font-bold bg-rose-50 p-2 rounded-lg border border-rose-200"></div>
       </div>
 
       <div class="pt-2 border-t border-slate-100 text-right">
@@ -1437,6 +1454,7 @@
       const pixInput = document.getElementById('setupPixKeyInput');
       const merchantInput = document.getElementById('setupMerchantNameInput');
       const cityInput = document.getElementById('setupMerchantCityInput');
+      const pinInput = document.getElementById('setupOwnerPinInput');
 
       if (nameInput) {
         nameInput.value = '';
@@ -1455,58 +1473,31 @@
         nameInput.dispatchEvent(new Event('input'));
       }
 
-      if (phoneInput) {
-        phoneInput.value = '';
-      }
-      if (feeInput) {
-        feeInput.value = 5.00;
-      }
+      if (phoneInput) phoneInput.value = '';
+      if (feeInput) feeInput.value = 5.00;
+      if (pinInput) pinInput.value = '';
 
-      if (!isPixUnlocked) {
-        if (pixInput) {
-          pixInput.readOnly = true;
-          pixInput.value = '';
-          pixInput.classList.add('bg-slate-100', 'text-slate-700');
-          pixInput.classList.remove('bg-white', 'text-slate-900', 'border-emerald-500');
-        }
-        if (merchantInput) {
-          merchantInput.readOnly = true;
-          merchantInput.value = 'LOJA';
-          merchantInput.classList.add('bg-slate-100', 'text-slate-700');
-          merchantInput.classList.remove('bg-white', 'text-slate-900');
-        }
-        if (cityInput) {
-          cityInput.readOnly = true;
-          cityInput.value = 'BRASIL';
-          cityInput.classList.add('bg-slate-100', 'text-slate-700');
-          cityInput.classList.remove('bg-white', 'text-slate-900');
-        }
-        document.getElementById('setupPixLockedBadge')?.classList.remove('hidden');
-        document.getElementById('setupPixUnlockedBadge')?.classList.add('hidden');
-        document.getElementById('setupPixLockedControls')?.classList.remove('hidden');
-      } else {
-        if (pixInput) {
-          pixInput.readOnly = false;
-          pixInput.value = '';
-          pixInput.classList.remove('bg-slate-100', 'text-slate-700');
-          pixInput.classList.add('bg-white', 'text-slate-900', 'border-emerald-500');
-        }
-        if (merchantInput) {
-          merchantInput.readOnly = false;
-          merchantInput.value = '';
-          merchantInput.classList.remove('bg-slate-100', 'text-slate-700');
-          merchantInput.classList.add('bg-white', 'text-slate-900');
-        }
-        if (cityInput) {
-          cityInput.readOnly = false;
-          cityInput.value = '';
-          cityInput.classList.remove('bg-slate-100', 'text-slate-700');
-          cityInput.classList.add('bg-white', 'text-slate-900');
-        }
-        document.getElementById('setupPixLockedBadge')?.classList.add('hidden');
-        document.getElementById('setupPixUnlockedBadge')?.classList.remove('hidden');
-        document.getElementById('setupPixLockedControls')?.classList.add('hidden');
+      // No cadastro inicial, os campos PIX são SEMPRE destravados para o novo lojista preencher
+      isPixUnlocked = true;
+      if (pixInput) {
+        pixInput.readOnly = false;
+        pixInput.value = '';
+        pixInput.classList.remove('bg-slate-100', 'text-slate-700');
+        pixInput.classList.add('bg-white', 'text-slate-900');
       }
+      if (merchantInput) {
+        merchantInput.readOnly = false;
+        merchantInput.value = (session && session.name ? session.name.toUpperCase() : 'LOJA');
+        merchantInput.classList.remove('bg-slate-100', 'text-slate-700');
+        merchantInput.classList.add('bg-white', 'text-slate-900');
+      }
+      if (cityInput) {
+        cityInput.readOnly = false;
+        cityInput.value = 'BRASIL';
+        cityInput.classList.remove('bg-slate-100', 'text-slate-700');
+        cityInput.classList.add('bg-white', 'text-slate-900');
+      }
+      document.getElementById('setupPixUnlockedBadge')?.classList.remove('hidden');
     }
 
     function handleCancelSetupStore() {
@@ -1543,16 +1534,20 @@
       storeConfig.deliveryFee = fee;
       storeConfig.ownerEmail = ownerEmail;
 
-      if (isPixUnlocked) {
-        const pixVal = document.getElementById('setupPixKeyInput')?.value.trim();
-        if (pixVal) storeConfig.pixKey = pixVal;
-        const merchVal = document.getElementById('setupMerchantNameInput')?.value.trim().toUpperCase();
-        if (merchVal) storeConfig.merchantName = merchVal;
-        const cityVal = document.getElementById('setupMerchantCityInput')?.value.trim().toUpperCase();
-        if (cityVal) storeConfig.merchantCity = cityVal;
+      const pixVal = document.getElementById('setupPixKeyInput')?.value.trim();
+      if (pixVal) storeConfig.pixKey = pixVal;
+      const merchVal = document.getElementById('setupMerchantNameInput')?.value.trim().toUpperCase();
+      if (merchVal) storeConfig.merchantName = merchVal;
+      const cityVal = document.getElementById('setupMerchantCityInput')?.value.trim().toUpperCase();
+      if (cityVal) storeConfig.merchantCity = cityVal;
+
+      const pinVal = document.getElementById('setupOwnerPinInput')?.value.trim();
+      if (pinVal && pinVal.length >= 4) {
+        storeConfig.ownerPin = pinVal;
+        localStorage.setItem(`STORE_OWNER_PIN_${slug}`, pinVal);
       }
 
-      localStorage.setItem(CONFIG_KEY, JSON.stringify(storeConfig));
+      localStorage.setItem(`DELIVERY_CONFIG_${slug}`, JSON.stringify(storeConfig));
       localStorage.setItem(LEGACY_CONFIG_KEY, JSON.stringify(storeConfig));
       window.dispatchEvent(new Event('storage'));
 
@@ -1577,10 +1572,18 @@
             deliveryFee: fee,
             pixKey: storeConfig.pixKey || '',
             merchantName: storeConfig.merchantName || 'LOJA',
-            merchantCity: storeConfig.merchantCity || 'BRASIL'
+            merchantCity: storeConfig.merchantCity || 'BRASIL',
+            ownerPin: storeConfig.ownerPin || ''
           }
         })
       }).then(() => {
+        alert(`🎉 Estabelecimento "${name}" criado com sucesso!\n\nSeu cardápio exclusivo está pronto.`);
+        window.location.replace(`pedidos.html?loja=${encodeURIComponent(slug)}`);
+      }).catch(err => {
+        console.error('Erro ao salvar no servidor:', err);
+        window.location.replace(`pedidos.html?loja=${encodeURIComponent(slug)}`);
+      });
+    }
         window.location.replace(`pedidos.html?loja=${encodeURIComponent(slug)}`);
       }).catch(() => {
         window.location.replace(`pedidos.html?loja=${encodeURIComponent(slug)}`);
@@ -1625,15 +1628,53 @@
 
     // ========================================================
     // PIN EXCLUSIVO DE SEGURANÇA DA CHAVE PIX DO DONO DA LOJA
-    // (SEM CHAVE MESTRE - RECUPERAÇÃO EXCLUSIVA POR E-MAIL)
+    // (MODO SIMPLES DIRETO & RECUPERAÇÃO POR E-MAIL)
     // ========================================================
+    function getStoreOwnerPinKey() {
+      const session = getLojistaSession();
+      const emailSlug = session && session.email ? session.email.replace(/[^a-z0-9]/gi, '_') : '';
+      const slug = getStoreSlug();
+      if (slug && slug !== 'default_store') {
+        return `STORE_OWNER_PIN_${slug}`;
+      }
+      if (emailSlug) {
+        return `STORE_OWNER_PIN_${emailSlug}`;
+      }
+      return 'STORE_OWNER_PIN_default_store';
+    }
+
+    function getPinRecoveryKey() {
+      const slug = getStoreSlug();
+      return `DELIVERY_PIN_RECOVERY_DATA_${slug}`;
+    }
+
     function getOwnerPin() {
-      return localStorage.getItem(STORE_OWNER_PIN_KEY);
+      if (storeConfig && storeConfig.ownerPin) return String(storeConfig.ownerPin).trim();
+      return localStorage.getItem(getStoreOwnerPinKey()) || '';
+    }
+
+    function setOwnerPin(newPin) {
+      storeConfig.ownerPin = newPin;
+      localStorage.setItem(getStoreOwnerPinKey(), newPin);
+      const slug = getStoreSlug();
+      localStorage.setItem(`DELIVERY_CONFIG_${slug}`, JSON.stringify(storeConfig));
+      localStorage.setItem(LEGACY_CONFIG_KEY, JSON.stringify(storeConfig));
+      if (slug && slug !== 'default_store') {
+        fetch(`/api/store?loja=${encodeURIComponent(slug)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: slug,
+            settings: storeConfig
+          })
+        }).catch(() => {});
+      }
     }
 
     function getLojistaEmail() {
       const session = getLojistaSession();
       if (session && session.email) return session.email;
+      if (storeConfig && storeConfig.ownerEmail) return storeConfig.ownerEmail;
       if (storeConfig && storeConfig.email) return storeConfig.email;
       return '';
     }
@@ -1647,50 +1688,8 @@
       return key.slice(0, 3) + '••••••••' + key.slice(-2);
     }
 
-    function openPixPinModal() {
-      document.getElementById('pinErrorMsg').classList.add('hidden');
-      document.getElementById('ownerPinInput').value = '';
-      
-      const currentPin = getOwnerPin();
-      // Se ainda não cadastrou nenhum PIN pela primeira vez, convida a criar o PIN
-      if (!currentPin) {
-        document.getElementById('ownerPinInput').placeholder = 'Criar PIN';
-      } else {
-        document.getElementById('ownerPinInput').placeholder = '••••';
-      }
-
-      document.getElementById('pixPinSecurityModal').classList.remove('hidden');
-      setTimeout(() => document.getElementById('ownerPinInput').focus(), 100);
-    }
-
-    function closePixPinModal() {
-      document.getElementById('pixPinSecurityModal').classList.add('hidden');
-    }
-
-    function handleVerifyOwnerPin(e) {
-      e.preventDefault();
-      const inputPin = document.getElementById('ownerPinInput').value.trim();
-      const actualPin = getOwnerPin();
-
-      // Se ainda não configurou PIN, este primeiro digitado é gravado com sucesso
-      if (!actualPin) {
-        if (inputPin.length < 4) {
-          const errBox = document.getElementById('pinErrorMsg');
-          errBox.textContent = 'O PIN inicial deve ter pelo menos 4 dígitos numéricos.';
-          errBox.classList.remove('hidden');
-          return;
-        }
-        localStorage.setItem(STORE_OWNER_PIN_KEY, inputPin);
-        alert('🔐 Seu PIN de segurança exclusivo foi cadastrado com sucesso!');
-      } else if (inputPin !== actualPin) {
-        const errBox = document.getElementById('pinErrorMsg');
-        errBox.textContent = 'PIN incorreto! Se você esqueceu, clique em "Recuperar por e-mail" abaixo.';
-        errBox.classList.remove('hidden');
-        return;
-      }
-
+    function unlockPixFields() {
       isPixUnlocked = true;
-      closePixPinModal();
 
       // Desbloqueia campos no configModal
       const pixInput = document.getElementById('cfgPixKey');
@@ -1706,12 +1705,14 @@
 
       if (nameInput) {
         nameInput.readOnly = false;
+        nameInput.value = storeConfig.merchantName || '';
         nameInput.classList.remove('bg-slate-100', 'text-slate-700');
         nameInput.classList.add('bg-white', 'text-slate-900');
       }
 
       if (cityInput) {
         cityInput.readOnly = false;
+        cityInput.value = storeConfig.merchantCity || '';
         cityInput.classList.remove('bg-slate-100', 'text-slate-700');
         cityInput.classList.add('bg-white', 'text-slate-900');
       }
@@ -1747,20 +1748,78 @@
       document.getElementById('setupPixLockedBadge')?.classList.add('hidden');
       document.getElementById('setupPixUnlockedBadge')?.classList.remove('hidden');
       document.getElementById('setupPixLockedControls')?.classList.add('hidden');
+    }
 
+    function openPixPinModal() {
+      document.getElementById('pinErrorMsg')?.classList.add('hidden');
+      const input = document.getElementById('ownerPinInput');
+      if (input) input.value = '';
+
+      const currentPin = getOwnerPin();
+      const titleEl = document.getElementById('pixPinModalTitle');
+      const descEl = document.getElementById('pixPinModalDesc');
+      const submitBtn = document.getElementById('pixPinModalSubmitBtn');
+
+      if (!currentPin) {
+        if (titleEl) titleEl.textContent = 'Cadastrar PIN de Segurança';
+        if (descEl) descEl.textContent = 'Você ainda não cadastrou um PIN. Crie agora seu código de 4 a 6 dígitos para proteger sua Chave PIX:';
+        if (input) input.placeholder = 'Criar PIN';
+        if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-lock"></i> Cadastrar PIN';
+      } else {
+        if (titleEl) titleEl.textContent = 'PIN do Dono da Loja';
+        if (descEl) descEl.textContent = 'Digite o seu PIN de segurança para autorizar a alteração da Chave PIX:';
+        if (input) input.placeholder = '••••';
+        if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-unlock"></i> Confirmar PIN';
+      }
+
+      document.getElementById('pixPinSecurityModal')?.classList.remove('hidden');
+      setTimeout(() => input?.focus(), 100);
+    }
+
+    function closePixPinModal() {
+      document.getElementById('pixPinSecurityModal')?.classList.add('hidden');
+    }
+
+    function handleVerifyOwnerPin(e) {
+      e.preventDefault();
+      const inputPin = document.getElementById('ownerPinInput').value.trim();
+      const actualPin = getOwnerPin();
+
+      // Se ainda não configurou PIN, este primeiro digitado é gravado com sucesso
+      if (!actualPin) {
+        if (inputPin.length < 4 || inputPin.length > 6) {
+          const errBox = document.getElementById('pinErrorMsg');
+          errBox.textContent = 'O PIN deve ter entre 4 e 6 dígitos numéricos.';
+          errBox.classList.remove('hidden');
+          return;
+        }
+        setOwnerPin(inputPin);
+        alert('🔐 Seu PIN de segurança exclusivo foi cadastrado com sucesso!');
+      } else if (inputPin !== actualPin) {
+        const errBox = document.getElementById('pinErrorMsg');
+        errBox.textContent = 'PIN incorreto! Se você esqueceu, clique em "Recuperar Senha / PIN" abaixo.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      unlockPixFields();
+      closePixPinModal();
       alert('🔓 Sucesso! PIN do Dono validado. Os dados bancários e a Chave PIX estão liberados para edição.');
     }
 
     function openChangePinModal() {
-      document.getElementById('changePinErrorMsg').classList.add('hidden');
-      document.getElementById('currentPinInput').value = '';
-      document.getElementById('newPinInput').value = '';
-      document.getElementById('confirmNewPinInput').value = '';
-      document.getElementById('changePinModal').classList.remove('hidden');
+      document.getElementById('changePinErrorMsg')?.classList.add('hidden');
+      const cur = document.getElementById('currentPinInput');
+      const np = document.getElementById('newPinInput');
+      const cnp = document.getElementById('confirmNewPinInput');
+      if (cur) cur.value = '';
+      if (np) np.value = '';
+      if (cnp) cnp.value = '';
+      document.getElementById('changePinModal')?.classList.remove('hidden');
     }
 
     function closeChangePinModal() {
-      document.getElementById('changePinModal').classList.add('hidden');
+      document.getElementById('changePinModal')?.classList.add('hidden');
     }
 
     function handleSaveNewPin(e) {
@@ -1772,12 +1831,12 @@
 
       const actualPin = getOwnerPin();
       if (actualPin && current !== actualPin) {
-        errBox.textContent = 'O PIN atual informado está incorreto! Caso não lembre, utilize a recuperação por e-mail.';
+        errBox.textContent = 'O PIN atual informado está incorreto! Caso não lembre, utilize a recuperação de PIN.';
         errBox.classList.remove('hidden');
         return;
       }
-      if (newPin.length < 4) {
-        errBox.textContent = 'O novo PIN deve ter pelo menos 4 dígitos!';
+      if (newPin.length < 4 || newPin.length > 6) {
+        errBox.textContent = 'O novo PIN deve ter entre 4 e 6 dígitos numéricos!';
         errBox.classList.remove('hidden');
         return;
       }
@@ -1787,24 +1846,45 @@
         return;
       }
 
-      localStorage.setItem(STORE_OWNER_PIN_KEY, newPin);
+      setOwnerPin(newPin);
       closeChangePinModal();
       alert('🔐 Novo PIN exclusivo gravado com sucesso! Guarde este código com segurança.');
     }
 
     // ========================================================
-    // RECUPERAÇÃO DO PIN POR E-MAIL DO LOJISTA
+    // RECUPERAÇÃO DO PIN: MODO SIMPLES & NO ÚLTIMO CASO E-MAIL
     // ========================================================
     function openRecoverPinModal() {
       closePixPinModal();
       closeChangePinModal();
-      
-      const email = getLojistaEmail();
-      const display = document.getElementById('recoverLojistaEmailDisplay');
-      if (display) display.textContent = email;
 
-      document.getElementById('recoverStep1')?.classList.remove('hidden');
-      document.getElementById('recoverStep2')?.classList.add('hidden');
+      const email = getLojistaEmail();
+      const session = getLojistaSession();
+
+      const display = document.getElementById('recoverLojistaEmailDisplay');
+      if (display) display.textContent = email || 'E-mail não cadastrado';
+
+      // Modo Simples: Dono conectado via Google
+      const simpleBox = document.getElementById('simpleRecoverSection');
+      const simpleEmailSpan = document.getElementById('simpleRecoverUserEmail');
+      if (simpleBox) {
+        if (session && session.email) {
+          if (simpleEmailSpan) simpleEmailSpan.textContent = session.email;
+          simpleBox.classList.remove('hidden');
+        } else {
+          simpleBox.classList.add('hidden');
+        }
+      }
+
+      // Limpa inputs
+      const sNew = document.getElementById('simpleNewPinInput');
+      if (sNew) sNew.value = '';
+      const sConf = document.getElementById('simpleConfirmPinInput');
+      if (sConf) sConf.value = '';
+
+      // Reseta etapa do e-mail
+      document.getElementById('emailRecoverStep1')?.classList.remove('hidden');
+      document.getElementById('emailRecoverStep2')?.classList.add('hidden');
       document.getElementById('recoverPinErrorMsg')?.classList.add('hidden');
       document.getElementById('recoverPinSuccessMsg')?.classList.add('hidden');
 
@@ -1822,22 +1902,46 @@
       document.getElementById('recoverPinModal')?.classList.add('hidden');
     }
 
+    function handleDirectPinReset(e) {
+      e.preventDefault();
+      const newPin = document.getElementById('simpleNewPinInput').value.trim();
+      const confPin = document.getElementById('simpleConfirmPinInput').value.trim();
+
+      if (newPin.length < 4 || newPin.length > 6) {
+        alert('O novo PIN deve ter entre 4 e 6 dígitos numéricos.');
+        return;
+      }
+      if (newPin !== confPin) {
+        alert('A confirmação do PIN não confere.');
+        return;
+      }
+
+      setOwnerPin(newPin);
+      unlockPixFields();
+      closeRecoverPinModal();
+      alert('🎉 Parabéns! Seu PIN de segurança foi redefinido com sucesso pelo Modo Simples!\n\nOs campos da Chave PIX estão 100% liberados para edição.');
+    }
+
     function sendPinRecoveryCode() {
       const email = getLojistaEmail();
+      if (!email) {
+        alert('Nenhum e-mail de proprietário encontrado para esta loja.');
+        return;
+      }
       const code = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutos de validade
-      localStorage.setItem(PIN_RECOVERY_KEY, JSON.stringify({ code, expiresAt, email }));
+      const expiresAt = Date.now() + (15 * 60 * 1000); // 15 minutos de validade
+      localStorage.setItem(getPinRecoveryKey(), JSON.stringify({ code, expiresAt, email }));
 
-      document.getElementById('recoverStep1')?.classList.add('hidden');
-      document.getElementById('recoverStep2')?.classList.remove('hidden');
+      document.getElementById('emailRecoverStep1')?.classList.add('hidden');
+      document.getElementById('emailRecoverStep2')?.classList.remove('hidden');
 
       const successBox = document.getElementById('recoverPinSuccessMsg');
       if (successBox) {
-        successBox.innerHTML = `<strong>Código enviado com sucesso!</strong> Verifique a caixa de entrada de <strong>${email}</strong>.<br><span class="text-[10px] text-emerald-800 font-mono mt-1 block bg-white/70 p-1.5 rounded border border-emerald-300">Código de segurança enviado: <strong>${code}</strong> (Válido por 10 minutos)</span>`;
+        successBox.innerHTML = `<strong>Código gerado com sucesso!</strong> Verifique a caixa de entrada de <strong>${email}</strong>.<br><span class="text-[10px] text-emerald-900 font-mono mt-1 block bg-white/90 p-1.5 rounded border border-emerald-300">Código de segurança: <strong>${code}</strong> (Válido por 15 minutos)</span>`;
         successBox.classList.remove('hidden');
       }
 
-      alert(`📧 Código de recuperação do PIN enviado para o e-mail: ${email}\n\nCódigo de autorização: ${code}\n(Válido por 10 minutos)`);
+      alert(`📧 Código de recuperação gerado para o e-mail: ${email}\n\nCódigo de autorização: ${code}\n(Válido por 15 minutos)`);
       setTimeout(() => document.getElementById('recoverCodeInput')?.focus(), 150);
     }
 
@@ -1851,7 +1955,7 @@
 
       let recoveryData = null;
       try {
-        const raw = localStorage.getItem(PIN_RECOVERY_KEY);
+        const raw = localStorage.getItem(getPinRecoveryKey());
         if (raw) recoveryData = JSON.parse(raw);
       } catch (err) {}
 
@@ -1895,11 +1999,11 @@
         return;
       }
 
-      localStorage.setItem(STORE_OWNER_PIN_KEY, newPin);
-      localStorage.removeItem(PIN_RECOVERY_KEY);
+      setOwnerPin(newPin);
+      localStorage.removeItem(getPinRecoveryKey());
+      unlockPixFields();
       closeRecoverPinModal();
-      alert('🎉 Parabéns! Seu PIN de segurança foi redefinido com sucesso! Utilize-o agora para desbloquear seus dados bancários.');
-      openPixPinModal();
+      alert('🎉 Parabéns! Seu PIN de segurança foi redefinido com sucesso pelo código de e-mail!\n\nOs dados bancários da Chave PIX estão liberados para alteração.');
     }
 
     // ========================================================
@@ -2536,6 +2640,8 @@
               if (store.settings.deliveryFee !== undefined) storeConfig.deliveryFee = Number(store.settings.deliveryFee);
               if (store.settings.merchantName) storeConfig.merchantName = store.settings.merchantName;
               if (store.settings.merchantCity) storeConfig.merchantCity = store.settings.merchantCity;
+              if (store.settings.ownerPin) storeConfig.ownerPin = store.settings.ownerPin;
+              if (store.settings.ownerEmail) storeConfig.ownerEmail = store.settings.ownerEmail;
             }
             localStorage.setItem(CONFIG_KEY, JSON.stringify(storeConfig));
             document.getElementById('panelStoreTitle').textContent = storeConfig.storeName || 'Fast Delivery Express';
@@ -3073,7 +3179,9 @@
             pixKey: storeConfig.pixKey,
             deliveryFee: storeConfig.deliveryFee,
             merchantName: storeConfig.merchantName,
-            merchantCity: storeConfig.merchantCity
+            merchantCity: storeConfig.merchantCity,
+            ownerPin: storeConfig.ownerPin || '',
+            ownerEmail: storeConfig.ownerEmail || (getLojistaSession() ? getLojistaSession().email : '')
           }
         })
       }).catch(() => {});
