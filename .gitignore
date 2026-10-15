@@ -11,3 +11,5 @@ motoboy-android-app/android/capacitor-android/build/
 motoboy-android-app/android/capacitor-cordova-android-plugins/build/
 ssl_cert.pem
 ssl_key.pem
+google_oauth_credentials.json
+
