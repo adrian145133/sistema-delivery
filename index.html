@@ -882,6 +882,9 @@
       }
     }
 
+    let isAddingCategoryInline = false;
+    let editingCategoryName = null;
+
     // RENDERIZAR CATEGORIAS (COM SUPORTE A ATÉ 2 LINHAS E ATÉ 3X O TAMANHO)
     function renderCategories() {
       const cats = [...new Set(products.map(p => p.category))];
@@ -889,21 +892,51 @@
       if (!container) return;
 
       if (isLojista() && isMenuUnlocked) {
-        // No modo lojista: botões de categoria com ícone de renomear + botão '+ Nova Categoria'
-        const catsHtml = cats.map(c => `
-          <div class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-all max-w-[26ch] ${selectedCategory === c ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm' : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'}">
-            <button type="button" onclick="setCategory('${escapeHtml(c)}')" class="font-bold focus:outline-none text-left leading-tight line-clamp-2 break-words" title="${escapeHtml(c)}">${escapeHtml(c)}</button>
-            <button type="button" onclick="promptRenameCategory('${escapeHtml(c)}')" title="Renomear categoria ${escapeHtml(c)}" class="shrink-0 text-[10px] ${selectedCategory === c ? 'text-slate-900 hover:text-white' : 'text-slate-400 hover:text-white'} p-0.5 rounded hover:bg-slate-800/40">
-              <i class="fa-solid fa-pen"></i>
-            </button>
-          </div>
-        `).join('');
+        // No modo lojista: botões de categoria com edição inline + campo inline de nova categoria
+        const catsHtml = cats.map(c => {
+          if (editingCategoryName === c) {
+            return `
+              <div class="inline-flex items-center gap-1 rounded-lg border border-emerald-500 bg-slate-900 px-2 py-0.5 shadow-sm shrink-0">
+                <input type="text" id="inlineRenameCategoryInput" value="${escapeHtml(c)}" maxlength="24" style="width: 14ch; max-width: 100%;" class="bg-transparent text-xs font-bold text-emerald-300 focus:outline-none" onkeydown="handleInlineRenameKey(event, '${escapeHtml(c)}')">
+                <button type="button" onclick="confirmInlineRenameCategory('${escapeHtml(c)}')" title="Salvar" class="w-fit h-6 px-1.5 flex items-center justify-center rounded bg-emerald-500 text-slate-950 hover:bg-emerald-400 text-xs font-bold transition-all">
+                  <i class="fa-solid fa-check"></i>
+                </button>
+                <button type="button" onclick="cancelInlineRenameCategory()" title="Cancelar" class="w-fit h-6 px-1.5 flex items-center justify-center rounded bg-slate-800 text-slate-400 hover:text-white text-xs transition-all">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            `;
+          }
+          return `
+            <div class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-all max-w-[26ch] ${selectedCategory === c ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm' : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'}">
+              <button type="button" onclick="setCategory('${escapeHtml(c)}')" class="font-bold focus:outline-none text-left leading-tight line-clamp-2 break-words" title="${escapeHtml(c)}">${escapeHtml(c)}</button>
+              <button type="button" onclick="startInlineRenameCategory('${escapeHtml(c)}')" title="Renomear categoria ${escapeHtml(c)}" class="shrink-0 text-[10px] ${selectedCategory === c ? 'text-slate-900 hover:text-white' : 'text-slate-400 hover:text-white'} p-0.5 rounded hover:bg-slate-800/40">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            </div>
+          `;
+        }).join('');
 
-        const addCatBtnHtml = `
-          <button type="button" onclick="promptAddCategory()" class="w-fit inline-flex items-center gap-1 rounded-lg border border-dashed border-emerald-500/70 bg-emerald-950/40 px-3 py-1 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 transition-all whitespace-nowrap shadow-xs shrink-0" title="Adicionar nova categoria">
-            <i class="fa-solid fa-plus text-[10px]"></i> Nova Categoria
-          </button>
-        `;
+        let addCatBtnHtml = '';
+        if (isAddingCategoryInline) {
+          addCatBtnHtml = `
+            <div class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/80 bg-slate-900 px-2 py-1 shadow-sm shrink-0">
+              <input type="text" id="inlineNewCategoryInput" maxlength="24" placeholder="Nome da categoria..." style="width: 16ch; max-width: 100%;" class="bg-transparent text-xs font-bold text-emerald-300 placeholder-slate-500 focus:outline-none" onkeydown="handleInlineCategoryKey(event)">
+              <button type="button" onclick="confirmInlineAddCategory()" title="Criar Categoria" class="w-fit h-6 px-2 flex items-center justify-center rounded bg-emerald-500 text-slate-950 hover:bg-emerald-400 text-xs font-bold transition-all">
+                <i class="fa-solid fa-check"></i>
+              </button>
+              <button type="button" onclick="cancelInlineAddCategory()" title="Cancelar" class="w-fit h-6 px-1.5 flex items-center justify-center rounded bg-slate-800 text-slate-400 hover:text-white text-xs transition-all">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          `;
+        } else {
+          addCatBtnHtml = `
+            <button type="button" onclick="startInlineAddCategory()" class="w-fit inline-flex items-center gap-1 rounded-lg border border-dashed border-emerald-500/70 bg-emerald-950/40 px-3 py-1 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 transition-all whitespace-nowrap shadow-xs shrink-0" title="Adicionar nova categoria">
+              <i class="fa-solid fa-plus text-[10px]"></i> Nova Categoria
+            </button>
+          `;
+        }
 
         container.innerHTML = catsHtml + addCatBtnHtml;
       } else {
@@ -924,13 +957,38 @@
       }
     }
 
-    function promptAddCategory() {
-      const name = prompt('Digite o nome da nova categoria (máximo 24 caracteres - até 3x o tamanho padrão):');
-      if (!name || !name.trim()) return;
-      let catName = name.trim();
-      if (catName.length > 24) {
-        catName = catName.substring(0, 24);
+    function startInlineAddCategory() {
+      isAddingCategoryInline = true;
+      editingCategoryName = null;
+      renderCategories();
+      setTimeout(() => {
+        const inp = document.getElementById('inlineNewCategoryInput');
+        if (inp) inp.focus();
+      }, 50);
+    }
+
+    function cancelInlineAddCategory() {
+      isAddingCategoryInline = false;
+      renderCategories();
+    }
+
+    function handleInlineCategoryKey(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmInlineAddCategory();
+      } else if (e.key === 'Escape') {
+        cancelInlineAddCategory();
       }
+    }
+
+    function confirmInlineAddCategory() {
+      const input = document.getElementById('inlineNewCategoryInput');
+      const name = input ? input.value.trim() : '';
+      if (!name) {
+        cancelInlineAddCategory();
+        return;
+      }
+      let catName = name.substring(0, 24);
       const existing = products.find(p => p.category.toLowerCase() === catName.toLowerCase());
       if (existing) {
         selectedCategory = existing.category;
@@ -946,17 +1004,46 @@
         saveProductsAndSync();
         selectedCategory = catName;
       }
+      isAddingCategoryInline = false;
       renderCategories();
       renderProducts();
     }
 
-    function promptRenameCategory(oldCat) {
-      const newName = prompt(`Renomear a categoria "${oldCat}" para (máximo 24 caracteres - até 3x o tamanho padrão):`, oldCat);
-      if (!newName || !newName.trim() || newName.trim() === oldCat) return;
-      let catName = newName.trim();
-      if (catName.length > 24) {
-        catName = catName.substring(0, 24);
+    function startInlineRenameCategory(cat) {
+      editingCategoryName = cat;
+      isAddingCategoryInline = false;
+      renderCategories();
+      setTimeout(() => {
+        const inp = document.getElementById('inlineRenameCategoryInput');
+        if (inp) {
+          inp.focus();
+          inp.select();
+        }
+      }, 50);
+    }
+
+    function cancelInlineRenameCategory() {
+      editingCategoryName = null;
+      renderCategories();
+    }
+
+    function handleInlineRenameKey(e, oldCat) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmInlineRenameCategory(oldCat);
+      } else if (e.key === 'Escape') {
+        cancelInlineRenameCategory();
       }
+    }
+
+    function confirmInlineRenameCategory(oldCat) {
+      const input = document.getElementById('inlineRenameCategoryInput');
+      const newName = input ? input.value.trim() : '';
+      if (!newName || newName === oldCat) {
+        cancelInlineRenameCategory();
+        return;
+      }
+      let catName = newName.substring(0, 24);
       products.forEach(p => {
         if (p.category === oldCat) {
           p.category = catName;
@@ -964,6 +1051,7 @@
       });
       saveProductsAndSync();
       selectedCategory = catName;
+      editingCategoryName = null;
       renderCategories();
       renderProducts();
     }
