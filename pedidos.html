@@ -182,10 +182,10 @@
             <span class="text-[11px] text-slate-500 font-medium">(<strong id="todayOrdersCount" class="text-slate-800">0</strong> hoje)</span>
           </div>
 
-          <!-- BOTÃO HISTÓRICO DE GANHOS (6 MESES) - SUBSTITUI O LIMPAR HISTÓRICO -->
+          <!-- BOTÃO HISTÓRICO DE GANHOS (2 ANOS) -->
           <button onclick="openSalesHistoryModal()" class="w-fit text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer">
             <i class="fa-solid fa-chart-line text-emerald-600 text-sm"></i>
-            <span>Histórico de Ganhos (6 Meses)</span>
+            <span>Histórico de Ganhos (2 Anos)</span>
           </button>
         </div>
       </div>
@@ -602,7 +602,7 @@
   </div>
 
   <!-- ==================================================== -->
-  <!-- MODAL: HISTÓRICO DE GANHOS (ÚLTIMOS 6 MESES)         -->
+  <!-- MODAL: HISTÓRICO DE GANHOS (ÚLTIMOS 2 ANOS)          -->
   <!-- ==================================================== -->
   <div id="salesHistoryModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 no-print overflow-y-auto">
     <div class="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
@@ -614,8 +614,8 @@
             <i class="fa-solid fa-chart-line"></i>
           </div>
           <div>
-            <h3 class="text-base font-bold text-slate-900 tracking-tight">Histórico de Ganhos & Vendas (6 Meses)</h3>
-            <p class="text-xs text-slate-500">Relatório consolidado de todas as vendas realizadas nos últimos 180 dias</p>
+            <h3 class="text-base font-bold text-slate-900 tracking-tight">Histórico de Ganhos & Vendas (2 Anos)</h3>
+            <p class="text-xs text-slate-500">Relatório consolidado de todas as vendas realizadas nos últimos 2 anos (730 dias)</p>
           </div>
         </div>
         <button onclick="closeSalesHistoryModal()" class="w-fit text-slate-400 hover:text-slate-700 text-lg p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
@@ -623,7 +623,7 @@
         </button>
       </div>
 
-      <!-- CARDS DE RESUMO FINANCEIRO (6 MESES) -->
+      <!-- CARDS DE RESUMO FINANCEIRO (2 ANOS) -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div class="rounded-xl border border-emerald-300 bg-emerald-50/70 p-3.5 space-y-1">
           <span class="text-[11px] font-bold text-emerald-800 uppercase tracking-wide">Faturamento no Período</span>
@@ -647,11 +647,13 @@
         <div class="flex items-center gap-2 flex-wrap">
           <label class="text-xs font-semibold text-slate-600">Filtrar:</label>
           <select id="historyPeriodFilter" onchange="renderSalesHistoryList()" class="w-fit rounded-xl border border-emerald-500/40 bg-emerald-50/70 text-xs font-semibold text-emerald-900 px-3 py-1.5 focus:outline-none">
-            <option value="all">Todo o Histórico (Últimos 6 Meses)</option>
+            <option value="all">Todo o Histórico (Últimos 2 Anos)</option>
             <option value="today">Vendas de Hoje</option>
             <option value="7days">Últimos 7 Dias</option>
             <option value="30days">Últimos 30 Dias</option>
             <option value="90days">Últimos 3 Meses</option>
+            <option value="180days">Últimos 6 Meses</option>
+            <option value="365days">Último 1 Ano</option>
           </select>
         </div>
         <div class="relative">
@@ -2849,14 +2851,14 @@
       }
     }
 
-    const SIX_MONTHS_MS = 180 * 24 * 60 * 60 * 1000; // 6 meses (180 dias)
+    const TWO_YEARS_MS = 730 * 24 * 60 * 60 * 1000; // 2 anos (730 dias)
 
     function getStoredOrders() {
       try {
         const raw = localStorage.getItem(ORDERS_STORAGE_KEY) || localStorage.getItem(LEGACY_ORDERS_KEY);
         const list = raw ? JSON.parse(raw) : [];
-        const cutoff = Date.now() - SIX_MONTHS_MS;
-        // Retém apenas pedidos dos últimos 6 meses (180 dias)
+        const cutoff = Date.now() - TWO_YEARS_MS;
+        // Retém apenas pedidos dos últimos 2 anos (730 dias)
         const validList = list.filter(o => {
           const t = new Date(o.createdAt).getTime();
           return !isNaN(t) && t >= cutoff;
@@ -3169,7 +3171,7 @@
     }
 
     // ========================================================
-    // MODAL DE HISTÓRICO DE GANHOS (ÚLTIMOS 6 MESES)
+    // MODAL DE HISTÓRICO DE GANHOS (ÚLTIMOS 2 ANOS)
     // ========================================================
     function openSalesHistoryModal() {
       const modal = document.getElementById('salesHistoryModal');
@@ -3187,12 +3189,12 @@
     function renderSalesHistoryList() {
       const orders = getStoredOrders();
       const now = Date.now();
-      const cutoff6Months = now - SIX_MONTHS_MS;
+      const cutoff2Years = now - TWO_YEARS_MS;
 
-      // Filtra estritamente por retenção de 6 meses
+      // Filtra estritamente por retenção de 2 anos
       let list = orders.filter(o => {
         const t = new Date(o.createdAt).getTime();
-        return !isNaN(t) && t >= cutoff6Months;
+        return !isNaN(t) && t >= cutoff2Years;
       });
 
       // Filtro de período selecionado
@@ -3212,6 +3214,12 @@
       } else if (period === '90days') {
         const cutoff90d = now - (90 * 24 * 60 * 60 * 1000);
         list = list.filter(o => new Date(o.createdAt).getTime() >= cutoff90d);
+      } else if (period === '180days') {
+        const cutoff180d = now - (180 * 24 * 60 * 60 * 1000);
+        list = list.filter(o => new Date(o.createdAt).getTime() >= cutoff180d);
+      } else if (period === '365days') {
+        const cutoff365d = now - (365 * 24 * 60 * 60 * 1000);
+        list = list.filter(o => new Date(o.createdAt).getTime() >= cutoff365d);
       }
 
       // Filtro de busca por texto
