@@ -413,6 +413,9 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
   <!-- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO DO PRODUTO (DIGITANDO 'SIM') -->
   <div id="deleteProductConfirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
     <div class="w-full max-w-sm rounded-2xl border border-rose-500/40 bg-slate-900 p-6 shadow-2xl space-y-4 text-white">
@@ -994,7 +997,7 @@
           return `
             <div class="flex flex-col justify-between rounded-2xl border-2 border-emerald-500/60 bg-slate-900/90 p-4 shadow-lg relative transition-all">
               <!-- BOTÃO DE EXCLUIR ITEM -->
-              <button onclick="deleteProductItem('${p.id}')" title="Excluir este item" class="w-fit absolute top-3 right-3 text-rose-400 hover:text-rose-300 p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-xs transition-colors">
+              <button type="button" onclick="deleteProductItem('${p.id}')" title="Excluir este item" class="w-fit absolute top-3 right-3 z-20 text-rose-400 hover:text-rose-300 p-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 text-xs transition-colors cursor-pointer shadow-xs">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
 
