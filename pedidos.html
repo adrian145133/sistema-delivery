@@ -643,27 +643,114 @@
   <!-- ==================================================== -->
   <!-- MODAL: CONFIGURAÇÃO INICIAL DO NOME DO RESTAURANTE   -->
   <!-- ==================================================== -->
-  <div id="setupStoreModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 no-print">
-    <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-2xl space-y-5 text-center">
-      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 text-2xl shadow-sm">
-        <i class="fa-solid fa-utensils"></i>
-      </div>
-      <div>
-        <h3 class="text-xl font-bold tracking-tight text-slate-900">Configure o Nome do seu Negócio</h3>
-        <p class="text-xs text-slate-500 mt-1">O seu cardápio digital exclusivo só será gerado após você definir o nome do seu estabelecimento.</p>
-      </div>
-      <form onsubmit="handleSetupStoreSubmit(event)" class="space-y-4 text-left">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Nome do Estabelecimento / Restaurante</label>
-          <input type="text" id="setupStoreNameInput" required placeholder="Ex: Pizzaria Bella Itália, Burger House..." class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+  <div id="setupStoreModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 no-print overflow-y-auto">
+    <div class="w-full max-w-xl max-h-[92vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            <i class="fa-brands fa-pix text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Configure o Nome do seu Negócio</h3>
+            <p class="text-xs text-slate-500">O seu cardápio digital exclusivo só será gerado após você definir o nome do seu estabelecimento.</p>
+          </div>
         </div>
-        <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-600 space-y-1">
+        <button type="button" onclick="handleCancelSetupStore()" class="w-fit text-slate-400 hover:text-slate-700 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSetupStoreSubmit(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Nome do Estabelecimento *</label>
+          <input type="text" id="setupStoreNameInput" required placeholder="Fast Delivery Express" class="w-full max-w-[50ch] rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+        </div>
+
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-2.5 text-[11px] text-slate-600 space-y-0.5">
           <p class="font-bold text-slate-800 flex items-center gap-1"><i class="fa-solid fa-link text-emerald-600"></i> Seu link de cardápio exclusivo será:</p>
           <p id="setupSlugPreview" class="text-emerald-700 font-mono font-bold break-all">https://sistema-delivery-xi.vercel.app/loja/...</p>
         </div>
-        <button type="submit" id="btnSubmitSetupStore" class="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 py-3 text-xs font-bold text-white shadow-sm transition-all active:scale-95">
-          Criar Meu Cardápio & Entrar no Painel
-        </button>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Telefone / WhatsApp da Loja *</label>
+            <input type="text" id="setupStorePhoneInput" required placeholder="(11) 99999-8888" style="width: 22ch; max-width: 100%;" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Taxa de Entrega Padrão (R$) *</label>
+            <input type="number" step="0.50" id="setupDeliveryFeeInput" required placeholder="5" style="width: 18ch; max-width: 100%;" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+          </div>
+        </div>
+
+        <!-- CAMPO DA CHAVE PIX DO LOJISTA (PROTEGIDO POR PIN MESTRE DO PROPRIETÁRIO) -->
+        <div class="rounded-xl border border-emerald-400 bg-emerald-50/70 p-3.5 space-y-3 shadow-xs">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <i class="fa-brands fa-pix text-emerald-600 text-base"></i>
+              <span class="font-bold text-emerald-950 text-sm">Chave PIX de Recebimento da Loja *</span>
+            </div>
+            <!-- INDICADOR DE STATUS DO PIN -->
+            <div id="setupPixLockStatusBadge" class="flex items-center gap-1.5">
+              <span id="setupPixLockedBadge" class="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 text-[10px] font-bold">
+                <i class="fa-solid fa-lock text-[9px]"></i> Trancado por PIN
+              </span>
+              <span id="setupPixUnlockedBadge" class="hidden inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 text-[10px] font-bold">
+                <i class="fa-solid fa-lock-open text-[9px]"></i> Liberado para o Dono
+              </span>
+            </div>
+          </div>
+
+          <!-- AVISO DE BLINDAGEM DE SEGURANÇA CONTRA FRAUDES DE CAIXA -->
+          <div class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed">
+            <div class="flex items-start gap-2">
+              <i class="fa-solid fa-shield-halved text-amber-600 text-sm mt-0.5 shrink-0"></i>
+              <div>
+                <strong>Trava Anti-Fraude do Dono:</strong> Para evitar que funcionários no computador do caixa alterem o PIX para uma conta pessoal, os dados bancários ficam trancados. Apenas o proprietário com o PIN de Segurança pode alterar a Chave PIX (com recuperação exclusiva pelo e-mail do lojista).
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Chave PIX (CPF, CNPJ, Celular ou E-mail):</label>
+            <input type="text" id="setupPixKeyInput" readonly placeholder="Ex: 11987654321 ou loja@pix.com.br" class="w-full max-w-[60ch] font-mono rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-slate-700 focus:outline-none transition-all">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Nome do Titular da Conta PIX *</label>
+              <input type="text" id="setupMerchantNameInput" readonly placeholder="Ex: CARLOS ALBERTO SILVA" class="w-full max-w-[40ch] uppercase rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-slate-700 focus:outline-none transition-all">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Cidade da Conta Bancária *</label>
+              <input type="text" id="setupMerchantCityInput" readonly placeholder="Ex: SAO PAULO" class="w-full max-w-[30ch] uppercase rounded-xl border border-slate-300 bg-slate-100 px-3 py-1.5 text-slate-700 focus:outline-none transition-all">
+            </div>
+          </div>
+
+          <!-- BOTÃO PARA DESTRAVAR COM PIN DO DONO & RECUPERAÇÃO -->
+          <div id="setupPixLockedControls" class="pt-2 flex items-center justify-between border-t border-emerald-200/60 flex-wrap gap-2">
+            <button type="button" onclick="openPixPinModal()" class="w-fit inline-flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 text-xs shadow-sm transition-all active:scale-95">
+              <i class="fa-solid fa-lock"></i> Desbloquear Edição (Digitar PIN do Dono)
+            </button>
+            <div class="flex items-center gap-3">
+              <button type="button" onclick="openChangePinModal()" class="w-fit text-[11px] text-slate-600 hover:text-slate-900 underline font-medium">
+                Alterar PIN
+              </button>
+              <button type="button" onclick="openRecoverPinModal()" class="w-fit text-[11px] text-amber-700 hover:text-amber-900 underline font-bold">
+                Recuperar PIN por E-mail
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
+          <button type="button" onclick="handleCancelSetupStore()" class="w-fit rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button type="submit" id="btnSubmitSetupStore" class="w-fit inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm">
+            <i class="fa-solid fa-floppy-disk"></i>
+            Salvar e Destravar Cardápio
+          </button>
+        </div>
       </form>
     </div>
   </div>
@@ -1328,23 +1415,93 @@
 
     function openSetupStoreModal(session) {
       const modal = document.getElementById('setupStoreModal');
-      if (modal) {
-        modal.classList.remove('hidden');
-        const input = document.getElementById('setupStoreNameInput');
-        if (input) {
-          setTimeout(() => input.focus(), 150);
-          input.oninput = () => {
-            const val = input.value.trim();
-            const slug = val.toLowerCase()
-              .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-+|-+$/g, '') || '...';
-            const preview = document.getElementById('setupSlugPreview');
-            if (preview) {
-              preview.textContent = `${window.location.origin}/loja/${slug}`;
-            }
-          };
+      if (!modal) return;
+      modal.classList.remove('hidden');
+
+      const nameInput = document.getElementById('setupStoreNameInput');
+      const phoneInput = document.getElementById('setupStorePhoneInput');
+      const feeInput = document.getElementById('setupDeliveryFeeInput');
+      const pixInput = document.getElementById('setupPixKeyInput');
+      const merchantInput = document.getElementById('setupMerchantNameInput');
+      const cityInput = document.getElementById('setupMerchantCityInput');
+
+      if (nameInput) {
+        nameInput.value = (storeConfig.storeName && storeConfig.storeName !== 'Meu Estabelecimento Delivery') ? storeConfig.storeName : '';
+        setTimeout(() => nameInput.focus(), 150);
+        nameInput.oninput = () => {
+          const val = nameInput.value.trim();
+          const slug = val.toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || '...';
+          const preview = document.getElementById('setupSlugPreview');
+          if (preview) {
+            preview.textContent = `${window.location.origin}/loja/${slug}`;
+          }
+        };
+        nameInput.dispatchEvent(new Event('input'));
+      }
+
+      if (phoneInput) {
+        phoneInput.value = storeConfig.storePhone || '';
+      }
+      if (feeInput) {
+        feeInput.value = storeConfig.deliveryFee || 5.00;
+      }
+
+      if (!isPixUnlocked) {
+        if (pixInput) {
+          pixInput.readOnly = true;
+          pixInput.value = storeConfig.pixKey ? maskPixKey(storeConfig.pixKey) : '';
+          pixInput.classList.add('bg-slate-100', 'text-slate-700');
+          pixInput.classList.remove('bg-white', 'text-slate-900', 'border-emerald-500');
         }
+        if (merchantInput) {
+          merchantInput.readOnly = true;
+          merchantInput.value = storeConfig.merchantName || 'LOJA';
+          merchantInput.classList.add('bg-slate-100', 'text-slate-700');
+          merchantInput.classList.remove('bg-white', 'text-slate-900');
+        }
+        if (cityInput) {
+          cityInput.readOnly = true;
+          cityInput.value = storeConfig.merchantCity || 'BRASIL';
+          cityInput.classList.add('bg-slate-100', 'text-slate-700');
+          cityInput.classList.remove('bg-white', 'text-slate-900');
+        }
+        document.getElementById('setupPixLockedBadge')?.classList.remove('hidden');
+        document.getElementById('setupPixUnlockedBadge')?.classList.add('hidden');
+        document.getElementById('setupPixLockedControls')?.classList.remove('hidden');
+      } else {
+        if (pixInput) {
+          pixInput.readOnly = false;
+          pixInput.value = storeConfig.pixKey || '';
+          pixInput.classList.remove('bg-slate-100', 'text-slate-700');
+          pixInput.classList.add('bg-white', 'text-slate-900', 'border-emerald-500');
+        }
+        if (merchantInput) {
+          merchantInput.readOnly = false;
+          merchantInput.value = storeConfig.merchantName || '';
+          merchantInput.classList.remove('bg-slate-100', 'text-slate-700');
+          merchantInput.classList.add('bg-white', 'text-slate-900');
+        }
+        if (cityInput) {
+          cityInput.readOnly = false;
+          cityInput.value = storeConfig.merchantCity || '';
+          cityInput.classList.remove('bg-slate-100', 'text-slate-700');
+          cityInput.classList.add('bg-white', 'text-slate-900');
+        }
+        document.getElementById('setupPixLockedBadge')?.classList.add('hidden');
+        document.getElementById('setupPixUnlockedBadge')?.classList.remove('hidden');
+        document.getElementById('setupPixLockedControls')?.classList.add('hidden');
+      }
+    }
+
+    function handleCancelSetupStore() {
+      const modal = document.getElementById('setupStoreModal');
+      if (modal) modal.classList.add('hidden');
+      const slug = getStoreSlug();
+      if (!slug || slug === 'default_store') {
+        handleLojistaLogout();
       }
     }
 
@@ -1352,7 +1509,13 @@
       e.preventDefault();
       const input = document.getElementById('setupStoreNameInput');
       const name = input ? input.value.trim() : '';
-      if (!name) return;
+      if (!name) {
+        alert('Por favor, defina o nome do seu estabelecimento.');
+        return;
+      }
+
+      const phone = document.getElementById('setupStorePhoneInput')?.value.trim() || '';
+      const fee = parseFloat(document.getElementById('setupDeliveryFeeInput')?.value) || 5.00;
 
       const slug = name.toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -1361,10 +1524,29 @@
 
       const session = getLojistaSession();
       const ownerEmail = session ? session.email : '';
+
+      storeConfig.storeName = name;
+      storeConfig.storePhone = phone || storeConfig.storePhone || '';
+      storeConfig.deliveryFee = fee;
+      storeConfig.ownerEmail = ownerEmail;
+
+      if (isPixUnlocked) {
+        const pixVal = document.getElementById('setupPixKeyInput')?.value.trim();
+        if (pixVal) storeConfig.pixKey = pixVal;
+        const merchVal = document.getElementById('setupMerchantNameInput')?.value.trim().toUpperCase();
+        if (merchVal) storeConfig.merchantName = merchVal;
+        const cityVal = document.getElementById('setupMerchantCityInput')?.value.trim().toUpperCase();
+        if (cityVal) storeConfig.merchantCity = cityVal;
+      }
+
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(storeConfig));
+      localStorage.setItem(LEGACY_CONFIG_KEY, JSON.stringify(storeConfig));
+      window.dispatchEvent(new Event('storage'));
+
       const btn = document.getElementById('btnSubmitSetupStore');
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Criando seu Cardápio...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Salvando e Destravando...';
       }
 
       fetch(`/api/store?loja=${encodeURIComponent(slug)}`, {
@@ -1373,12 +1555,16 @@
         body: JSON.stringify({
           id: slug,
           name: name,
+          phone: storeConfig.storePhone,
           settings: {
+            ...storeConfig,
             ownerEmail: ownerEmail,
             storeName: name,
-            deliveryFee: 5.00,
-            pixKey: '',
-            products: []
+            storePhone: storeConfig.storePhone,
+            deliveryFee: fee,
+            pixKey: storeConfig.pixKey || '',
+            merchantName: storeConfig.merchantName || 'LOJA',
+            merchantCity: storeConfig.merchantCity || 'BRASIL'
           }
         })
       }).then(() => {
@@ -1493,27 +1679,61 @@
       isPixUnlocked = true;
       closePixPinModal();
 
-      // Desbloqueia campos
+      // Desbloqueia campos no configModal
       const pixInput = document.getElementById('cfgPixKey');
       const nameInput = document.getElementById('cfgMerchantName');
       const cityInput = document.getElementById('cfgMerchantCity');
 
-      pixInput.readOnly = false;
-      pixInput.value = storeConfig.pixKey || '';
-      pixInput.classList.remove('bg-slate-100', 'text-slate-700');
-      pixInput.classList.add('bg-white', 'text-slate-900', 'border-emerald-500');
+      if (pixInput) {
+        pixInput.readOnly = false;
+        pixInput.value = storeConfig.pixKey || '';
+        pixInput.classList.remove('bg-slate-100', 'text-slate-700');
+        pixInput.classList.add('bg-white', 'text-slate-900', 'border-emerald-500');
+      }
 
-      nameInput.readOnly = false;
-      nameInput.classList.remove('bg-slate-100', 'text-slate-700');
-      nameInput.classList.add('bg-white', 'text-slate-900');
+      if (nameInput) {
+        nameInput.readOnly = false;
+        nameInput.classList.remove('bg-slate-100', 'text-slate-700');
+        nameInput.classList.add('bg-white', 'text-slate-900');
+      }
 
-      cityInput.readOnly = false;
-      cityInput.classList.remove('bg-slate-100', 'text-slate-700');
-      cityInput.classList.add('bg-white', 'text-slate-900');
+      if (cityInput) {
+        cityInput.readOnly = false;
+        cityInput.classList.remove('bg-slate-100', 'text-slate-700');
+        cityInput.classList.add('bg-white', 'text-slate-900');
+      }
 
-      document.getElementById('pixLockedBadge').classList.add('hidden');
-      document.getElementById('pixUnlockedBadge').classList.remove('hidden');
-      document.getElementById('pixLockedControls').classList.add('hidden');
+      document.getElementById('pixLockedBadge')?.classList.add('hidden');
+      document.getElementById('pixUnlockedBadge')?.classList.remove('hidden');
+      document.getElementById('pixLockedControls')?.classList.add('hidden');
+
+      // Desbloqueia campos no setupStoreModal
+      const setupPix = document.getElementById('setupPixKeyInput');
+      const setupName = document.getElementById('setupMerchantNameInput');
+      const setupCity = document.getElementById('setupMerchantCityInput');
+
+      if (setupPix) {
+        setupPix.readOnly = false;
+        setupPix.value = storeConfig.pixKey || '';
+        setupPix.classList.remove('bg-slate-100', 'text-slate-700');
+        setupPix.classList.add('bg-white', 'text-slate-900', 'border-emerald-500');
+      }
+
+      if (setupName) {
+        setupName.readOnly = false;
+        setupName.classList.remove('bg-slate-100', 'text-slate-700');
+        setupName.classList.add('bg-white', 'text-slate-900');
+      }
+
+      if (setupCity) {
+        setupCity.readOnly = false;
+        setupCity.classList.remove('bg-slate-100', 'text-slate-700');
+        setupCity.classList.add('bg-white', 'text-slate-900');
+      }
+
+      document.getElementById('setupPixLockedBadge')?.classList.add('hidden');
+      document.getElementById('setupPixUnlockedBadge')?.classList.remove('hidden');
+      document.getElementById('setupPixLockedControls')?.classList.add('hidden');
 
       alert('🔓 Sucesso! PIN do Dono validado. Os dados bancários e a Chave PIX estão liberados para edição.');
     }
