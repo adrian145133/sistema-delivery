@@ -173,9 +173,17 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-slate-500">Total de pedidos: <strong id="totalOrdersCount" class="text-slate-900">0</strong></span>
-          <button onclick="clearAllOrders()" class="w-fit text-xs text-rose-600 hover:text-rose-700 ml-4 border border-rose-200 px-2 py-1 rounded-lg bg-rose-50">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- TOTAL VENDAS DO DIA (A PARTIR DE 00H) -->
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 shadow-xs">
+            <i class="fa-solid fa-cash-register text-emerald-600 text-sm"></i>
+            <span class="text-xs font-semibold text-slate-700">Vendas de Hoje (a partir de 00h):</span>
+            <strong id="todaySalesTotal" class="text-sm font-extrabold text-emerald-700">R$ 0,00</strong>
+            <span class="text-[11px] text-slate-500 font-medium">(<strong id="todayOrdersCount" class="text-slate-800">0</strong> hoje)</span>
+          </div>
+
+          <span class="text-xs text-slate-500">Total geral: <strong id="totalOrdersCount" class="text-slate-900">0</strong></span>
+          <button onclick="clearAllOrders()" class="w-fit text-xs text-rose-600 hover:text-rose-700 border border-rose-200 px-2 py-1 rounded-lg bg-rose-50">
             Limpar Histórico
           </button>
         </div>
@@ -188,7 +196,7 @@
           Pagos / Em Separação (<span id="count-separando">0</span>)
         </button>
         <button onclick="filterStatus('entrega')" id="filter-entrega" class="w-fit rounded-lg px-4 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all">
-          Saiu p/ Entrega (<span id="count-entrega">0</span>)
+          Em Rota de Entrega (<span id="count-entrega">0</span>)
         </button>
         <button onclick="filterStatus('entregue')" id="filter-entregue" class="w-fit rounded-lg px-4 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all">
           Entregues (<span id="count-entregue">0</span>)
@@ -234,7 +242,7 @@
         <div class="flex items-start gap-3 p-3 rounded-xl bg-blue-50/70 border border-blue-200">
           <div class="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white font-bold shrink-0 text-xs">2</div>
           <div>
-            <h4 class="font-bold text-blue-950 text-sm">Saiu p/ Entrega (Despacho com o Motoboy)</h4>
+            <h4 class="font-bold text-blue-950 text-sm">Em Rota de Entrega (Despacho com o Motoboy)</h4>
             <p class="mt-0.5">O pedido pronto é embalado com a folha A4 grampeada na sacola. O motoboy aponta a câmera do celular para o QR Code impresso na folha, abre a rota do Google Maps no celular dele e parte para a entrega.</p>
           </div>
         </div>
@@ -2865,18 +2873,48 @@
     function updateCounters(orders) {
       const counts = { separando: 0, entrega: 0, entregue: 0 };
 
+      // Vendas do dia atual (a partir de 00h até o final do dia)
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0).getTime();
+
+      let todaySalesTotal = 0;
+      let todayOrdersCount = 0;
+
       orders.forEach(o => {
         if (o.status === 'pago' || o.status === 'separando') {
           counts.separando++;
         } else if (counts[o.status] !== undefined) {
           counts[o.status]++;
         }
+
+        // Vendas a partir de 00:00h do dia corrente
+        const orderTime = new Date(o.createdAt).getTime();
+        if (!isNaN(orderTime) && orderTime >= startOfDay && orderTime < endOfDay) {
+          todayOrdersCount++;
+          todaySalesTotal += Number(o.total || 0);
+        }
       });
 
-      document.getElementById('totalOrdersCount').textContent = orders.length;
-      document.getElementById('count-separando').textContent = counts.separando;
-      document.getElementById('count-entrega').textContent = counts.entrega;
-      document.getElementById('count-entregue').textContent = counts.entregue;
+      const totalOrdersEl = document.getElementById('totalOrdersCount');
+      if (totalOrdersEl) totalOrdersEl.textContent = orders.length;
+
+      const todayOrdersEl = document.getElementById('todayOrdersCount');
+      if (todayOrdersEl) todayOrdersEl.textContent = todayOrdersCount;
+
+      const todaySalesEl = document.getElementById('todaySalesTotal');
+      if (todaySalesEl) {
+        todaySalesEl.textContent = `R$ ${todaySalesTotal.toFixed(2).replace('.', ',')}`;
+      }
+
+      const countSepEl = document.getElementById('count-separando');
+      if (countSepEl) countSepEl.textContent = counts.separando;
+
+      const countEntEl = document.getElementById('count-entrega');
+      if (countEntEl) countEntEl.textContent = counts.entrega;
+
+      const countEntregueEl = document.getElementById('count-entregue');
+      if (countEntregueEl) countEntregueEl.textContent = counts.entregue;
     }
 
     // FILTRO DE STATUS (3 ETAPAS COM IMPRESSÃO NA COZINHA)
@@ -2924,7 +2962,7 @@
         if (order.status === 'pago' || order.status === 'separando') {
           statusBadge = `<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800 border border-emerald-200"><i class="fa-solid fa-fire-burner"></i> Pago / Em Separação</span>`;
         } else if (order.status === 'entrega') {
-          statusBadge = `<span class="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-800 border border-blue-200"><i class="fa-solid fa-motorcycle"></i> Saiu p/ Entrega</span>`;
+          statusBadge = `<span class="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-800 border border-blue-200"><i class="fa-solid fa-motorcycle"></i> Em Rota de Entrega</span>`;
         } else if (order.status === 'entregue') {
           statusBadge = `<span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-200"><i class="fa-solid fa-flag-checkered"></i> Entregue</span>`;
         }
@@ -2989,7 +3027,7 @@
                 <!-- STATUS SELECTOR COMPACTO COM COR VERDE CLARINHA (REGRA 7) -->
                 <select onchange="updateOrderStatus('${order.id}', this.value)" class="w-fit rounded-xl border border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/40 px-3 py-1.5 text-xs font-semibold text-emerald-900 focus:outline-none">
                   <option value="separando" ${order.status === 'separando' || order.status === 'pago' ? 'selected' : ''}>Status: Pago / Em Separação</option>
-                  <option value="entrega" ${order.status === 'entrega' ? 'selected' : ''}>Status: Saiu p/ Entrega</option>
+                  <option value="entrega" ${order.status === 'entrega' ? 'selected' : ''}>Status: Em Rota de Entrega</option>
                   <option value="entregue" ${order.status === 'entregue' ? 'selected' : ''}>Status: Entregue</option>
                 </select>
 
