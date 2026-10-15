@@ -162,11 +162,15 @@
             <span class="flex items-center gap-1.5"><i class="fa-solid fa-volume-high text-emerald-600"></i> Alarme sonoro em novo pedido</span>
           </label>
 
-          <!-- TOGGLE AUTO-IMPRIMIR -->
-          <label class="flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-            <input type="checkbox" id="autoPrintToggle" checked onchange="saveSettings()" class="rounded border-slate-300 text-emerald-600 focus:ring-0">
-            <span class="flex items-center gap-1.5 font-bold"><i class="fa-solid fa-bolt text-amber-500"></i> Auto-imprimir folha A4 ao pagar</span>
-          </label>
+          <!-- AUTO-IMPRIMIR SEMPRE ATIVO (SEM PRECISAR MARCAR) -->
+          <div class="flex items-center gap-2 select-none text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-300 shadow-xs">
+            <input type="checkbox" id="autoPrintToggle" checked style="display: none;">
+            <i class="fa-solid fa-bolt text-amber-500 text-sm"></i>
+            <span>Auto-imprimir folha A4 ao pagar:</span>
+            <span class="inline-flex items-center gap-1 rounded-md bg-emerald-200/80 text-emerald-950 px-1.5 py-0.5 text-[10px] font-extrabold uppercase">
+              <i class="fa-solid fa-check text-[9px]"></i> Sempre Ativo
+            </span>
+          </div>
         </div>
 
         <div class="flex items-center gap-2">
@@ -2669,7 +2673,7 @@
     function saveSettings() {
       const settings = {
         sound: document.getElementById('soundToggle')?.checked ?? true,
-        autoPrint: document.getElementById('autoPrintToggle')?.checked ?? true
+        autoPrint: true // Sempre ativo
       };
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     }
@@ -2680,8 +2684,8 @@
         if (raw) {
           const s = JSON.parse(raw);
           if (document.getElementById('soundToggle')) document.getElementById('soundToggle').checked = s.sound !== false;
-          if (document.getElementById('autoPrintToggle')) document.getElementById('autoPrintToggle').checked = s.autoPrint !== false;
         }
+        if (document.getElementById('autoPrintToggle')) document.getElementById('autoPrintToggle').checked = true;
       } catch (e) {}
     }
 
@@ -2847,7 +2851,7 @@
 
         if (hasNew && lastKnownOrderIds.size > 0) {
           playOrderChime();
-          if (document.getElementById('autoPrintToggle')?.checked && newestOrder) {
+          if (newestOrder) {
             printOrder(newestOrder.id);
           }
         }
@@ -3104,9 +3108,7 @@
       playOrderChime();
       loadAndRenderOrders();
 
-      if (document.getElementById('autoPrintToggle')?.checked) {
-        printOrder(testOrder.id);
-      }
+      printOrder(testOrder.id);
     }
 
     // ========================================================
