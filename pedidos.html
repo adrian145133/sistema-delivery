@@ -1373,43 +1373,41 @@
       const session = getLojistaSession();
       if (!session || !session.email) return;
 
+      const userEmail = session.email.toLowerCase().trim();
       const currentSlug = getStoreSlug();
-      
-      // Se a URL já possui uma loja específica que não seja default_store
-      if (currentSlug && currentSlug !== 'default_store') {
-        if (!storeConfig.ownerEmail) {
-          storeConfig.ownerEmail = session.email;
-          localStorage.setItem(CONFIG_KEY, JSON.stringify(storeConfig));
-          fetch(`/api/store?loja=${encodeURIComponent(currentSlug)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: currentSlug,
-              name: storeConfig.storeName,
-              phone: storeConfig.storePhone,
-              settings: {
-                ...storeConfig,
-                ownerEmail: session.email
-              }
-            })
-          }).catch(() => {});
+
+      // 1. Busca no servidor (Supabase) qual loja pertence a este Gmail
+      let userStore = null;
+      try {
+        const res = await fetch(`/api/store?ownerEmail=${encodeURIComponent(userEmail)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.id && !data.notFound && data.id !== 'default_store') {
+            userStore = data;
+          }
         }
+      } catch (e) {
+        console.warn('Erro ao consultar loja do lojista:', e);
+      }
+
+      // 2. Se este Gmail JÁ POSSUI uma loja cadastrada:
+      if (userStore && userStore.id) {
+        // Se a URL atual não for a da loja deste lojista, redireciona para a loja DELE
+        if (currentSlug !== userStore.id) {
+          window.location.replace(`pedidos.html?loja=${encodeURIComponent(userStore.id)}`);
+          return;
+        }
+        // Já está na própria loja dele, sincroniza os dados
         return;
       }
 
-      // Se a URL não tem loja definida, busca no Supabase se este e-mail do lojista já tem uma loja
-      try {
-        const res = await fetch(`/api/store?ownerEmail=${encodeURIComponent(session.email)}`);
-        if (res.ok) {
-          const store = await res.json();
-          if (store && store.id && !store.notFound && store.id !== 'default_store') {
-            window.location.replace(`pedidos.html?loja=${encodeURIComponent(store.id)}`);
-            return;
-          }
-        }
-      } catch (e) {}
+      // 3. Se este Gmail AINDA NÃO POSSUI loja cadastrada (é um novo lojista):
+      // Garante que a URL não aponte para a loja de outro lojista
+      if (currentSlug && currentSlug !== 'default_store') {
+        history.replaceState(null, '', 'pedidos.html');
+      }
 
-      // Lojista novo que ainda não configurou o nome do negócio: abre modal
+      // Abre obrigatoriamente o modal para este novo Gmail cadastrar a loja dele
       openSetupStoreModal(session);
     }
 
@@ -1426,7 +1424,7 @@
       const cityInput = document.getElementById('setupMerchantCityInput');
 
       if (nameInput) {
-        nameInput.value = (storeConfig.storeName && storeConfig.storeName !== 'Meu Estabelecimento Delivery') ? storeConfig.storeName : '';
+        nameInput.value = '';
         setTimeout(() => nameInput.focus(), 150);
         nameInput.oninput = () => {
           const val = nameInput.value.trim();
@@ -1443,28 +1441,28 @@
       }
 
       if (phoneInput) {
-        phoneInput.value = storeConfig.storePhone || '';
+        phoneInput.value = '';
       }
       if (feeInput) {
-        feeInput.value = storeConfig.deliveryFee || 5.00;
+        feeInput.value = 5.00;
       }
 
       if (!isPixUnlocked) {
         if (pixInput) {
           pixInput.readOnly = true;
-          pixInput.value = storeConfig.pixKey ? maskPixKey(storeConfig.pixKey) : '';
+          pixInput.value = '';
           pixInput.classList.add('bg-slate-100', 'text-slate-700');
           pixInput.classList.remove('bg-white', 'text-slate-900', 'border-emerald-500');
         }
         if (merchantInput) {
           merchantInput.readOnly = true;
-          merchantInput.value = storeConfig.merchantName || 'LOJA';
+          merchantInput.value = 'LOJA';
           merchantInput.classList.add('bg-slate-100', 'text-slate-700');
           merchantInput.classList.remove('bg-white', 'text-slate-900');
         }
         if (cityInput) {
           cityInput.readOnly = true;
-          cityInput.value = storeConfig.merchantCity || 'BRASIL';
+          cityInput.value = 'BRASIL';
           cityInput.classList.add('bg-slate-100', 'text-slate-700');
           cityInput.classList.remove('bg-white', 'text-slate-900');
         }
@@ -1474,19 +1472,19 @@
       } else {
         if (pixInput) {
           pixInput.readOnly = false;
-          pixInput.value = storeConfig.pixKey || '';
+          pixInput.value = '';
           pixInput.classList.remove('bg-slate-100', 'text-slate-700');
           pixInput.classList.add('bg-white', 'text-slate-900', 'border-emerald-500');
         }
         if (merchantInput) {
           merchantInput.readOnly = false;
-          merchantInput.value = storeConfig.merchantName || '';
+          merchantInput.value = '';
           merchantInput.classList.remove('bg-slate-100', 'text-slate-700');
           merchantInput.classList.add('bg-white', 'text-slate-900');
         }
         if (cityInput) {
           cityInput.readOnly = false;
-          cityInput.value = storeConfig.merchantCity || '';
+          cityInput.value = '';
           cityInput.classList.remove('bg-slate-100', 'text-slate-700');
           cityInput.classList.add('bg-white', 'text-slate-900');
         }
@@ -1607,7 +1605,7 @@
       if (!confirm('Deseja realmente sair da conta do lojista?')) return;
       localStorage.removeItem(LOJISTA_SESSION_KEY);
       localStorage.removeItem('LOJISTA_SESSION');
-      checkLojistaAuth();
+      window.location.replace('pedidos.html');
     }
 
     // ========================================================

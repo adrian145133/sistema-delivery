@@ -405,7 +405,7 @@ async function getStoreByEmail(email) {
       const { data, error } = await supabaseClient
         .from('stores')
         .select('*')
-        .eq('settings->>ownerEmail', cleanEmail)
+        .ilike('settings->>ownerEmail', cleanEmail)
         .limit(1)
         .maybeSingle();
       if (!error && data) {
