@@ -1,25 +1,5 @@
 {
   "framework": null,
-  "headers": [
-    {
-      "source": "/(.*)\\.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/pedidos.html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        }
-      ]
-    }
-  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
