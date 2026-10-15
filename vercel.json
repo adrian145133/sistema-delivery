@@ -20,6 +20,14 @@
     {
       "source": "/painel/:slug",
       "destination": "/pedidos.html?loja=:slug"
+    },
+    {
+      "source": "/login",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/login/",
+      "destination": "/login.html"
     }
   ]
 }
