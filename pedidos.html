@@ -1356,40 +1356,46 @@
     function getLojistaSession() {
       try {
         const raw = localStorage.getItem(LOJISTA_SESSION_KEY) || localStorage.getItem('LOJISTA_SESSION');
-        if (!raw) return null;
-        const session = JSON.parse(raw);
-        // Descarta e expurga qualquer sessão antiga com e-mail mock/fake
-        if (session && (session.email === 'lojista.delivery@gmail.com' || session.email === 'loja@delivery.com')) {
-          localStorage.removeItem(LOJISTA_SESSION_KEY);
-          localStorage.removeItem('LOJISTA_SESSION');
-          return null;
+        if (raw) {
+          const session = JSON.parse(raw);
+          // Descarta e expurga qualquer sessão antiga com e-mail mock/fake
+          if (session && (session.email === 'lojista.delivery@gmail.com' || session.email === 'loja@delivery.com')) {
+            localStorage.removeItem(LOJISTA_SESSION_KEY);
+            localStorage.removeItem('LOJISTA_SESSION');
+          } else if (session && session.email) {
+            return session;
+          }
         }
-        return session;
+        // Fallback para o e-mail do lojista salvo na configuração da loja
+        let cfgOwner = (typeof storeConfig !== 'undefined' && storeConfig && storeConfig.ownerEmail) ? storeConfig.ownerEmail : null;
+        if (!cfgOwner) {
+          try {
+            const rawCfg = localStorage.getItem(CONFIG_KEY) || localStorage.getItem(LEGACY_CONFIG_KEY);
+            if (rawCfg) {
+              const parsed = JSON.parse(rawCfg);
+              if (parsed && parsed.ownerEmail) cfgOwner = parsed.ownerEmail;
+            }
+          } catch (e) {}
+        }
+        if (cfgOwner && cfgOwner.includes('@') && cfgOwner !== 'lojista.delivery@gmail.com' && cfgOwner !== 'loja@delivery.com') {
+          return {
+            email: cfgOwner,
+            name: cfgOwner.split('@')[0],
+            role: 'lojista'
+          };
+        }
+        return null;
       } catch (e) {
         return null;
       }
     }
 
     function checkLojistaAuth(isDirectLoginAction = false) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const hasStoreParam = Boolean(urlParams.get('loja') || urlParams.get('store'));
-      
       const loginModal = document.getElementById('lojistaLoginModal');
       const emailBadge = document.getElementById('lojistaLoggedEmail');
       const authHeader = document.getElementById('lojistaAuthHeader');
       const avatarEl = document.getElementById('lojistaLoggedAvatar');
       const defaultIcon = document.getElementById('lojistaDefaultUserIcon');
-
-      // Se acessou o APONTAMENTO MESTRE (pedidos.html puro sem loja na URL) e não foi um clique de login recente:
-      // NUNCA auto-redireciona para loja de ninguém! Exibe a tela de login para o usuário escolher com qual conta entrar!
-      if (!hasStoreParam && !isDirectLoginAction) {
-        localStorage.removeItem(LOJISTA_SESSION_KEY);
-        localStorage.removeItem('LOJISTA_SESSION');
-        if (loginModal) loginModal.classList.remove('hidden');
-        if (authHeader) authHeader.classList.add('hidden');
-        initGoogleIdentity();
-        return;
-      }
 
       const session = getLojistaSession();
 
