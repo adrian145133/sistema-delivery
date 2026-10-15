@@ -1117,8 +1117,14 @@
       }).join('');
     }
 
+    const MAX_PRODUCTS = 3000;
+
     // AÇÕES DO MODO EDIÇÃO DO CARDÁPIO (LOJISTA)
     function addNewBlankProduct(cat) {
+      if (products.length >= MAX_PRODUCTS) {
+        alert(`⚠️ Limite de segurança atingido: seu cardápio já atingiu o máximo de ${MAX_PRODUCTS.toLocaleString('pt-BR')} produtos cadastrados.`);
+        return;
+      }
       const actualCat = cat || selectedCategory || 'Lanches';
       const newId = 'p_' + Date.now();
       const blankItem = {
@@ -1141,19 +1147,53 @@
       if (fi) fi.click();
     }
 
+    // COMPRESSÃO AUTOMÁTICA DE FOTOS DO PRODUTO (REDUZ DE 5MB-10MB PARA ~60KB ULTRA-RÁPIDO)
     function handleProductPhotoFile(id, input) {
       if (!input.files || !input.files[0]) return;
       const file = input.files[0];
       const reader = new FileReader();
       reader.onload = function(e) {
-        const base64Url = e.target.result;
-        const prod = products.find(p => p.id === id);
-        if (prod) {
-          prod.imageUrl = base64Url;
-          saveProductsAndSync();
-          const preview = document.getElementById('img_preview_' + id);
-          if (preview) preview.src = base64Url;
-        }
+        const rawData = e.target.result;
+        const img = new Image();
+        img.onload = function() {
+          const maxDim = 600; // Redimensiona para até 600px com proporção perfeita
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          // Comprime para JPEG com 82% de qualidade para carregamento instantâneo
+          const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+          const prod = products.find(p => p.id === id);
+          if (prod) {
+            prod.imageUrl = compressedUrl;
+            saveProductsAndSync();
+            const preview = document.getElementById('img_preview_' + id);
+            if (preview) preview.src = compressedUrl;
+          }
+        };
+        img.onerror = function() {
+          const prod = products.find(p => p.id === id);
+          if (prod) {
+            prod.imageUrl = rawData;
+            saveProductsAndSync();
+            const preview = document.getElementById('img_preview_' + id);
+            if (preview) preview.src = rawData;
+          }
+        };
+        img.src = rawData;
       };
       reader.readAsDataURL(file);
     }
