@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Painel da Loja & Impressão A4 de Pedidos</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -604,7 +607,7 @@
       </div>
 
       <!-- BOTÃO OFICIAL REAL GOOGLE SIGN-IN -->
-      <div id="googleBtnContainer" class="w-full flex items-center justify-center min-h-[44px]">
+      <div id="googleBtnContainer" onclick="userClickedLogin = true" class="w-full flex items-center justify-center min-h-[44px]">
         <button onclick="handleGoogleLogin()" type="button" class="w-full max-w-[320px] flex items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs sm:text-sm font-bold py-2.5 px-4 shadow-sm transition-all duration-150 cursor-pointer active:scale-95">
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
             <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z" />
@@ -1208,12 +1211,24 @@
       }
     }
 
+    let userClickedLogin = false;
+
     function handleGoogleCredentialResponse(response) {
       try {
         if (!response || !response.credential) {
           console.error('Nenhuma credencial retornada pelo Google');
           return;
         }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasStoreParam = Boolean(urlParams.get('loja') || urlParams.get('store'));
+
+        // Se está no apontamento mestre e o usuário NÃO clicou expressamente para logar, ignora callback silencioso
+        if (!hasStoreParam && !userClickedLogin) {
+          console.warn('Auto-login silencioso do Google bloqueado no apontamento mestre.');
+          return;
+        }
+
         const profile = decodeJwtResponse(response.credential);
         if (!profile) {
           alert('Não foi possível ler as credenciais da Conta Google.');
@@ -1255,10 +1270,14 @@
               client_id: GOOGLE_CLIENT_ID,
               callback: handleGoogleCredentialResponse,
               auto_select: false,
-              cancel_on_tap_outside: true
+              cancel_on_tap_outside: true,
+              itp_support: true
             });
             gisInitialized = true;
           }
+          try {
+            google.accounts.id.disableAutoSelect();
+          } catch (e) {}
           container.innerHTML = '';
           google.accounts.id.renderButton(container, {
             theme: 'outline',
@@ -1354,6 +1373,12 @@
       // Se acessou o APONTAMENTO MESTRE (pedidos.html puro sem loja na URL) e não foi um clique de login recente:
       // NUNCA auto-redireciona para loja de ninguém! Exibe a tela de login para o usuário escolher com qual conta entrar!
       if (!hasStoreParam && !isDirectLoginAction) {
+        userClickedLogin = false;
+        try {
+          if (window.google && window.google.accounts && window.google.accounts.id) {
+            google.accounts.id.disableAutoSelect();
+          }
+        } catch (e) {}
         localStorage.removeItem(LOJISTA_SESSION_KEY);
         localStorage.removeItem('LOJISTA_SESSION');
         if (loginModal) loginModal.classList.remove('hidden');
@@ -1588,6 +1613,7 @@
     }
 
     function handleGoogleLogin() {
+      userClickedLogin = true;
       if (window.google && window.google.accounts && window.google.accounts.id) {
         try {
           google.accounts.id.prompt();
@@ -1599,6 +1625,7 @@
 
     function handleEmailLogin(e) {
       e.preventDefault();
+      userClickedLogin = true;
       const email = document.getElementById('loginEmailInput').value.trim();
       const pass = document.getElementById('loginPasswordInput').value.trim();
       if (!email || !pass) return;
@@ -1618,6 +1645,11 @@
 
     function handleLojistaLogout() {
       if (!confirm('Deseja realmente sair da conta do lojista?')) return;
+      try {
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+          google.accounts.id.disableAutoSelect();
+        }
+      } catch (e) {}
       localStorage.removeItem(LOJISTA_SESSION_KEY);
       localStorage.removeItem('LOJISTA_SESSION');
       window.location.replace('pedidos.html');
