@@ -1745,7 +1745,6 @@
           }
         })
       }).then(() => {
-        alert('🎉 Parabéns! Agora clique em editar cardápio e adicione seus produtos e comece a vender já!');
         window.location.replace(`pedidos.html?loja=${encodeURIComponent(slug)}`);
       }).catch(err => {
         console.error('Erro ao salvar no servidor:', err);
