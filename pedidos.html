@@ -303,18 +303,18 @@
         </div>
 
         <!-- INTEGRAÇÃO MERCADO PAGO: 1 CLIQUE + BAIXA AUTOMÁTICA E CARTÃO DE CRÉDITO -->
-        <div class="rounded-xl border border-sky-300 bg-sky-50/80 p-3.5 space-y-3 shadow-xs">
+        <div class="rounded-xl border border-amber-300 bg-amber-50/70 p-3.5 space-y-3 shadow-xs">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-2">
-              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#009ee3] text-white shadow-xs font-black text-xs">
-                <i class="fa-solid fa-bolt"></i>
+              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FFE600] text-slate-900 border border-amber-400 shadow-xs font-black text-xs">
+                <i class="fa-solid fa-bolt text-amber-900"></i>
               </div>
               <div>
                 <span class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
                   Mercado Pago (Baixa Automática & Impressão)
-                  <span class="rounded bg-sky-100 text-sky-800 text-[10px] px-1.5 py-0.5 font-bold">Oficial</span>
+                  <span class="rounded bg-amber-100 text-amber-900 border border-amber-300 text-[10px] px-1.5 py-0.5 font-bold">Oficial</span>
                 </span>
-                <p class="text-[11px] text-slate-500">Aprovação instantânea de pedidos sem precisar conferir extrato bancário</p>
+                <p class="text-[11px] text-slate-600">Aprovação instantânea de pedidos sem precisar conferir extrato bancário</p>
               </div>
             </div>
             <span id="mpStatusBadge" class="hidden inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 text-[11px] font-bold">
@@ -324,11 +324,11 @@
 
           <!-- ÁREA NÃO CONECTADO -->
           <div id="mpNotConnectedArea" class="space-y-2">
-            <p class="text-[11px] text-slate-600 leading-relaxed">
+            <p class="text-[11px] text-slate-700 leading-relaxed">
               Conecte sua conta do Mercado Pago para que os pagamentos PIX dos clientes caiam direto na sua conta e o cupom saia impresso na mesma hora:
             </p>
             <div class="flex items-center gap-2 flex-wrap">
-              <button type="button" onclick="connectMercadoPagoOAuth()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-[#009ee3] hover:bg-[#0082ba] text-white font-bold px-4 py-2 text-xs shadow-md transition-all active:scale-95">
+              <button type="button" onclick="connectMercadoPagoOAuth()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-[#FFE600] hover:bg-[#F2DA00] text-[#002D59] border border-amber-400 font-bold px-4 py-2 text-xs shadow-md transition-all active:scale-95">
                 <i class="fa-solid fa-link"></i> Conectar com Mercado Pago (1 Clique)
               </button>
               <button type="button" onclick="toggleManualMpToken()" class="w-fit text-[11px] text-slate-500 hover:text-slate-800 underline font-medium">
@@ -336,11 +336,11 @@
               </button>
             </div>
             <!-- Entrada manual de token caso queira colar direto -->
-            <div id="mpManualTokenBox" class="hidden pt-2 border-t border-sky-200/50 space-y-1.5">
+            <div id="mpManualTokenBox" class="hidden pt-2 border-t border-amber-200/50 space-y-1.5">
               <label class="block text-[10px] font-semibold text-slate-600">Access Token do Mercado Pago (APP_USR-...):</label>
               <div class="flex items-center gap-2 flex-wrap">
-                <input type="password" id="mpManualTokenInput" placeholder="APP_USR-..." style="width: 42ch; max-width: 100%;" class="font-mono rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-sky-500">
-                <button type="button" onclick="saveManualMpToken()" class="w-fit inline-flex items-center gap-1 rounded-lg bg-sky-600 px-3 py-1 text-xs font-bold text-white hover:bg-sky-700">
+                <input type="password" id="mpManualTokenInput" placeholder="APP_USR-..." style="width: 42ch; max-width: 100%;" class="font-mono rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-amber-500">
+                <button type="button" onclick="saveManualMpToken()" class="w-fit inline-flex items-center gap-1 rounded-lg bg-[#FFE600] hover:bg-[#F2DA00] text-[#002D59] border border-amber-400 px-3 py-1 text-xs font-bold shadow-xs">
                   Salvar Token
                 </button>
               </div>
@@ -883,17 +883,17 @@
         </div>
 
         <!-- INTEGRAÇÃO MERCADO PAGO NO CADASTRO INICIAL (AUTOMATIZAÇÃO RECOMENDADA) -->
-        <div class="rounded-xl border border-sky-300 bg-sky-50/80 p-3.5 space-y-2.5 shadow-xs">
+        <div class="rounded-xl border border-amber-300 bg-amber-50/70 p-3.5 space-y-2.5 shadow-xs">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-2">
-              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#009ee3] text-white shadow-xs font-black text-xs">
-                <i class="fa-solid fa-bolt"></i>
+              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FFE600] text-slate-900 border border-amber-400 shadow-xs font-black text-xs">
+                <i class="fa-solid fa-bolt text-amber-900"></i>
               </div>
               <div>
                 <span class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
                   Conectar Mercado Pago
                 </span>
-                <p class="text-[11px] text-slate-500">Baixa automática em 2s + Impressão na hora sem você precisar conferir extrato</p>
+                <p class="text-[11px] text-slate-600">Baixa automática em 2s + Impressão na hora sem você precisar conferir extrato</p>
               </div>
             </div>
             <span id="setupMpStatusBadge" class="hidden inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 text-[11px] font-bold">
@@ -903,11 +903,11 @@
 
           <!-- ÁREA NÃO CONECTADO -->
           <div id="setupMpNotConnectedArea" class="space-y-2">
-            <p class="text-[11px] text-slate-600 leading-relaxed">
+            <p class="text-[11px] text-slate-700 leading-relaxed">
               O jeito mais rápido: autorize em 1 clique e sua loja já começa a vender no piloto automático:
             </p>
             <div class="flex items-center gap-2 flex-wrap">
-              <button type="button" onclick="connectMercadoPagoFromSetup()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-[#009ee3] hover:bg-[#0082ba] text-white font-bold px-4 py-2 text-xs shadow-md transition-all active:scale-95">
+              <button type="button" onclick="connectMercadoPagoFromSetup()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-[#FFE600] hover:bg-[#F2DA00] text-[#002D59] border border-amber-400 font-bold px-4 py-2 text-xs shadow-md transition-all active:scale-95">
                 <i class="fa-solid fa-link"></i> Conectar com Mercado Pago (1 Clique)
               </button>
             </div>
