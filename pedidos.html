@@ -302,6 +302,80 @@
           </div>
         </div>
 
+        <!-- INTEGRAÇÃO MERCADO PAGO: 1 CLIQUE + BAIXA AUTOMÁTICA E CARTÃO DE CRÉDITO -->
+        <div class="rounded-xl border border-sky-300 bg-sky-50/80 p-3.5 space-y-3 shadow-xs">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#009ee3] text-white shadow-xs font-black text-xs">
+                <i class="fa-solid fa-bolt"></i>
+              </div>
+              <div>
+                <span class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                  Mercado Pago (Baixa Automática & Impressão)
+                  <span class="rounded bg-sky-100 text-sky-800 text-[10px] px-1.5 py-0.5 font-bold">Oficial</span>
+                </span>
+                <p class="text-[11px] text-slate-500">Aprovação instantânea de pedidos sem precisar conferir extrato bancário</p>
+              </div>
+            </div>
+            <span id="mpStatusBadge" class="hidden inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 text-[11px] font-bold">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i> Conectado
+            </span>
+          </div>
+
+          <!-- ÁREA NÃO CONECTADO -->
+          <div id="mpNotConnectedArea" class="space-y-2">
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Conecte sua conta do Mercado Pago para que os pagamentos PIX dos clientes caiam direto na sua conta e o cupom saia impresso na mesma hora:
+            </p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" onclick="connectMercadoPagoOAuth()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-[#009ee3] hover:bg-[#0082ba] text-white font-bold px-4 py-2 text-xs shadow-md transition-all active:scale-95">
+                <i class="fa-solid fa-link"></i> Conectar com Mercado Pago (1 Clique)
+              </button>
+              <button type="button" onclick="toggleManualMpToken()" class="w-fit text-[11px] text-slate-500 hover:text-slate-800 underline font-medium">
+                Ou inserir Access Token manual
+              </button>
+            </div>
+            <!-- Entrada manual de token caso queira colar direto -->
+            <div id="mpManualTokenBox" class="hidden pt-2 border-t border-sky-200/50 space-y-1.5">
+              <label class="block text-[10px] font-semibold text-slate-600">Access Token do Mercado Pago (APP_USR-...):</label>
+              <div class="flex items-center gap-2 flex-wrap">
+                <input type="password" id="mpManualTokenInput" placeholder="APP_USR-..." style="width: 42ch; max-width: 100%;" class="font-mono rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-sky-500">
+                <button type="button" onclick="saveManualMpToken()" class="w-fit inline-flex items-center gap-1 rounded-lg bg-sky-600 px-3 py-1 text-xs font-bold text-white hover:bg-sky-700">
+                  Salvar Token
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ÁREA JÁ CONECTADO -->
+          <div id="mpConnectedArea" class="hidden space-y-2">
+            <div class="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-emerald-600 text-base shrink-0"></i>
+                <div>
+                  <strong>Sua conta Mercado Pago está conectada e 100% ativa!</strong>
+                  <p class="text-[11px] text-emerald-800">PIX com baixa automática em 2s e impressão direta na impressora habilitados.</p>
+                </div>
+              </div>
+              <button type="button" onclick="disconnectMercadoPago()" class="w-fit shrink-0 text-xs text-red-600 hover:text-red-800 underline font-bold">
+                Desconectar Conta
+              </button>
+            </div>
+          </div>
+
+          <!-- OPÇÃO OPCIONAL: CARTÃO DE CRÉDITO ONLINE -->
+          <div class="pt-2 border-t border-sky-200/60 flex items-center justify-between gap-3">
+            <div>
+              <label for="cfgAcceptCreditCard" class="text-xs font-semibold text-slate-800 flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" id="cfgAcceptCreditCard" onchange="toggleCreditCardOption(this.checked)" class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+                <span>Aceitar Cartão de Crédito Online (Mercado Pago)</span>
+                <span class="rounded bg-emerald-100 text-emerald-800 text-[10px] px-1.5 py-0.5 font-bold">Opcional</span>
+              </label>
+              <p class="text-[10px] text-slate-500 ml-5.5">Permite que o cliente parcele ou pague no cartão de crédito direto pelo cardápio online.</p>
+            </div>
+          </div>
+        </div>
+
         <!-- CAMPO DA CHAVE PIX DO LOJISTA (PROTEGIDO POR PIN MESTRE DO PROPRIETÁRIO) -->
         <div class="rounded-xl border border-emerald-400 bg-emerald-50/70 p-3.5 space-y-3 shadow-xs">
           <div class="flex items-center justify-between flex-wrap gap-2">
@@ -2814,9 +2888,13 @@
               if (store.settings.merchantCity) storeConfig.merchantCity = store.settings.merchantCity;
               if (store.settings.ownerPin) storeConfig.ownerPin = store.settings.ownerPin;
               if (store.settings.ownerEmail) storeConfig.ownerEmail = store.settings.ownerEmail;
+              if (store.settings.mpConnected !== undefined) storeConfig.mpConnected = store.settings.mpConnected;
+              if (store.settings.mpAccessToken) storeConfig.mpAccessToken = store.settings.mpAccessToken;
+              if (store.settings.acceptCreditCard !== undefined) storeConfig.acceptCreditCard = store.settings.acceptCreditCard;
             }
             localStorage.setItem(CONFIG_KEY, JSON.stringify(storeConfig));
             document.getElementById('panelStoreTitle').textContent = storeConfig.storeName || 'Fast Delivery Express';
+            renderMercadoPagoStatus();
             checkPixWarning();
           }
         }
@@ -2825,11 +2903,120 @@
 
     function checkPixWarning() {
       const banner = document.getElementById('pixWarningAlert');
-      const hasPix = storeConfig.pixKey && storeConfig.pixKey.trim() !== '' && storeConfig.pixKey !== 'chave_pix_pendente';
+      const hasMp = Boolean(storeConfig.mpConnected || storeConfig.mpAccessToken);
+      const hasPix = (storeConfig.pixKey && storeConfig.pixKey.trim() !== '' && storeConfig.pixKey !== 'chave_pix_pendente') || hasMp;
       if (!hasPix) {
         banner.classList.remove('hidden');
       } else {
         banner.classList.add('hidden');
+      }
+    }
+
+    // ========================================================
+    // INTEGRAÇÃO OFICIAL MERCADO PAGO (1 CLIQUE & CARTÃO)
+    // ========================================================
+    async function connectMercadoPagoOAuth() {
+      const slug = getStoreSlug();
+      try {
+        const res = await fetch(`/api/mercadopago-auth-url?loja=${encodeURIComponent(slug)}`);
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('Não foi possível gerar a URL de autorização do Mercado Pago.');
+        }
+      } catch (e) {
+        alert('Erro ao conectar ao Mercado Pago: ' + e.message);
+      }
+    }
+
+    function toggleManualMpToken() {
+      const box = document.getElementById('mpManualTokenBox');
+      if (box) box.classList.toggle('hidden');
+    }
+
+    async function saveManualMpToken() {
+      const token = document.getElementById('mpManualTokenInput')?.value.trim();
+      if (!token) {
+        alert('Por favor, digite o Access Token do Mercado Pago.');
+        return;
+      }
+      const slug = getStoreSlug();
+      try {
+        const res = await fetch(`/api/mercadopago-save-token?loja=${encodeURIComponent(slug)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token, storeId: slug })
+        });
+        if (res.ok) {
+          storeConfig.mpConnected = true;
+          storeConfig.mpAccessToken = token;
+          localStorage.setItem(CONFIG_KEY, JSON.stringify(storeConfig));
+          renderMercadoPagoStatus();
+          checkPixWarning();
+          alert('✅ Access Token do Mercado Pago salvo com sucesso! Baixa automática ativa.');
+        } else {
+          alert('Erro ao salvar token.');
+        }
+      } catch (e) {
+        alert('Erro: ' + e.message);
+      }
+    }
+
+    async function disconnectMercadoPago() {
+      if (!confirm('Deseja realmente desconectar sua conta do Mercado Pago?')) return;
+      const slug = getStoreSlug();
+      try {
+        await fetch(`/api/mercadopago-save-token?loja=${encodeURIComponent(slug)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ disconnect: true, storeId: slug })
+        });
+        storeConfig.mpConnected = false;
+        delete storeConfig.mpAccessToken;
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(storeConfig));
+        renderMercadoPagoStatus();
+        checkPixWarning();
+        alert('Conta do Mercado Pago desconectada.');
+      } catch (e) {
+        alert('Erro ao desconectar: ' + e.message);
+      }
+    }
+
+    async function toggleCreditCardOption(checked) {
+      storeConfig.acceptCreditCard = checked;
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(storeConfig));
+      const slug = getStoreSlug();
+      try {
+        await fetch(`/api/mercadopago-save-token?loja=${encodeURIComponent(slug)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acceptCreditCard: checked, storeId: slug })
+        });
+      } catch (e) {}
+    }
+
+    function renderMercadoPagoStatus() {
+      const isConnected = Boolean(storeConfig.mpConnected || storeConfig.mpAccessToken);
+      const notConnArea = document.getElementById('mpNotConnectedArea');
+      const connArea = document.getElementById('mpConnectedArea');
+      const badge = document.getElementById('mpStatusBadge');
+      const cardCheckbox = document.getElementById('cfgAcceptCreditCard');
+
+      if (notConnArea && connArea && badge) {
+        if (isConnected) {
+          notConnArea.classList.add('hidden');
+          connArea.classList.remove('hidden');
+          badge.classList.remove('hidden');
+        } else {
+          notConnArea.classList.remove('hidden');
+          connArea.classList.add('hidden');
+          badge.classList.add('hidden');
+        }
+      }
+
+      if (cardCheckbox) {
+        cardCheckbox.checked = Boolean(storeConfig.acceptCreditCard);
       }
     }
 
@@ -2879,6 +3066,20 @@
       loadAndRenderOrders();
       syncOrdersFromServer();
       checkAndEnforceLicense();
+
+      // Detecção de retorno do OAuth do Mercado Pago
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('mp_connected') === '1') {
+        storeConfig.mpConnected = true;
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(storeConfig));
+        renderMercadoPagoStatus();
+        checkPixWarning();
+        alert('🎉 Conta Mercado Pago conectada com sucesso! Sua loja agora recebe pagamentos com baixa automática e impressão instantânea!');
+        const cleanUrl = window.location.pathname + (urlParams.get('loja') ? `?loja=${encodeURIComponent(urlParams.get('loja'))}` : '');
+        window.history.replaceState({}, document.title, cleanUrl);
+      } else if (urlParams.get('mp_error')) {
+        alert('Aviso: Falha ao autorizar no Mercado Pago (' + urlParams.get('mp_error') + ').');
+      }
       
       // Observa alterações no localStorage (quando cliente compra no cardápio ou admin libera licença)
       window.addEventListener('storage', (e) => {
@@ -3526,6 +3727,7 @@
       document.getElementById('pixUnlockedBadge').classList.add('hidden');
       document.getElementById('pixLockedControls').classList.remove('hidden');
 
+      renderMercadoPagoStatus();
       document.getElementById('configModal').classList.remove('hidden');
     }
 
@@ -3538,6 +3740,7 @@
       storeConfig.storeName = document.getElementById('cfgStoreName').value.trim();
       storeConfig.storePhone = document.getElementById('cfgStorePhone').value.trim();
       storeConfig.deliveryFee = parseFloat(document.getElementById('cfgDeliveryFee').value) || 5.00;
+      storeConfig.acceptCreditCard = document.getElementById('cfgAcceptCreditCard')?.checked ?? Boolean(storeConfig.acceptCreditCard);
       
       // Só atualiza os dados bancários se foi desbloqueado com o PIN do dono
       if (isPixUnlocked) {
@@ -3565,7 +3768,10 @@
             merchantName: storeConfig.merchantName,
             merchantCity: storeConfig.merchantCity,
             ownerPin: storeConfig.ownerPin || '',
-            ownerEmail: storeConfig.ownerEmail || (getLojistaSession() ? getLojistaSession().email : '')
+            ownerEmail: storeConfig.ownerEmail || (getLojistaSession() ? getLojistaSession().email : ''),
+            mpConnected: Boolean(storeConfig.mpConnected),
+            mpAccessToken: storeConfig.mpAccessToken || '',
+            acceptCreditCard: Boolean(storeConfig.acceptCreditCard)
           }
         })
       }).catch(() => {});

@@ -284,11 +284,44 @@
             </div>
           </div>
 
-          <!-- PASSO 1: BOTÃO GERAR PAGAMENTO PIX OFICIAL DO BANCO CENTRAL -->
-          <div id="checkoutStep1Area">
+          <!-- SELEÇÃO DA FORMA DE PAGAMENTO ONLINE -->
+          <div id="paymentMethodSelectionBox" class="rounded-xl border border-slate-700 bg-slate-900/60 p-3 space-y-2">
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Forma de Pagamento Online:</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <label id="labelPayPix" class="flex items-center gap-2.5 p-2.5 rounded-lg border-2 border-emerald-500 bg-emerald-950/40 text-white cursor-pointer transition-all">
+                <input type="radio" name="payOption" value="pix" checked onchange="handlePayOptionChange('pix')" class="text-emerald-500 focus:ring-emerald-400">
+                <div class="flex items-center gap-2">
+                  <i class="fa-brands fa-pix text-emerald-400 text-base"></i>
+                  <div>
+                    <span class="font-bold block text-xs">PIX Oficial</span>
+                    <span class="text-[10px] text-slate-400">Baixa automática em 2s</span>
+                  </div>
+                </div>
+              </label>
+
+              <label id="creditCardOptionContainer" class="hidden flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-700 bg-slate-800/40 text-slate-300 cursor-pointer hover:border-sky-400 transition-all">
+                <input type="radio" name="payOption" value="card" onchange="handlePayOptionChange('card')" class="text-sky-500 focus:ring-sky-400">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-credit-card text-sky-400 text-base"></i>
+                  <div>
+                    <span class="font-bold block text-white text-xs">Cartão de Crédito</span>
+                    <span class="text-[10px] text-slate-400">Mercado Pago (Parcele ou 1x)</span>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- PASSO 1: BOTÃO GERAR PAGAMENTO PIX OFICIAL OU CARTÃO -->
+          <div id="checkoutStep1Area" class="space-y-2">
             <button type="button" id="btnGeneratePix" onclick="generateStorePixPayment()" class="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-sm font-bold text-slate-950 hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 transition-all">
               <i class="fa-brands fa-pix text-base"></i>
               <span id="btnGeneratePixText">Gerar Pagamento PIX Oficial</span>
+            </button>
+
+            <button type="button" id="btnSubmitCardPay" onclick="startCreditCardPayment()" class="hidden w-full flex items-center justify-center gap-2 rounded-xl bg-[#009ee3] py-3 text-sm font-bold text-white hover:bg-[#0082ba] shadow-lg shadow-sky-500/20 transition-all">
+              <i class="fa-solid fa-credit-card text-base"></i>
+              <span>Pagar com Cartão de Crédito Online</span>
             </button>
           </div>
 
@@ -474,6 +507,9 @@
               if (store.settings.deliveryFee !== undefined) config.deliveryFee = Number(store.settings.deliveryFee);
               if (store.settings.merchantName) config.merchantName = store.settings.merchantName;
               if (store.settings.merchantCity) config.merchantCity = store.settings.merchantCity;
+              if (store.settings.mpConnected !== undefined) config.mpConnected = store.settings.mpConnected;
+              if (store.settings.mpAccessToken) config.mpAccessToken = store.settings.mpAccessToken;
+              if (store.settings.acceptCreditCard !== undefined) config.acceptCreditCard = store.settings.acceptCreditCard;
               if (Array.isArray(store.settings.products)) {
                 products = store.settings.products;
                 localStorage.setItem(storageProdKey, JSON.stringify(products));
@@ -488,6 +524,7 @@
             document.getElementById('headerStoreName').textContent = config.storeName || slug;
             document.getElementById('headerStoreInfo').innerHTML = `<i class="fa-solid fa-phone"></i> ${config.storePhone || ''} • Entrega R$ ${(config.deliveryFee || 5).toFixed(2).replace('.', ',')}`;
             checkPixStatus();
+            checkPaymentMethodsAvailability();
           } else if (store && store.notFound && !isLojista()) {
             const grid = document.getElementById('productsGrid');
             if (grid) {
@@ -675,6 +712,7 @@
     }
 
     function isPixKeyValid() {
+      if (config && (config.mpConnected || config.mpAccessToken)) return true;
       if (config && config.pixKey && config.pixKey.trim() !== '' && config.pixKey !== 'chave_pix_pendente') {
         return true;
       }
@@ -683,6 +721,11 @@
         const raw = localStorage.getItem(`DELIVERY_CONFIG_${slug}`) || localStorage.getItem('DELIVERY_CONFIG');
         if (raw) {
           const parsed = JSON.parse(raw);
+          if (parsed && (parsed.mpConnected || parsed.mpAccessToken)) {
+            config.mpConnected = parsed.mpConnected;
+            config.mpAccessToken = parsed.mpAccessToken;
+            return true;
+          }
           if (parsed && parsed.pixKey && parsed.pixKey.trim() !== '' && parsed.pixKey !== 'chave_pix_pendente') {
             config.pixKey = parsed.pixKey;
             return true;
@@ -757,6 +800,50 @@
 
       // Sincroniza em segundo plano com a nuvem Supabase (Estilo Yooga)
       syncStoreDataFromCloud();
+
+      // Checa retorno do checkout de Cartão de Crédito Mercado Pago
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('card_success') === '1') {
+          const savedPending = sessionStorage.getItem('PENDING_CARD_ORDER');
+          if (savedPending) {
+            const orderObj = JSON.parse(savedPending);
+            sessionStorage.removeItem('PENDING_CARD_ORDER');
+
+            // Salva pedido no servidor
+            fetch(`/api/orders?loja=${encodeURIComponent(slug)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(orderObj)
+            }).catch(() => {});
+
+            // Salva pedido localmente
+            const currentOrders = JSON.parse(localStorage.getItem(`DELIVERY_ORDERS_${slug}`) || '[]');
+            currentOrders.unshift(orderObj);
+            localStorage.setItem(`DELIVERY_ORDERS_${slug}`, JSON.stringify(currentOrders));
+            localStorage.setItem('DELIVERY_ORDERS', JSON.stringify(currentOrders));
+            window.dispatchEvent(new Event('storage'));
+
+            // Limpa carrinho
+            cart = [];
+            localStorage.removeItem(`DELIVERY_CART_${slug}`);
+            updateCartUI();
+
+            // Mostra tela de confirmação
+            document.getElementById('checkoutFormArea')?.classList.add('hidden');
+            document.getElementById('checkoutSuccessArea')?.classList.remove('hidden');
+            document.getElementById('checkoutModal')?.classList.remove('hidden');
+            const title = document.getElementById('successOrderTitle');
+            if (title) title.textContent = `Pedido Pago com Cartão! (${orderObj.orderNumber})`;
+            const desc = document.getElementById('successOrderDesc');
+            if (desc) desc.textContent = `Seu pagamento via Cartão de Crédito foi aprovado pelo Mercado Pago! Seu pedido já está sendo preparado pela cozinha.`;
+
+            // Limpa query da URL
+            const cleanUrl = window.location.pathname + (slug ? `?loja=${encodeURIComponent(slug)}` : '');
+            window.history.replaceState({}, document.title, cleanUrl);
+          }
+        }
+      } catch (err) {}
     }
 
     function checkPixStatus() {
@@ -1441,6 +1528,8 @@
       document.getElementById('checkoutSuccessArea').classList.add('hidden');
       document.getElementById('checkoutFormArea').classList.remove('hidden');
       document.getElementById('checkoutModal').classList.remove('hidden');
+      handlePayOptionChange('pix');
+      checkPaymentMethodsAvailability();
       backToStep1();
 
       // Inicia captura suave em segundo plano se ainda não capturado
@@ -1657,6 +1746,129 @@
       payload += '6304';
       const checksum = crc16(payload);
       return payload + checksum;
+    }
+
+    let selectedPayOption = 'pix';
+
+    function handlePayOptionChange(opt) {
+      selectedPayOption = opt;
+      const btnPix = document.getElementById('btnGeneratePix');
+      const btnCard = document.getElementById('btnSubmitCardPay');
+      const labelPix = document.getElementById('labelPayPix');
+      const labelCard = document.getElementById('creditCardOptionContainer');
+
+      if (opt === 'pix') {
+        if (btnPix) btnPix.classList.remove('hidden');
+        if (btnCard) btnCard.classList.add('hidden');
+        if (labelPix) {
+          labelPix.className = 'flex items-center gap-2.5 p-2.5 rounded-lg border-2 border-emerald-500 bg-emerald-950/40 text-white cursor-pointer transition-all';
+        }
+        if (labelCard) {
+          labelCard.className = 'flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-700 bg-slate-800/40 text-slate-300 cursor-pointer hover:border-sky-400 transition-all';
+        }
+      } else {
+        if (btnPix) btnPix.classList.add('hidden');
+        if (btnCard) btnCard.classList.remove('hidden');
+        if (labelCard) {
+          labelCard.className = 'flex items-center gap-2.5 p-2.5 rounded-lg border-2 border-sky-500 bg-sky-950/40 text-white cursor-pointer transition-all';
+        }
+        if (labelPix) {
+          labelPix.className = 'flex items-center gap-2.5 p-2.5 rounded-lg border border-slate-700 bg-slate-800/40 text-slate-300 cursor-pointer hover:border-emerald-400 transition-all';
+        }
+      }
+    }
+
+    function checkPaymentMethodsAvailability() {
+      const cardOption = document.getElementById('creditCardOptionContainer');
+      if (cardOption) {
+        if (config && (config.acceptCreditCard || config.mpConnected)) {
+          cardOption.classList.remove('hidden');
+        } else {
+          cardOption.classList.add('hidden');
+        }
+      }
+    }
+
+    async function startCreditCardPayment() {
+      const name = (document.getElementById('custName')?.value || '').trim();
+      const phone = (document.getElementById('custPhone')?.value || '').trim();
+      const street = (document.getElementById('custStreet')?.value || '').trim();
+      const num = (document.getElementById('custNumber')?.value || '').trim();
+      const neighborhood = (document.getElementById('custNeighborhood')?.value || '').trim();
+      const complement = (document.getElementById('custComplement')?.value || '').trim();
+
+      if (!name) { alert('Por favor, informe seu nome.'); return; }
+      if (!street || !num) { alert('Por favor, informe a Rua e o Número da casa para entrega.'); return; }
+
+      const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+      const fee = Number(config.deliveryFee !== undefined ? config.deliveryFee : 5.00);
+      const total = subtotal + fee;
+
+      const slug = getStoreSlug() || 'default_store';
+      let lastNum = parseInt(localStorage.getItem(`DELIVERY_LAST_NUM_${slug}`) || localStorage.getItem('DELIVERY_LAST_NUM') || '1000', 10);
+      const orderNumber = lastNum + 1;
+
+      const fullAddress = `${street}, ${num}${neighborhood ? ' - ' + neighborhood : ''}`;
+      const mapsUrl = gpsCoords 
+        ? `https://www.google.com/maps/search/?api=1&query=${gpsCoords.lat},${gpsCoords.lng}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+
+      pendingOrderPayload = {
+        id: 'ord-' + Date.now(),
+        orderNumber: `#${orderNumber}`,
+        store_id: slug,
+        createdAt: new Date().toISOString(),
+        items: cart.map(it => ({ id: it.id, title: it.name, price: it.price, quantity: it.quantity })),
+        subtotal: subtotal,
+        deliveryFee: fee,
+        total: total,
+        paymentMethod: `Cartão de Crédito Online (Mercado Pago)`,
+        customer: {
+          name: name,
+          phone: phone,
+          street: street,
+          number: num,
+          complement: complement,
+          location: gpsCoords ? { lat: gpsCoords.lat, lng: gpsCoords.lng } : null
+        },
+        status: 'pago'
+      };
+
+      sessionStorage.setItem('PENDING_CARD_ORDER', JSON.stringify(pendingOrderPayload));
+
+      const btnCard = document.getElementById('btnSubmitCardPay');
+      if (btnCard) {
+        btnCard.disabled = true;
+        btnCard.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Abrindo Mercado Pago Seguro...`;
+      }
+
+      try {
+        const res = await fetch(`/api/create-card-preference?loja=${encodeURIComponent(slug)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            total: total,
+            orderNumber: `#${orderNumber}`,
+            customer: { name, phone }
+          })
+        });
+        const data = await res.json();
+        if (data && data.initPoint) {
+          window.location.href = data.initPoint;
+        } else {
+          alert('Erro ao iniciar pagamento com cartão: ' + (data?.error || 'Tente novamente.'));
+          if (btnCard) {
+            btnCard.disabled = false;
+            btnCard.innerHTML = `<i class="fa-solid fa-credit-card"></i> Pagar com Cartão de Crédito Online`;
+          }
+        }
+      } catch (err) {
+        alert('Erro ao conectar com Mercado Pago: ' + err.message);
+        if (btnCard) {
+          btnCard.disabled = false;
+          btnCard.innerHTML = `<i class="fa-solid fa-credit-card"></i> Pagar com Cartão de Crédito Online`;
+        }
+      }
     }
 
     // GERAÇÃO DE PIX OFICIAL DO LOJISTA COM BAIXA AUTOMÁTICA EM TEMPO REAL

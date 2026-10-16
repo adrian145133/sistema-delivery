@@ -15,6 +15,8 @@ const PROFITS_FILE = path.join(__dirname, 'profits.json');
 
 // Chave API Mercado Pago oficial
 const MP_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN || 'APP_USR-3981041992629702-072910-09ef1f4ba21b41a0eafbe24dcc1c7456-2469694673';
+const MP_CLIENT_ID = process.env.MERCADO_PAGO_CLIENT_ID || '3981041992629702';
+const MP_CLIENT_SECRET = process.env.MERCADO_PAGO_CLIENT_SECRET || '';
 const PLATFORM_FEE = 1.00; // Taxa de R$ 1,00 por pedido pago
 
 const MIME_TYPES = {
@@ -898,6 +900,190 @@ async function handleRequest(req, res) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: err.message }));
     }
+    return;
+  }
+
+  // API: Gerar URL oficial de autorização OAuth Mercado Pago
+  if (req.method === 'GET' && pathname === '/api/mercadopago-auth-url') {
+    const loja = queryParams.get('loja') || 'default_store';
+    const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+    const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
+    const redirectUri = `${proto}://${host}/api/mercadopago-callback`;
+    const authUrl = `https://auth.mercadopago.com.br/authorization?client_id=${MP_CLIENT_ID}&response_type=code&platform_id=mp&state=${encodeURIComponent(loja)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      url: authUrl,
+      clientId: MP_CLIENT_ID,
+      redirectUri: redirectUri,
+      hasClientSecret: Boolean(MP_CLIENT_SECRET)
+    }));
+    return;
+  }
+
+  // API: Callback oficial de autorização do Mercado Pago
+  if (req.method === 'GET' && pathname === '/api/mercadopago-callback') {
+    const code = queryParams.get('code');
+    const state = queryParams.get('state') || 'default_store';
+    if (!code) {
+      res.writeHead(302, { Location: `/pedidos.html?loja=${encodeURIComponent(state)}&mp_error=no_code` });
+      return res.end();
+    }
+    const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+    const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
+    const redirectUri = `${proto}://${host}/api/mercadopago-callback`;
+
+    try {
+      const tokenRes = await fetch('https://api.mercadopago.com/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_secret: MP_CLIENT_SECRET,
+          client_id: MP_CLIENT_ID,
+          grant_type: 'authorization_code',
+          code: code,
+          redirect_uri: redirectUri
+        })
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenRes.ok || !tokenData.access_token) {
+        console.error('Erro na troca de token Mercado Pago:', tokenData);
+        res.writeHead(302, { Location: `/pedidos.html?loja=${encodeURIComponent(state)}&mp_error=token_failed` });
+        return res.end();
+      }
+
+      const store = await db.getStore(state);
+      store.settings = store.settings || {};
+      store.settings.mpConnected = true;
+      store.settings.mpAccessToken = tokenData.access_token;
+      store.settings.mpPublicKey = tokenData.public_key || null;
+      store.settings.mpUserId = tokenData.user_id || null;
+      store.settings.mpConnectedAt = new Date().toISOString();
+      await db.saveStore(store);
+
+      res.writeHead(302, { Location: `/pedidos.html?loja=${encodeURIComponent(state)}&mp_connected=1` });
+      return res.end();
+    } catch (err) {
+      console.error('Erro em mercadopago-callback:', err);
+      res.writeHead(302, { Location: `/pedidos.html?loja=${encodeURIComponent(state)}&mp_error=${encodeURIComponent(err.message)}` });
+      return res.end();
+    }
+  }
+
+  // API: Salvar token manual do Mercado Pago ou desconectar
+  if (req.method === 'POST' && pathname === '/api/mercadopago-save-token') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const loja = queryParams.get('loja') || payload.storeId || 'default_store';
+        const store = await db.getStore(loja);
+        store.settings = store.settings || {};
+        if (payload.token) {
+          store.settings.mpConnected = true;
+          store.settings.mpAccessToken = payload.token.trim();
+        }
+        if (payload.disconnect) {
+          store.settings.mpConnected = false;
+          delete store.settings.mpAccessToken;
+          delete store.settings.mpUserId;
+          delete store.settings.mpPublicKey;
+        }
+        if (payload.acceptCreditCard !== undefined) {
+          store.settings.acceptCreditCard = Boolean(payload.acceptCreditCard);
+        }
+        await db.saveStore(store);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, settings: store.settings }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // API: Criar Preferência de Pagamento para Cartão de Crédito Online
+  if (req.method === 'POST' && pathname === '/api/create-card-preference') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const amount = Number(payload.total);
+        if (!amount || amount <= 0) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Valor total inválido' }));
+          return;
+        }
+
+        const loja = queryParams.get('loja') || payload.storeId || 'default_store';
+        const store = await db.getStore(loja);
+        const token = store?.settings?.mpAccessToken || MP_ACCESS_TOKEN;
+
+        const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+        const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
+        const origin = `${proto}://${host}`;
+
+        const prefPayload = {
+          items: [
+            {
+              id: String(payload.orderNumber || 'PEDIDO'),
+              title: `Pedido ${payload.orderNumber || 'Delivery'} - ${store?.name || 'Fast Delivery'}`,
+              quantity: 1,
+              currency_id: 'BRL',
+              unit_price: Number(amount.toFixed(2))
+            }
+          ],
+          payer: {
+            name: payload.customer?.name || 'Cliente',
+            email: payload.customer?.email || 'cliente@deliveryrapido.com.br',
+            phone: {
+              number: payload.customer?.phone || '11999999999'
+            }
+          },
+          back_urls: {
+            success: `${origin}/index.html?loja=${encodeURIComponent(loja)}&card_success=1&order_ref=${encodeURIComponent(payload.orderNumber || '')}`,
+            pending: `${origin}/index.html?loja=${encodeURIComponent(loja)}&card_pending=1`,
+            failure: `${origin}/index.html?loja=${encodeURIComponent(loja)}&card_failure=1`
+          },
+          auto_return: 'approved',
+          payment_methods: {
+            excluded_payment_types: [
+              { id: 'ticket' }
+            ]
+          },
+          statement_descriptor: (store?.name || 'DELIVERY').substring(0, 16)
+        };
+
+        const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(prefPayload)
+        });
+        const prefData = await mpRes.json();
+        if (!mpRes.ok) {
+          console.error('Mercado Pago Preferences Error:', prefData);
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Erro ao gerar checkout com cartão', details: prefData }));
+          return;
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          preferenceId: prefData.id,
+          initPoint: prefData.init_point,
+          sandboxInitPoint: prefData.sandbox_init_point
+        }));
+      } catch (err) {
+        console.error('Erro em create-card-preference:', err);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
     return;
   }
 
