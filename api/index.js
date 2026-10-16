@@ -124,6 +124,15 @@ module.exports = async (req, res) => {
         }
         return sendJson(res, 400, { error: 'Formato de pedido inválido' });
       }
+      if (req.method === 'DELETE') {
+        const payload = await parseBody(req);
+        const orderId = payload?.id || searchParams.get('id');
+        if (!orderId) {
+          return sendJson(res, 400, { error: 'ID do pedido é obrigatório' });
+        }
+        await db.deleteOrder(orderId, storeId);
+        return sendJson(res, 200, { success: true, deletedId: orderId });
+      }
     }
 
     // 3. POST /api/driver-send-phone-code (Envio do Código 6 Dígitos)

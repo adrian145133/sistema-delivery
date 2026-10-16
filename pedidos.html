@@ -1317,6 +1317,7 @@
     const DRIVER_PAIRING_STORAGE_KEY = `DELIVERY_DRIVER_PAIRING_CODE_${currentStoreSlug}`;
     const PAIRED_DRIVERS_STORAGE_KEY = `DELIVERY_PAIRED_DRIVERS_${currentStoreSlug}`;
     const PRINTED_ORDERS_STORAGE_KEY = `DELIVERY_PRINTED_ORDERS_${currentStoreSlug}`;
+    const DELETED_ORDERS_STORAGE_KEY = `DELIVERY_DELETED_ORDERS_${currentStoreSlug}`;
 
     function getPrintedOrderIds() {
       try {
@@ -1332,6 +1333,22 @@
       const set = getPrintedOrderIds();
       set.add(orderId);
       localStorage.setItem(PRINTED_ORDERS_STORAGE_KEY, JSON.stringify([...set]));
+    }
+
+    function getDeletedOrderIds() {
+      try {
+        const raw = localStorage.getItem(DELETED_ORDERS_STORAGE_KEY);
+        return new Set(raw ? JSON.parse(raw) : []);
+      } catch (e) {
+        return new Set();
+      }
+    }
+
+    function addDeletedOrderId(orderId) {
+      if (!orderId) return;
+      const set = getDeletedOrderIds();
+      set.add(orderId);
+      localStorage.setItem(DELETED_ORDERS_STORAGE_KEY, JSON.stringify([...set]));
     }
 
     let currentFilter = 'separando'; // PADRÃO INICIAL: PAGOS / EM SEPARAÇÃO (UNIFICADOS)
@@ -2898,8 +2915,12 @@
     });
 
     // Função de Som Web Audio (ding-dong de novo pedido)
+    let lastChimeTime = 0;
     function playOrderChime() {
       if (!document.getElementById('soundToggle')?.checked) return;
+      const nowMs = Date.now();
+      if (nowMs - lastChimeTime < 4000) return; // Cooldown de 4 segundos contra loop de som
+      lastChimeTime = nowMs;
       try {
         if (!audioCtx) {
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2943,8 +2964,10 @@
         const list = raw ? JSON.parse(raw) : [];
         const cutoff = Date.now() - TWO_YEARS_MS;
         const printedIds = getPrintedOrderIds();
-        // Retém apenas pedidos dos últimos 2 anos (730 dias)
+        const deletedIds = getDeletedOrderIds();
+        // Retém apenas pedidos dos últimos 2 anos (730 dias) e exclui removidos
         const validList = list.filter(o => {
+          if (deletedIds.has(o.id)) return false;
           const t = new Date(o.createdAt).getTime();
           return !isNaN(t) && t >= cutoff;
         }).map(o => {
@@ -2978,7 +3001,9 @@
         if (res.ok) {
           const list = await res.json();
           if (Array.isArray(list)) {
-            localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(list));
+            const deletedIds = getDeletedOrderIds();
+            const cleanList = list.filter(o => !deletedIds.has(o.id));
+            localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(cleanList));
             loadAndRenderOrders(true);
           }
         }
@@ -3011,6 +3036,7 @@
       const printedIds = getPrintedOrderIds();
       const toPrint = list.find(o => !printedIds.has(o.id) && (o.status === 'separando' || o.status === 'pago'));
       if (toPrint) {
+        markOrderAsPrinted(toPrint.id);
         playOrderChime();
         printOrder(toPrint.id);
       }
@@ -3022,16 +3048,22 @@
       if (checkNew && isInitialOrdersLoaded) {
         let hasNew = false;
         let newestOrder = null;
+        const printedIds = getPrintedOrderIds();
         orders.forEach(o => {
           if (!lastKnownOrderIds.has(o.id)) {
             hasNew = true;
-            if (!newestOrder) newestOrder = o;
+            if (!newestOrder && !printedIds.has(o.id) && (o.status === 'separando' || o.status === 'pago')) {
+              newestOrder = o;
+            }
           }
         });
 
-        if (hasNew && newestOrder) {
+        if (hasNew) {
           playOrderChime();
-          printOrder(newestOrder.id);
+          if (newestOrder) {
+            markOrderAsPrinted(newestOrder.id);
+            printOrder(newestOrder.id);
+          }
         }
       }
 
@@ -3266,11 +3298,28 @@
       }
     }
 
-    function deleteOrder(id) {
+    async function deleteOrder(id) {
       if (!confirm('Deseja realmente remover este pedido?')) return;
+      addDeletedOrderId(id);
       const orders = getStoredOrders().filter(o => o.id !== id);
-      saveOrders(orders);
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+      localStorage.setItem(LEGACY_ORDERS_KEY, JSON.stringify(orders));
+      const printedIds = getPrintedOrderIds();
+      printedIds.delete(id);
+      localStorage.setItem(PRINTED_ORDERS_STORAGE_KEY, JSON.stringify([...printedIds]));
+      lastKnownOrderIds.delete(id);
       loadAndRenderOrders();
+
+      const slug = getStoreSlug();
+      try {
+        await fetch(`/api/orders?loja=${encodeURIComponent(slug)}&id=${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+      } catch (e) {
+        console.warn('Erro ao deletar pedido no servidor:', e);
+      }
     }
 
     // ========================================================
@@ -4164,16 +4213,6 @@
         }, 1200);
       }, 100);
     }
-
-    // Auto-impressão de pedidos pendentes ao focar ou ativar a aba
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        checkAndAutoPrintPending();
-      }
-    });
-    window.addEventListener('focus', () => {
-      checkAndAutoPrintPending();
-    });
   </script>
 </body>
 </html>

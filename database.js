@@ -258,6 +258,21 @@ async function upsertOrder(order, storeId = 'default_store') {
   return order;
 }
 
+async function deleteOrder(orderId, storeId = 'default_store') {
+  const localList = readLocalJson(ORDERS_FILE, []);
+  const filtered = localList.filter(o => o.id !== orderId);
+  writeLocalJson(ORDERS_FILE, filtered);
+
+  if (supabaseClient) {
+    try {
+      await supabaseClient.from('orders').delete().eq('id', orderId).eq('store_id', storeId);
+    } catch (e) {
+      console.warn('[Supabase] Falha ao deletar pedido:', e.message);
+    }
+  }
+  return true;
+}
+
 // ======================================================================
 // TOKENS DE CADASTRO DESCARTÁVEIS (5 MINUTOS)
 // ======================================================================
@@ -437,6 +452,7 @@ module.exports = {
   getOrders,
   saveOrders,
   upsertOrder,
+  deleteOrder,
   getDriverTokens,
   saveDriverTokens,
   getDriverPhoneCodes,
