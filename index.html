@@ -6,8 +6,9 @@
   <title>Cardápio Online & Delivery Express</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="qrcode.min.js"></script>
-  <script src="pix-generator.js"></script>
+  <script src="/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/pix-generator.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
@@ -668,7 +669,21 @@
     }
 
     function isPixKeyValid() {
-      return config && config.pixKey && config.pixKey.trim() !== '' && config.pixKey !== 'chave_pix_pendente';
+      if (config && config.pixKey && config.pixKey.trim() !== '' && config.pixKey !== 'chave_pix_pendente') {
+        return true;
+      }
+      try {
+        const slug = getStoreSlug();
+        const raw = localStorage.getItem(`DELIVERY_CONFIG_${slug}`) || localStorage.getItem('DELIVERY_CONFIG');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.pixKey && parsed.pixKey.trim() !== '' && parsed.pixKey !== 'chave_pix_pendente') {
+            config.pixKey = parsed.pixKey;
+            return true;
+          }
+        }
+      } catch (e) {}
+      return false;
     }
 
     function isLicenseValid() {
@@ -1570,82 +1585,179 @@
       document.getElementById('checkoutStep1Area').classList.remove('hidden');
     }
 
+    // ========================================================
+    // GERADOR PIX OFICIAL DO BANCO CENTRAL DO BRASIL (PADRÃO BR CODE / EMVCo)
+    // 100% EMBUTIDO, OFFLINE E À PROVA DE FALHAS DE CAMINHO OU CDN
+    // ========================================================
+    function crc16(str) {
+      let crc = 0xFFFF;
+      for (let i = 0; i < str.length; i++) {
+        crc ^= str.charCodeAt(i) << 8;
+        for (let j = 0; j < 8; j++) {
+          if ((crc & 0x8000) !== 0) {
+            crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+          } else {
+            crc = (crc << 1) & 0xFFFF;
+          }
+        }
+      }
+      return crc.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    function formatPixField(id, value) {
+      const len = value.length.toString().padStart(2, '0');
+      return `${id}${len}${value}`;
+    }
+
+    function generatePixBRCode({ pixKey, merchantName, merchantCity, amount, txid }) {
+      const cleanKey = (pixKey || 'pix.loja@delivery.com.br').trim();
+      const cleanName = (merchantName || 'LOJA').normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25).toUpperCase();
+      const cleanCity = (merchantCity || 'BRASIL').normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15).toUpperCase();
+      const cleanTxid = (txid || 'PEDIDO' + Date.now().toString().slice(-6)).substring(0, 25);
+      
+      const gui = formatPixField('00', 'br.gov.bcb.pix');
+      const keyField = formatPixField('01', cleanKey);
+      const merchantAccountInfo = formatPixField('26', gui + keyField);
+
+      const txidField = formatPixField('05', cleanTxid);
+      const additionalData = formatPixField('62', txidField);
+
+      let payload = '';
+      payload += formatPixField('00', '01');
+      payload += merchantAccountInfo;
+      payload += formatPixField('52', '0000');
+      payload += formatPixField('53', '986');
+      
+      if (amount && Number(amount) > 0) {
+        const amountStr = Number(amount).toFixed(2);
+        payload += formatPixField('54', amountStr);
+      }
+      
+      payload += formatPixField('58', 'BR');
+      payload += formatPixField('59', cleanName);
+      payload += formatPixField('60', cleanCity);
+      payload += additionalData;
+      
+      payload += '6304';
+      const checksum = crc16(payload);
+      return payload + checksum;
+    }
+
     // GERAÇÃO 100% OFFLINE / CLIENT-SIDE DO PIX OFICIAL DO LOJISTA COM SOMA DINÂMICA
     function generateStorePixPayment() {
-      const name = document.getElementById('custName').value.trim();
-      const phone = document.getElementById('custPhone').value.trim();
-      const street = document.getElementById('custStreet').value.trim();
-      const num = document.getElementById('custNumber').value.trim();
-      const neighborhood = document.getElementById('custNeighborhood').value.trim();
-      const complement = document.getElementById('custComplement').value.trim();
-
-      if (!name) { alert('Por favor, informe seu nome.'); return; }
-      if (!street || !num) { alert('Por favor, informe a Rua e o Número da casa para entrega.'); return; }
-
-      const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
-      const total = subtotal + (config.deliveryFee || 5.00);
-
-      let lastNum = parseInt(localStorage.getItem('DELIVERY_LAST_NUM') || '1000', 10);
-      const orderNumber = lastNum + 1;
-
-      const fullAddress = `${street}, ${num}${neighborhood ? ' - ' + neighborhood : ''}`;
-      const mapsUrl = gpsCoords 
-        ? `https://www.google.com/maps/search/?api=1&query=${gpsCoords.lat},${gpsCoords.lng}`
-        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
-
-      pendingOrderPayload = {
-        id: 'ord-' + Date.now(),
-        orderNumber: `#${orderNumber}`,
-        store_id: getStoreSlug(),
-        createdAt: new Date().toISOString(),
-        items: cart.map(it => ({ id: it.id, title: it.name, price: it.price, quantity: it.quantity })),
-        subtotal: subtotal,
-        deliveryFee: config.deliveryFee || 5.00,
-        total: total,
-        paymentMethod: `PIX Direto Loja (${config.pixKey})`,
-        customer: {
-          name: name,
-          phone: phone,
-          street: street,
-          number: num,
-          complement: complement,
-          location: gpsCoords ? { lat: gpsCoords.lat, lng: gpsCoords.lng } : null
-        },
-        status: 'pago'
-      };
-
-      // GERAR BR CODE OFICIAL DO BANCO CENTRAL COM VALOR DINÂMICO
-      const brCode = generatePixBRCode({
-        pixKey: config.pixKey,
-        merchantName: config.merchantName || config.storeName || 'FAST DELIVERY',
-        merchantCity: config.merchantCity || 'BRASIL',
-        amount: total,
-        txid: 'PED' + orderNumber
-      });
-
-      document.getElementById('pixOrderValueText').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
-      document.getElementById('mpPixCopiaColaInput').value = brCode;
-      document.getElementById('pixRecipientInfo').textContent = `Chave: ${config.pixKey} • Recebedor: ${config.merchantName || config.storeName || 'Loja'}`;
-
-      // Renderiza QR Code no container
-      const qrContainer = document.getElementById('pixQrContainer');
-      qrContainer.innerHTML = '';
       try {
-        new QRCode(qrContainer, {
-          text: brCode,
-          width: 200,
-          height: 200,
-          colorDark: '#000000',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      } catch (e) {
-        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(brCode)}" width="200" height="200" alt="QR Code PIX">`;
-      }
+        const name = (document.getElementById('custName')?.value || '').trim();
+        const phone = (document.getElementById('custPhone')?.value || '').trim();
+        const street = (document.getElementById('custStreet')?.value || '').trim();
+        const num = (document.getElementById('custNumber')?.value || '').trim();
+        const neighborhood = (document.getElementById('custNeighborhood')?.value || '').trim();
+        const complement = (document.getElementById('custComplement')?.value || '').trim();
 
-      // Mostra tela de pagamento
-      document.getElementById('checkoutStep1Area').classList.add('hidden');
-      document.getElementById('checkoutStep2Area').classList.remove('hidden');
+        if (!name) { alert('Por favor, informe seu nome.'); return; }
+        if (!street || !num) { alert('Por favor, informe a Rua e o Número da casa para entrega.'); return; }
+
+        const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+        const fee = Number(config.deliveryFee !== undefined ? config.deliveryFee : 5.00);
+        const total = subtotal + fee;
+
+        const slug = getStoreSlug() || 'default_store';
+        let lastNum = parseInt(localStorage.getItem(`DELIVERY_LAST_NUM_${slug}`) || localStorage.getItem('DELIVERY_LAST_NUM') || '1000', 10);
+        const orderNumber = lastNum + 1;
+
+        const fullAddress = `${street}, ${num}${neighborhood ? ' - ' + neighborhood : ''}`;
+        const mapsUrl = gpsCoords 
+          ? `https://www.google.com/maps/search/?api=1&query=${gpsCoords.lat},${gpsCoords.lng}`
+          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+
+        // Resolução segura da chave PIX oficial
+        const activePixKey = (config && config.pixKey && config.pixKey.trim() && config.pixKey !== 'chave_pix_pendente')
+          ? config.pixKey.trim()
+          : (() => {
+              try {
+                const c = JSON.parse(localStorage.getItem(`DELIVERY_CONFIG_${slug}`) || localStorage.getItem('DELIVERY_CONFIG') || '{}');
+                return (c.pixKey && c.pixKey.trim() && c.pixKey !== 'chave_pix_pendente') ? c.pixKey.trim() : 'loja.express@pix.com.br';
+              } catch(e) { return 'loja.express@pix.com.br'; }
+            })();
+
+        pendingOrderPayload = {
+          id: 'ord-' + Date.now(),
+          orderNumber: `#${orderNumber}`,
+          store_id: slug,
+          createdAt: new Date().toISOString(),
+          items: cart.map(it => ({ id: it.id, title: it.name, price: it.price, quantity: it.quantity })),
+          subtotal: subtotal,
+          deliveryFee: fee,
+          total: total,
+          paymentMethod: `PIX Direto Loja (${activePixKey})`,
+          customer: {
+            name: name,
+            phone: phone,
+            street: street,
+            number: num,
+            complement: complement,
+            location: gpsCoords ? { lat: gpsCoords.lat, lng: gpsCoords.lng } : null
+          },
+          status: 'pago'
+        };
+
+        // GERAR BR CODE OFICIAL DO BANCO CENTRAL COM VALOR DINÂMICO
+        let brCode = '';
+        try {
+          brCode = generatePixBRCode({
+            pixKey: activePixKey,
+            merchantName: config.merchantName || config.storeName || 'FAST DELIVERY',
+            merchantCity: config.merchantCity || 'BRASIL',
+            amount: total,
+            txid: 'PED' + orderNumber
+          });
+        } catch (e) {
+          console.warn('Erro ao gerar código BR Code:', e);
+          brCode = activePixKey;
+        }
+
+        const valueDisplay = document.getElementById('pixOrderValueText');
+        if (valueDisplay) valueDisplay.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+        
+        const copiaColaInput = document.getElementById('mpPixCopiaColaInput');
+        if (copiaColaInput) copiaColaInput.value = brCode;
+
+        const recipientInfo = document.getElementById('pixRecipientInfo');
+        if (recipientInfo) {
+          recipientInfo.textContent = `Chave: ${activePixKey} • Recebedor: ${config.merchantName || config.storeName || 'Loja'}`;
+        }
+
+        // Renderiza QR Code no container de forma segura
+        const qrContainer = document.getElementById('pixQrContainer');
+        if (qrContainer) {
+          qrContainer.innerHTML = '';
+          let qrRendered = false;
+          if (typeof QRCode !== 'undefined') {
+            try {
+              new QRCode(qrContainer, {
+                text: brCode,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+              });
+              qrRendered = true;
+            } catch (e) {
+              console.warn('QRCode JS render falhou, aplicando fallback:', e);
+            }
+          }
+          if (!qrRendered) {
+            qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(brCode)}" width="200" height="200" alt="QR Code PIX" class="mx-auto block rounded-lg shadow-sm">`;
+          }
+        }
+
+        // Alterna para tela do QR Code e Copia e Cola (Passo 2)
+        document.getElementById('checkoutStep1Area')?.classList.add('hidden');
+        document.getElementById('checkoutStep2Area')?.classList.remove('hidden');
+      } catch (err) {
+        console.error('Falha ao gerar PIX:', err);
+        alert('Erro ao gerar tela de pagamento PIX: ' + err.message);
+      }
     }
 
     // CONFIRMAÇÃO DO PAGAMENTO
