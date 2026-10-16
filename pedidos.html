@@ -892,7 +892,6 @@
               <div>
                 <span class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
                   Conectar Mercado Pago
-                  <span class="rounded bg-sky-100 text-sky-800 text-[10px] px-1.5 py-0.5 font-bold">Piloto Automático</span>
                 </span>
                 <p class="text-[11px] text-slate-500">Baixa automática em 2s + Impressão na hora sem você precisar conferir extrato</p>
               </div>
@@ -928,53 +927,6 @@
                 Desconectar
               </button>
             </div>
-          </div>
-        </div>
-
-        <!-- CAMPO DA CHAVE PIX MANUAL (CASO O LOJISTA NÃO QUEIRA CONECTAR MERCADO PAGO) -->
-        <div class="rounded-xl border border-emerald-400 bg-emerald-50/70 p-3.5 space-y-3 shadow-xs">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <div class="flex items-center gap-2">
-              <i class="fa-brands fa-pix text-emerald-600 text-base"></i>
-              <span class="font-bold text-emerald-950 text-sm">Ou use Chave PIX Manual</span>
-            </div>
-            <span class="text-[10px] text-slate-500 font-medium">Opcional se conectou Mercado Pago acima</span>
-          </div>
-
-          <!-- AVISO DE RECEBIMENTO DIRETO SEM TAXAS -->
-          <div class="p-2.5 rounded-lg bg-emerald-100/70 border border-emerald-300 text-emerald-950 text-[11px] leading-relaxed">
-            <div class="flex items-start gap-2">
-              <i class="fa-solid fa-circle-check text-emerald-700 text-sm mt-0.5 shrink-0"></i>
-              <div>
-                <strong>Recebimento Direto:</strong> Se não quiser conectar o Mercado Pago agora, digite sua Chave PIX. A confirmação de pagamento será manual.
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Chave PIX (CPF, CNPJ, Celular ou E-mail):</label>
-            <input type="text" id="setupPixKeyInput" placeholder="Ex: 11987654321 ou loja@pix.com.br" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 36ch; max-width: 100%;" class="font-mono rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Nome do Titular da Conta PIX</label>
-              <input type="text" id="setupMerchantNameInput" placeholder="Ex: CARLOS ALBERTO SILVA" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 40ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
-            </div>
-            <div>
-              <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Cidade da Conta Bancária</label>
-              <input type="text" id="setupMerchantCityInput" placeholder="Ex: SAO PAULO" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 28ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
-            </div>
-          </div>
-
-          <!-- CAMPO OPCIONAL: PIN DO DONO JÁ NO CADASTRO -->
-          <div class="pt-2 border-t border-emerald-200/60">
-            <label class="block font-semibold text-slate-700 mb-1 text-[11px] flex items-center gap-1.5">
-              <i class="fa-solid fa-key text-emerald-700"></i>
-              Criar PIN de Segurança do Dono (Opcional - 4 a 6 dígitos numéricos):
-            </label>
-            <input type="password" id="setupOwnerPinInput" maxlength="6" placeholder="Ex: 1234" autocomplete="new-password" style="width: 18ch; max-width: 100%;" class="font-mono text-center rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
-            <p class="text-[10px] text-slate-500 mt-0.5">Use este PIN no caixa caso deseje proteger a chave PIX de alterações futuras por funcionários.</p>
           </div>
         </div>
 
@@ -1769,29 +1721,7 @@
       if (pinInput) pinInput.value = '';
 
       renderMercadoPagoStatus();
-
-      // No cadastro inicial, os campos PIX são SEMPRE destravados para o novo lojista preencher
-      isPixUnlocked = true;
-      if (pixInput) {
-        pixInput.readOnly = false;
-        pixInput.value = storeConfig.pixKey && storeConfig.pixKey !== 'loja.express@pix.com.br' ? storeConfig.pixKey : '';
-        pixInput.classList.remove('bg-slate-100', 'text-slate-700');
-        pixInput.classList.add('bg-white', 'text-slate-900');
-        setTimeout(() => nameInput?.focus() || pixInput.focus(), 150);
-      }
-      if (merchantInput) {
-        merchantInput.readOnly = false;
-        merchantInput.value = storeConfig.merchantName && storeConfig.merchantName !== 'FAST DELIVERY' ? storeConfig.merchantName : '';
-        merchantInput.classList.remove('bg-slate-100', 'text-slate-700');
-        merchantInput.classList.add('bg-white', 'text-slate-900');
-      }
-      if (cityInput) {
-        cityInput.readOnly = false;
-        cityInput.value = storeConfig.merchantCity && storeConfig.merchantCity !== 'SAO PAULO' ? storeConfig.merchantCity : '';
-        cityInput.classList.remove('bg-slate-100', 'text-slate-700');
-        cityInput.classList.add('bg-white', 'text-slate-900');
-      }
-      document.getElementById('setupPixUnlockedBadge')?.classList.remove('hidden');
+      setTimeout(() => nameInput?.focus(), 150);
     }
 
     function handleCancelSetupStore() {
@@ -1821,10 +1751,8 @@
         .replace(/^-+|-+$/g, '') || ('loja-' + Date.now());
 
       const isMp = Boolean(storeConfig.mpConnected || storeConfig.mpAccessToken);
-      const pixVal = document.getElementById('setupPixKeyInput')?.value.trim();
-      if (!isMp && !pixVal) {
-        alert('Por favor, conecte com o Mercado Pago ou digite uma Chave PIX para sua loja.');
-        document.getElementById('setupPixKeyInput')?.focus();
+      if (!isMp) {
+        alert('Por favor, clique em "Conectar com Mercado Pago" para autorizar os pagamentos da sua loja.');
         return;
       }
       localStorage.removeItem('STORE_SETUP_NAME_TEMP');
@@ -1836,18 +1764,6 @@
       storeConfig.storePhone = phone || storeConfig.storePhone || '';
       storeConfig.deliveryFee = fee;
       storeConfig.ownerEmail = ownerEmail;
-
-      if (pixVal) storeConfig.pixKey = pixVal;
-      const merchVal = document.getElementById('setupMerchantNameInput')?.value.trim().toUpperCase();
-      if (merchVal) storeConfig.merchantName = merchVal;
-      const cityVal = document.getElementById('setupMerchantCityInput')?.value.trim().toUpperCase();
-      if (cityVal) storeConfig.merchantCity = cityVal;
-
-      const pinVal = document.getElementById('setupOwnerPinInput')?.value.trim();
-      if (pinVal && pinVal.length >= 4) {
-        storeConfig.ownerPin = pinVal;
-        localStorage.setItem(`STORE_OWNER_PIN_${slug}`, pinVal);
-      }
 
       localStorage.setItem(`DELIVERY_CONFIG_${slug}`, JSON.stringify(storeConfig));
       localStorage.setItem(LEGACY_CONFIG_KEY, JSON.stringify(storeConfig));
