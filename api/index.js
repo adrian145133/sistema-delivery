@@ -4,6 +4,7 @@
 // ======================================================================
 
 const db = require('../database');
+const DEFAULT_MP_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN || 'APP_USR-3981041992629702-072910-09ef1f4ba21b41a0eafbe24dcc1c7456-2469694673';
 
 function parseBody(req) {
   return new Promise((resolve) => {
@@ -266,6 +267,84 @@ module.exports = async (req, res) => {
         database: db.isSupabaseActive() ? 'Supabase PostgreSQL' : 'Local Fallback',
         timestamp: new Date().toISOString()
       });
+    }
+
+    // 8. POST /api/create-pix (Criação de PIX dinâmico com baixa automática)
+    if (pathname === '/api/create-pix' || pathname.endsWith('/create-pix')) {
+      if (req.method !== 'POST') return sendJson(res, 405, { error: 'Método não permitido' });
+      const payload = await parseBody(req);
+      const amount = Number(payload.total);
+      if (!amount || amount <= 0) {
+        return sendJson(res, 400, { error: 'Valor total inválido' });
+      }
+
+      const store = await db.getStore(storeId);
+      const token = store?.settings?.mpAccessToken || DEFAULT_MP_ACCESS_TOKEN;
+
+      const mpPayload = {
+        transaction_amount: Number(amount.toFixed(2)),
+        description: `Pedido #${payload.orderNumber || 'Delivery'} - ${store?.name || 'Fast Delivery'}`,
+        payment_method_id: 'pix',
+        payer: {
+          email: payload.customer?.email || 'cliente@deliveryrapido.com.br',
+          first_name: payload.customer?.name || 'Cliente'
+        }
+      };
+
+      try {
+        const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'X-Idempotency-Key': 'ord_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)
+          },
+          body: JSON.stringify(mpPayload)
+        });
+        const mpData = await mpResponse.json();
+        if (!mpResponse.ok) {
+          console.error('Mercado Pago Error:', mpData);
+          return sendJson(res, 400, { error: 'Erro ao gerar PIX no Mercado Pago', details: mpData });
+        }
+        const pointData = mpData.point_of_interaction?.transaction_data || {};
+        return sendJson(res, 200, {
+          paymentId: mpData.id,
+          status: mpData.status,
+          qrCode: pointData.qr_code,
+          qrCodeBase64: pointData.qr_code_base64 ? `data:image/png;base64,${pointData.qr_code_base64}` : null,
+          ticketUrl: pointData.ticket_url,
+          total: amount
+        });
+      } catch (err) {
+        console.error('Erro em /api/create-pix:', err);
+        return sendJson(res, 500, { error: err.message });
+      }
+    }
+
+    // 9. GET /api/check-pix (Verificação de status do PIX para baixa instantânea)
+    if (pathname === '/api/check-pix' || pathname.endsWith('/check-pix')) {
+      const paymentId = searchParams.get('paymentId');
+      if (!paymentId) {
+        return sendJson(res, 400, { error: 'paymentId obrigatório' });
+      }
+      const store = await db.getStore(storeId);
+      const token = store?.settings?.mpAccessToken || DEFAULT_MP_ACCESS_TOKEN;
+      try {
+        const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const mpData = await mpResponse.json();
+        return sendJson(res, 200, {
+          paymentId: mpData.id,
+          status: mpData.status,
+          isApproved: mpData.status === 'approved',
+          transactionAmount: mpData.transaction_amount
+        });
+      } catch (err) {
+        return sendJson(res, 500, { error: err.message });
+      }
     }
 
     // Rota padrão para requisições de API não mapeadas

@@ -323,8 +323,14 @@
                 </div>
               </div>
 
+              <!-- AVISO DE BAIXA AUTOMÁTICA EM TEMPO REAL -->
+              <div id="pixAutoCheckingStatus" class="hidden mt-3 flex items-center justify-center gap-2 p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-400 font-semibold animate-pulse">
+                <i class="fa-solid fa-spinner animate-spin"></i>
+                <span>Aguardando você pagar no banco... Assim que pagar, aprova sozinho na hora!</span>
+              </div>
+
               <!-- BOTÃO DE CONFIRMAÇÃO DE PAGAMENTO -->
-              <div class="mt-4 pt-3 border-t border-emerald-500/20 flex items-center justify-center">
+              <div class="mt-3 pt-3 border-t border-emerald-500/20 flex items-center justify-center">
                 <button type="button" onclick="confirmPaymentCompleted()" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-emerald-400 shadow-md transition-all">
                   <i class="fa-solid fa-check-circle"></i>
                   Já Fiz o Pagamento via PIX
@@ -1445,7 +1451,13 @@
       }
     }
 
+    let pixCheckInterval = null;
+
     function closeCheckoutModal() {
+      if (pixCheckInterval) {
+        clearInterval(pixCheckInterval);
+        pixCheckInterval = null;
+      }
       document.getElementById('checkoutModal').classList.add('hidden');
     }
 
@@ -1581,6 +1593,10 @@
     }
 
     function backToStep1() {
+      if (pixCheckInterval) {
+        clearInterval(pixCheckInterval);
+        pixCheckInterval = null;
+      }
       document.getElementById('checkoutStep2Area').classList.add('hidden');
       document.getElementById('checkoutStep1Area').classList.remove('hidden');
     }
@@ -1643,8 +1659,8 @@
       return payload + checksum;
     }
 
-    // GERAÇÃO 100% OFFLINE / CLIENT-SIDE DO PIX OFICIAL DO LOJISTA COM SOMA DINÂMICA
-    function generateStorePixPayment() {
+    // GERAÇÃO DE PIX OFICIAL DO LOJISTA COM BAIXA AUTOMÁTICA EM TEMPO REAL
+    async function generateStorePixPayment() {
       try {
         const name = (document.getElementById('custName')?.value || '').trim();
         const phone = (document.getElementById('custPhone')?.value || '').trim();
@@ -1688,7 +1704,7 @@
           subtotal: subtotal,
           deliveryFee: fee,
           total: total,
-          paymentMethod: `PIX Direto Loja (${activePixKey})`,
+          paymentMethod: `PIX Automático Mercado Pago`,
           customer: {
             name: name,
             phone: phone,
@@ -1700,19 +1716,57 @@
           status: 'pago'
         };
 
-        // GERAR BR CODE OFICIAL DO BANCO CENTRAL COM VALOR DINÂMICO
+        const btnGen = document.getElementById('btnGeneratePix');
+        if (btnGen) {
+          btnGen.disabled = true;
+          btnGen.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Gerando PIX Oficial...`;
+        }
+
         let brCode = '';
+        let paymentId = null;
+        let qrCodeImgBase64 = null;
+
+        // 1. Tenta gerar via Mercado Pago API em /api/create-pix
         try {
-          brCode = generatePixBRCode({
-            pixKey: activePixKey,
-            merchantName: config.merchantName || config.storeName || 'FAST DELIVERY',
-            merchantCity: config.merchantCity || 'BRASIL',
-            amount: total,
-            txid: 'PED' + orderNumber
+          const res = await fetch(`/api/create-pix?loja=${encodeURIComponent(slug)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              total,
+              orderNumber: `#${orderNumber}`,
+              customer: { name, phone }
+            })
           });
-        } catch (e) {
-          console.warn('Erro ao gerar código BR Code:', e);
-          brCode = activePixKey;
+          if (res.ok) {
+            const data = await res.json();
+            if (data.qrCode) {
+              brCode = data.qrCode;
+              paymentId = data.paymentId;
+              qrCodeImgBase64 = data.qrCodeBase64 || null;
+            }
+          }
+        } catch (mpErr) {
+          console.warn('Criação via Mercado Pago API falhou, usando gerador offline:', mpErr);
+        }
+
+        // 2. Se o Mercado Pago não retornou QR Code, usa o gerador offline como fallback
+        if (!brCode) {
+          try {
+            brCode = generatePixBRCode({
+              pixKey: activePixKey,
+              merchantName: config.merchantName || config.storeName || 'FAST DELIVERY',
+              merchantCity: config.merchantCity || 'BRASIL',
+              amount: total,
+              txid: 'PED' + orderNumber
+            });
+          } catch (e) {
+            brCode = activePixKey;
+          }
+        }
+
+        if (btnGen) {
+          btnGen.disabled = false;
+          btnGen.innerHTML = `<i class="fa-brands fa-pix text-base"></i> Gerar Pagamento PIX Oficial`;
         }
 
         const valueDisplay = document.getElementById('pixOrderValueText');
@@ -1723,37 +1777,63 @@
 
         const recipientInfo = document.getElementById('pixRecipientInfo');
         if (recipientInfo) {
-          recipientInfo.textContent = `Chave: ${activePixKey} • Recebedor: ${config.merchantName || config.storeName || 'Loja'}`;
+          recipientInfo.textContent = paymentId ? `PIX Oficial Mercado Pago • Baixa Automática em Tempo Real` : `Chave: ${activePixKey} • Recebedor: ${config.merchantName || config.storeName || 'Loja'}`;
         }
 
         // Renderiza QR Code no container de forma segura
         const qrContainer = document.getElementById('pixQrContainer');
         if (qrContainer) {
           qrContainer.innerHTML = '';
-          let qrRendered = false;
-          if (typeof QRCode !== 'undefined') {
-            try {
-              new QRCode(qrContainer, {
-                text: brCode,
-                width: 200,
-                height: 200,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.M
-              });
-              qrRendered = true;
-            } catch (e) {
-              console.warn('QRCode JS render falhou, aplicando fallback:', e);
+          if (qrCodeImgBase64) {
+            qrContainer.innerHTML = `<img src="${qrCodeImgBase64}" width="200" height="200" alt="QR Code PIX" class="mx-auto block rounded-lg shadow-sm">`;
+          } else {
+            let qrRendered = false;
+            if (typeof QRCode !== 'undefined') {
+              try {
+                new QRCode(qrContainer, {
+                  text: brCode,
+                  width: 200,
+                  height: 200,
+                  colorDark: '#000000',
+                  colorLight: '#ffffff',
+                  correctLevel: QRCode.CorrectLevel.M
+                });
+                qrRendered = true;
+              } catch (e) {}
             }
-          }
-          if (!qrRendered) {
-            qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(brCode)}" width="200" height="200" alt="QR Code PIX" class="mx-auto block rounded-lg shadow-sm">`;
+            if (!qrRendered) {
+              qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(brCode)}" width="200" height="200" alt="QR Code PIX" class="mx-auto block rounded-lg shadow-sm">`;
+            }
           }
         }
 
         // Alterna para tela do QR Code e Copia e Cola (Passo 2)
         document.getElementById('checkoutStep1Area')?.classList.add('hidden');
         document.getElementById('checkoutStep2Area')?.classList.remove('hidden');
+
+        // 3. INICIA VERIFICAÇÃO AUTOMÁTICA EM TEMPO REAL (BAIXA AUTOMÁTICA)
+        if (pixCheckInterval) clearInterval(pixCheckInterval);
+        const autoStatusMsg = document.getElementById('pixAutoCheckingStatus');
+        if (paymentId) {
+          if (autoStatusMsg) autoStatusMsg.classList.remove('hidden');
+          
+          pixCheckInterval = setInterval(async () => {
+            try {
+              const chkRes = await fetch(`/api/check-pix?loja=${encodeURIComponent(slug)}&paymentId=${encodeURIComponent(paymentId)}`);
+              if (chkRes.ok) {
+                const chkData = await chkRes.json();
+                if (chkData.isApproved === true || chkData.status === 'approved') {
+                  clearInterval(pixCheckInterval);
+                  pixCheckInterval = null;
+                  // BAIXA AUTOMÁTICA INSTANTÂNEA!
+                  confirmPaymentCompleted();
+                }
+              }
+            } catch (pollErr) {}
+          }, 2000);
+        } else {
+          if (autoStatusMsg) autoStatusMsg.classList.add('hidden');
+        }
       } catch (err) {
         console.error('Falha ao gerar PIX:', err);
         alert('Erro ao gerar tela de pagamento PIX: ' + err.message);
@@ -1762,6 +1842,10 @@
 
     // CONFIRMAÇÃO DO PAGAMENTO
     function confirmPaymentCompleted() {
+      if (pixCheckInterval) {
+        clearInterval(pixCheckInterval);
+        pixCheckInterval = null;
+      }
       if (!pendingOrderPayload) return;
 
       const slug = getStoreSlug();
