@@ -9,11 +9,11 @@ echo ========================================================
 echo.
 
 if exist "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" (
-    start "" "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --app="https://sistema-delivery-xi.vercel.app/pedidos.html" --kiosk-printing --user-data-dir="%LOCALAPPDATA%\DeliveryKioskProfile"
+    start "" "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --app="https://sistema-delivery-xi.vercel.app/pedidos.html?loja=bocagorda" --kiosk-printing
 ) else if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" (
-    start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" --app="https://sistema-delivery-xi.vercel.app/pedidos.html" --kiosk-printing --user-data-dir="%LOCALAPPDATA%\DeliveryKioskProfile"
+    start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" --app="https://sistema-delivery-xi.vercel.app/pedidos.html?loja=bocagorda" --kiosk-printing
 ) else (
-    start "" "https://sistema-delivery-xi.vercel.app/pedidos.html"
+    start "" "https://sistema-delivery-xi.vercel.app/pedidos.html?loja=bocagorda"
 )
 
 exit

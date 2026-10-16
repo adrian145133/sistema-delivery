@@ -1316,6 +1316,23 @@
     const TERMINALS_STORAGE_KEY = `DELIVERY_PAIRED_TERMINALS_${currentStoreSlug}`;
     const DRIVER_PAIRING_STORAGE_KEY = `DELIVERY_DRIVER_PAIRING_CODE_${currentStoreSlug}`;
     const PAIRED_DRIVERS_STORAGE_KEY = `DELIVERY_PAIRED_DRIVERS_${currentStoreSlug}`;
+    const PRINTED_ORDERS_STORAGE_KEY = `DELIVERY_PRINTED_ORDERS_${currentStoreSlug}`;
+
+    function getPrintedOrderIds() {
+      try {
+        const raw = localStorage.getItem(PRINTED_ORDERS_STORAGE_KEY);
+        return new Set(raw ? JSON.parse(raw) : []);
+      } catch (e) {
+        return new Set();
+      }
+    }
+
+    function markOrderAsPrinted(orderId) {
+      if (!orderId) return;
+      const set = getPrintedOrderIds();
+      set.add(orderId);
+      localStorage.setItem(PRINTED_ORDERS_STORAGE_KEY, JSON.stringify([...set]));
+    }
 
     let currentFilter = 'separando'; // PADRÃO INICIAL: PAGOS / EM SEPARAÇÃO (UNIFICADOS)
     let lastKnownOrderIds = new Set();
@@ -2925,10 +2942,16 @@
         const raw = localStorage.getItem(ORDERS_STORAGE_KEY) || localStorage.getItem(LEGACY_ORDERS_KEY);
         const list = raw ? JSON.parse(raw) : [];
         const cutoff = Date.now() - TWO_YEARS_MS;
+        const printedIds = getPrintedOrderIds();
         // Retém apenas pedidos dos últimos 2 anos (730 dias)
         const validList = list.filter(o => {
           const t = new Date(o.createdAt).getTime();
           return !isNaN(t) && t >= cutoff;
+        }).map(o => {
+          if (printedIds.has(o.id) || o.printed === true) {
+            o.printed = true;
+          }
+          return o;
         });
         // ORDENAÇÃO OBRIGATÓRIA: CADA PEDIDO QUE ENTRAR FICA SEMPRE EM PRIMEIRO
         return validList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -2980,6 +3003,18 @@
     }
 
     let isInitialOrdersLoaded = false;
+    let isPrintingOrderNow = false;
+
+    function checkAndAutoPrintPending(ordersList) {
+      if (isPrintingOrderNow) return;
+      const list = ordersList || getStoredOrders();
+      const printedIds = getPrintedOrderIds();
+      const toPrint = list.find(o => !printedIds.has(o.id) && (o.status === 'separando' || o.status === 'pago'));
+      if (toPrint) {
+        playOrderChime();
+        printOrder(toPrint.id);
+      }
+    }
 
     function loadAndRenderOrders(checkNew = false) {
       const orders = getStoredOrders();
@@ -2990,15 +3025,13 @@
         orders.forEach(o => {
           if (!lastKnownOrderIds.has(o.id)) {
             hasNew = true;
-            newestOrder = o;
+            if (!newestOrder) newestOrder = o;
           }
         });
 
         if (hasNew && newestOrder) {
           playOrderChime();
-          setTimeout(() => {
-            printOrder(newestOrder.id);
-          }, 350);
+          printOrder(newestOrder.id);
         }
       }
 
@@ -3409,10 +3442,7 @@
       saveOrders(orders);
       playOrderChime();
       loadAndRenderOrders();
-
-      setTimeout(() => {
-        printOrder(testOrder.id);
-      }, 350);
+      printOrder(testOrder.id);
     }
 
     // ========================================================
@@ -3953,10 +3983,10 @@
       const orders = getStoredOrders();
       const order = orders.find(o => o.id === orderId);
       if (!order) {
-        alert('Pedido não encontrado.');
         return;
       }
 
+      markOrderAsPrinted(order.id);
       order.printed = true;
       order.printedAt = new Date().toISOString();
       saveOrders(orders);
@@ -4126,8 +4156,24 @@
         }
       }
 
-      window.print();
+      isPrintingOrderNow = true;
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+          isPrintingOrderNow = false;
+        }, 1200);
+      }, 100);
     }
+
+    // Auto-impressão de pedidos pendentes ao focar ou ativar a aba
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        checkAndAutoPrintPending();
+      }
+    });
+    window.addEventListener('focus', () => {
+      checkAndAutoPrintPending();
+    });
   </script>
 </body>
 </html>

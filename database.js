@@ -192,7 +192,8 @@ async function getOrders(storeId = 'default_store') {
           paymentMethod: o.payment_method,
           status: o.status,
           createdAt: o.created_at,
-          deliveredAt: o.delivered_at
+          deliveredAt: o.delivered_at,
+          printed: o.customer?._printed === true || o.printed === true
         }));
       }
     } catch (e) {
@@ -212,7 +213,7 @@ async function saveOrders(orders, storeId = 'default_store') {
           id: o.id,
           store_id: storeId,
           order_number: o.orderNumber || o.id,
-          customer: o.customer || {},
+          customer: { ...(o.customer || {}), _printed: o.printed === true },
           items: o.items || [],
           total: o.total || 0,
           payment_method: o.paymentMethod || o.formaPagamento || 'Pix',
@@ -243,7 +244,7 @@ async function upsertOrder(order, storeId = 'default_store') {
         id: order.id,
         store_id: storeId,
         order_number: order.orderNumber || order.id,
-        customer: order.customer || {},
+        customer: { ...(order.customer || {}), _printed: order.printed === true },
         items: order.items || [],
         total: order.total || 0,
         payment_method: order.paymentMethod || 'Pix',
