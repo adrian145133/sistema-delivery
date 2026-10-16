@@ -882,19 +882,63 @@
           </div>
         </div>
 
-        <!-- CAMPO DA CHAVE PIX DO LOJISTA (TOTALMENTE LIBERADO NO CADASTRO INICIAL) -->
+        <!-- INTEGRAÇÃO MERCADO PAGO NO CADASTRO INICIAL (AUTOMATIZAÇÃO RECOMENDADA) -->
+        <div class="rounded-xl border border-sky-300 bg-sky-50/80 p-3.5 space-y-2.5 shadow-xs">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#009ee3] text-white shadow-xs font-black text-xs">
+                <i class="fa-solid fa-bolt"></i>
+              </div>
+              <div>
+                <span class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                  Conectar Mercado Pago
+                  <span class="rounded bg-sky-100 text-sky-800 text-[10px] px-1.5 py-0.5 font-bold">Piloto Automático</span>
+                </span>
+                <p class="text-[11px] text-slate-500">Baixa automática em 2s + Impressão na hora sem você precisar conferir extrato</p>
+              </div>
+            </div>
+            <span id="setupMpStatusBadge" class="hidden inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 text-[11px] font-bold">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i> Conectado
+            </span>
+          </div>
+
+          <!-- ÁREA NÃO CONECTADO -->
+          <div id="setupMpNotConnectedArea" class="space-y-2">
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              O jeito mais rápido: autorize em 1 clique e sua loja já começa a vender no piloto automático:
+            </p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" onclick="connectMercadoPagoFromSetup()" class="w-fit inline-flex items-center gap-2 rounded-xl bg-[#009ee3] hover:bg-[#0082ba] text-white font-bold px-4 py-2 text-xs shadow-md transition-all active:scale-95">
+                <i class="fa-solid fa-link"></i> Conectar com Mercado Pago (1 Clique)
+              </button>
+            </div>
+          </div>
+
+          <!-- ÁREA JÁ CONECTADO -->
+          <div id="setupMpConnectedArea" class="hidden space-y-1.5">
+            <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-emerald-600 text-base shrink-0"></i>
+                <div>
+                  <strong>Conta Mercado Pago Conectada e Ativa!</strong>
+                  <p class="text-[10px] text-emerald-800">Seus pedidos já serão baixados e impressos automaticamente.</p>
+                </div>
+              </div>
+              <button type="button" onclick="disconnectMercadoPago()" class="w-fit shrink-0 text-xs text-red-600 hover:text-red-800 underline font-semibold">
+                Desconectar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CAMPO DA CHAVE PIX MANUAL (CASO O LOJISTA NÃO QUEIRA CONECTAR MERCADO PAGO) -->
         <div class="rounded-xl border border-emerald-400 bg-emerald-50/70 p-3.5 space-y-3 shadow-xs">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-2">
               <i class="fa-brands fa-pix text-emerald-600 text-base"></i>
-              <span class="font-bold text-emerald-950 text-sm">Chave PIX de Recebimento da Loja *</span>
+              <span class="font-bold text-emerald-950 text-sm">Ou use Chave PIX Manual</span>
             </div>
-            <!-- INDICADOR DE STATUS DO CADASTRO -->
-            <div class="flex items-center gap-1.5">
-              <span id="setupPixUnlockedBadge" class="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 text-[10px] font-bold">
-                <i class="fa-solid fa-lock-open text-[9px]"></i> Liberado para Cadastro
-              </span>
-            </div>
+            <span class="text-[10px] text-slate-500 font-medium">Opcional se conectou Mercado Pago acima</span>
           </div>
 
           <!-- AVISO DE RECEBIMENTO DIRETO SEM TAXAS -->
@@ -902,24 +946,24 @@
             <div class="flex items-start gap-2">
               <i class="fa-solid fa-circle-check text-emerald-700 text-sm mt-0.5 shrink-0"></i>
               <div>
-                <strong>Recebimento Direto na sua Conta:</strong> Digite a Chave PIX do seu negócio. Os clientes pagarão 100% dos pedidos diretamente para você, com taxa ZERO.
+                <strong>Recebimento Direto:</strong> Se não quiser conectar o Mercado Pago agora, digite sua Chave PIX. A confirmação de pagamento será manual.
               </div>
             </div>
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Chave PIX (CPF, CNPJ, Celular ou E-mail) *</label>
-            <input type="text" id="setupPixKeyInput" required placeholder="Ex: 11987654321 ou loja@pix.com.br" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 36ch; max-width: 100%;" class="font-mono rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
+            <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Chave PIX (CPF, CNPJ, Celular ou E-mail):</label>
+            <input type="text" id="setupPixKeyInput" placeholder="Ex: 11987654321 ou loja@pix.com.br" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 36ch; max-width: 100%;" class="font-mono rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Nome do Titular da Conta PIX *</label>
-              <input type="text" id="setupMerchantNameInput" required placeholder="Ex: CARLOS ALBERTO SILVA" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 40ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
+              <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Nome do Titular da Conta PIX</label>
+              <input type="text" id="setupMerchantNameInput" placeholder="Ex: CARLOS ALBERTO SILVA" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 40ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
             </div>
             <div>
-              <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Cidade da Conta Bancária *</label>
-              <input type="text" id="setupMerchantCityInput" required placeholder="Ex: SAO PAULO" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 28ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
+              <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Cidade da Conta Bancária</label>
+              <input type="text" id="setupMerchantCityInput" placeholder="Ex: SAO PAULO" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 28ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
             </div>
           </div>
 
@@ -1693,8 +1737,14 @@
       const cityInput = document.getElementById('setupMerchantCityInput');
       const pinInput = document.getElementById('setupOwnerPinInput');
 
+      const savedTempName = localStorage.getItem('STORE_SETUP_NAME_TEMP');
       if (nameInput) {
-        nameInput.value = '';
+        if (savedTempName) {
+          nameInput.value = savedTempName;
+          setTimeout(() => nameInput.dispatchEvent(new Event('input')), 50);
+        } else {
+          nameInput.value = '';
+        }
         nameInput.oninput = () => {
           const val = nameInput.value.trim();
           const slug = val.toLowerCase()
@@ -1709,33 +1759,35 @@
           }
         };
         const preview = document.getElementById('setupSlugPreview');
-        if (preview) {
+        if (preview && !savedTempName) {
           preview.textContent = `${window.location.origin}/loja/...`;
         }
       }
 
-      if (phoneInput) phoneInput.value = '';
-      if (feeInput) feeInput.value = '';
+      if (phoneInput) phoneInput.value = storeConfig.storePhone || '';
+      if (feeInput) feeInput.value = storeConfig.deliveryFee !== undefined ? storeConfig.deliveryFee : '';
       if (pinInput) pinInput.value = '';
+
+      renderMercadoPagoStatus();
 
       // No cadastro inicial, os campos PIX são SEMPRE destravados para o novo lojista preencher
       isPixUnlocked = true;
       if (pixInput) {
         pixInput.readOnly = false;
-        pixInput.value = '';
+        pixInput.value = storeConfig.pixKey && storeConfig.pixKey !== 'loja.express@pix.com.br' ? storeConfig.pixKey : '';
         pixInput.classList.remove('bg-slate-100', 'text-slate-700');
         pixInput.classList.add('bg-white', 'text-slate-900');
         setTimeout(() => nameInput?.focus() || pixInput.focus(), 150);
       }
       if (merchantInput) {
         merchantInput.readOnly = false;
-        merchantInput.value = '';
+        merchantInput.value = storeConfig.merchantName && storeConfig.merchantName !== 'FAST DELIVERY' ? storeConfig.merchantName : '';
         merchantInput.classList.remove('bg-slate-100', 'text-slate-700');
         merchantInput.classList.add('bg-white', 'text-slate-900');
       }
       if (cityInput) {
         cityInput.readOnly = false;
-        cityInput.value = '';
+        cityInput.value = storeConfig.merchantCity && storeConfig.merchantCity !== 'SAO PAULO' ? storeConfig.merchantCity : '';
         cityInput.classList.remove('bg-slate-100', 'text-slate-700');
         cityInput.classList.add('bg-white', 'text-slate-900');
       }
@@ -1768,6 +1820,15 @@
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '') || ('loja-' + Date.now());
 
+      const isMp = Boolean(storeConfig.mpConnected || storeConfig.mpAccessToken);
+      const pixVal = document.getElementById('setupPixKeyInput')?.value.trim();
+      if (!isMp && !pixVal) {
+        alert('Por favor, conecte com o Mercado Pago ou digite uma Chave PIX para sua loja.');
+        document.getElementById('setupPixKeyInput')?.focus();
+        return;
+      }
+      localStorage.removeItem('STORE_SETUP_NAME_TEMP');
+
       const session = getLojistaSession();
       const ownerEmail = session ? session.email : '';
 
@@ -1776,7 +1837,6 @@
       storeConfig.deliveryFee = fee;
       storeConfig.ownerEmail = ownerEmail;
 
-      const pixVal = document.getElementById('setupPixKeyInput')?.value.trim();
       if (pixVal) storeConfig.pixKey = pixVal;
       const merchVal = document.getElementById('setupMerchantNameInput')?.value.trim().toUpperCase();
       if (merchVal) storeConfig.merchantName = merchVal;
@@ -1815,7 +1875,10 @@
             pixKey: storeConfig.pixKey || '',
             merchantName: storeConfig.merchantName || 'LOJA',
             merchantCity: storeConfig.merchantCity || 'BRASIL',
-            ownerPin: storeConfig.ownerPin || ''
+            ownerPin: storeConfig.ownerPin || '',
+            mpConnected: Boolean(storeConfig.mpConnected),
+            mpAccessToken: storeConfig.mpAccessToken || '',
+            acceptCreditCard: Boolean(storeConfig.acceptCreditCard)
           }
         })
       }).then(() => {
@@ -2915,8 +2978,8 @@
     // ========================================================
     // INTEGRAÇÃO OFICIAL MERCADO PAGO (1 CLIQUE & CARTÃO)
     // ========================================================
-    async function connectMercadoPagoOAuth() {
-      const slug = getStoreSlug();
+    async function connectMercadoPagoOAuth(customSlug) {
+      const slug = customSlug || getStoreSlug();
       try {
         const res = await fetch(`/api/mercadopago-auth-url?loja=${encodeURIComponent(slug)}`);
         const data = await res.json();
@@ -2928,6 +2991,29 @@
       } catch (e) {
         alert('Erro ao conectar ao Mercado Pago: ' + e.message);
       }
+    }
+
+    function connectMercadoPagoFromSetup() {
+      const name = document.getElementById('setupStoreNameInput')?.value.trim();
+      const phone = document.getElementById('setupStorePhoneInput')?.value.trim();
+      const fee = document.getElementById('setupDeliveryFeeInput')?.value.trim();
+      if (!name) {
+        alert('Por favor, informe primeiro o Nome do Estabelecimento antes de conectar ao Mercado Pago.');
+        document.getElementById('setupStoreNameInput')?.focus();
+        return;
+      }
+      const slug = name.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || ('loja-' + Date.now());
+
+      storeConfig.storeName = name;
+      if (phone) storeConfig.storePhone = phone;
+      if (fee) storeConfig.deliveryFee = parseFloat(fee) || 0;
+      localStorage.setItem(`DELIVERY_CONFIG_${slug}`, JSON.stringify(storeConfig));
+      localStorage.setItem('STORE_SETUP_NAME_TEMP', name);
+
+      connectMercadoPagoOAuth(slug);
     }
 
     function toggleManualMpToken() {
@@ -3012,6 +3098,21 @@
           notConnArea.classList.remove('hidden');
           connArea.classList.add('hidden');
           badge.classList.add('hidden');
+        }
+      }
+
+      const setupNotConn = document.getElementById('setupMpNotConnectedArea');
+      const setupConn = document.getElementById('setupMpConnectedArea');
+      const setupBadge = document.getElementById('setupMpStatusBadge');
+      if (setupNotConn && setupConn && setupBadge) {
+        if (isConnected) {
+          setupNotConn.classList.add('hidden');
+          setupConn.classList.remove('hidden');
+          setupBadge.classList.remove('hidden');
+        } else {
+          setupNotConn.classList.remove('hidden');
+          setupConn.classList.add('hidden');
+          setupBadge.classList.add('hidden');
         }
       }
 
