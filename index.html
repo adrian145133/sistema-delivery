@@ -84,76 +84,6 @@
     </div>
   </div>
 
-  <!-- ==================================================== -->
-  <!-- PORTAL PRINCIPAL / ONBOARDING DO LOJISTA            -->
-  <!-- (Exibido quando não há loja definida na URL)        -->
-  <!-- ==================================================== -->
-  <section id="portalLandingSection" class="hidden flex-1 flex flex-col items-center justify-center px-4 py-12 md:py-20">
-    <div class="mx-auto max-w-4xl text-center space-y-6">
-      
-      <!-- BADGE -->
-      <div class="w-fit mx-auto inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-4 py-1.5 text-xs font-bold text-emerald-400 shadow-sm">
-        <i class="fa-solid fa-bolt"></i>
-        <span>Plataforma de Cardápio Digital & Delivery Exclusivo</span>
-      </div>
-
-      <!-- TÍTULO PRINCIPAL -->
-      <h2 class="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
-        Crie o Cardápio Digital <br class="hidden sm:inline">
-        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500">
-          Exclusivo do seu Estabelecimento
-        </span>
-      </h2>
-
-      <!-- SUBTÍTULO -->
-      <p class="text-sm md:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-        Cada estabelecimento possui um link único e exclusivo. Configure o nome do seu negócio em menos de 1 minuto, receba pedidos em tempo real no WhatsApp e pagamentos via PIX direto na sua conta bancária sem intermediários!
-      </p>
-
-      <!-- BOTÕES CTA PRINCIPAIS -->
-      <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-        <a href="pedidos.html" id="btnPortalGoogleLogin" class="w-fit inline-flex items-center justify-center gap-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-6 py-3.5 text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95">
-          <i class="fa-solid fa-store text-base"></i>
-          <span id="portalGoogleBtnText">Acessar Painel do Lojista & Criar Cardápio</span>
-        </a>
-      </div>
-
-      <!-- CARDS DE RECURSOS -->
-      <div class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-5 text-left pt-6">
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 backdrop-blur-sm space-y-2 hover:border-emerald-500/40 transition-all">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-lg">
-            <i class="fa-solid fa-link"></i>
-          </div>
-          <h4 class="font-bold text-white text-sm">Link Exclusivo</h4>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Seu link único no formato <code class="text-emerald-400 font-mono">/loja/seu-nome</code> para colocar na bio do Instagram e WhatsApp.
-          </p>
-        </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 backdrop-blur-sm space-y-2 hover:border-emerald-500/40 transition-all">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-lg">
-            <i class="fa-solid fa-qrcode"></i>
-          </div>
-          <h4 class="font-bold text-white text-sm">PIX Direto na Sua Conta</h4>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            O cliente escaneia o QR Code dinâmico do Banco Central e o dinheiro cai na hora na sua conta sem retenção de taxas.
-          </p>
-        </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 backdrop-blur-sm space-y-2 hover:border-emerald-500/40 transition-all">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-lg">
-            <i class="fa-solid fa-location-dot"></i>
-          </div>
-          <h4 class="font-bold text-white text-sm">GPS do Cliente & Impressão</h4>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Comanda de separação impressa com a localização exata no Google Maps para seu motoboy entregar sem errar o endereço.
-          </p>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
   <!-- ÁREA EXCLUSIVA DO CARDÁPIO (EXIBIDA QUANDO HÁ LOJA SELECIONADA) -->
   <div id="menuMainArea">
     <!-- BANNER E BUSCA -->
@@ -507,33 +437,7 @@
       }
     }
 
-    function handlePortalGoogleLogin() {
-      window.location.href = 'pedidos.html';
-    }
 
-    function checkLoggedInLojistaOnPortal() {
-      try {
-        const raw = localStorage.getItem('LOJISTA_SESSION');
-        if (raw) {
-          const session = JSON.parse(raw);
-          if (session && session.email) {
-            const btnText = document.getElementById('portalGoogleBtnText');
-            if (btnText) btnText.textContent = `Acessar Painel (${session.name || session.email})`;
-            fetch(`/api/store?ownerEmail=${encodeURIComponent(session.email)}`)
-              .then(r => r.json())
-              .then(data => {
-                if (data && data.id && !data.notFound && data.id !== 'default_store') {
-                  const btn = document.getElementById('btnPortalGoogleLogin');
-                  if (btn) {
-                    btn.onclick = () => window.location.href = `/loja/${data.id}`;
-                    if (btnText) btnText.textContent = `Ver Meu Cardápio (${data.name || data.id})`;
-                  }
-                }
-              }).catch(() => {});
-          }
-        }
-      } catch (e) {}
-    }
 
     async function syncStoreDataFromCloud() {
       const slug = getStoreSlug();
@@ -785,28 +689,15 @@
 
     function init() {
       const slug = getStoreSlug();
-      const portalLanding = document.getElementById('portalLandingSection');
+      if (!slug) {
+        window.location.replace('login.html');
+        return;
+      }
+
       const menuMainArea = document.getElementById('menuMainArea');
       const cartBtn = document.getElementById('btnHeaderCart');
       const storeStatusBadge = document.getElementById('headerStoreStatusBadge');
 
-      if (!slug) {
-        // Modo Portal: Não há loja definida na URL
-        if (portalLanding) portalLanding.classList.remove('hidden');
-        if (menuMainArea) menuMainArea.classList.add('hidden');
-        if (cartBtn) cartBtn.classList.add('hidden');
-        if (storeStatusBadge) storeStatusBadge.classList.add('hidden');
-        
-        document.getElementById('headerStoreName').textContent = 'Cardápio Fácil & Delivery';
-        document.getElementById('headerStoreInfo').innerHTML = `<i class="fa-solid fa-store"></i> Plataforma de Cardápio Digital Multi-Lojas`;
-
-        initLojistaControls();
-        checkLoggedInLojistaOnPortal();
-        return;
-      }
-
-      // Modo Cardápio Exclusivo da Loja
-      if (portalLanding) portalLanding.classList.add('hidden');
       if (menuMainArea) menuMainArea.classList.remove('hidden');
       if (cartBtn) cartBtn.classList.remove('hidden');
       if (storeStatusBadge) storeStatusBadge.classList.remove('hidden');

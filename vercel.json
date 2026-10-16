@@ -2,6 +2,10 @@
   "framework": null,
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/login.html"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
     },

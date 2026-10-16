@@ -924,7 +924,7 @@ async function handleRequest(req, res) {
   // Servidor Estático de Arquivos
   let parsedUrl = pathname;
   if (parsedUrl === '/' || parsedUrl === '') {
-    parsedUrl = '/index.html';
+    parsedUrl = '/login.html';
   } else if (parsedUrl.startsWith('/loja/')) {
     parsedUrl = '/index.html';
   } else if (parsedUrl.startsWith('/pedidos/') || parsedUrl.startsWith('/painel/')) {
