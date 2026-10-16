@@ -786,10 +786,10 @@
         </div>
       </div>
 
-      <form onsubmit="handleSetupStoreSubmit(event)" class="space-y-3.5 text-xs">
+      <form onsubmit="handleSetupStoreSubmit(event)" autocomplete="off" class="space-y-3.5 text-xs">
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Nome do Estabelecimento *</label>
-          <input type="text" id="setupStoreNameInput" required placeholder="Fast Delivery Express" class="w-full max-w-[50ch] rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+          <input type="text" id="setupStoreNameInput" required placeholder="Digite o nome do estabelecimento" autocomplete="off" autocorrect="off" spellcheck="false" class="w-full max-w-[50ch] rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
         </div>
 
         <div class="rounded-xl bg-slate-50 border border-slate-200 p-2.5 text-[11px] text-slate-600 space-y-0.5">
@@ -800,11 +800,11 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Telefone / WhatsApp da Loja *</label>
-            <input type="text" id="setupStorePhoneInput" required placeholder="(11) 99999-8888" style="width: 22ch; max-width: 100%;" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+            <input type="text" id="setupStorePhoneInput" required placeholder="(00) 00000-0000" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 22ch; max-width: 100%;" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
           </div>
           <div>
             <label class="block font-semibold text-slate-700 mb-1">Taxa de Entrega Padrão (R$) *</label>
-            <input type="number" step="0.50" id="setupDeliveryFeeInput" required placeholder="5" style="width: 18ch; max-width: 100%;" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
+            <input type="number" step="0.50" id="setupDeliveryFeeInput" required placeholder="0.00" autocomplete="off" style="width: 18ch; max-width: 100%;" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-slate-900 focus:border-emerald-500 focus:bg-white focus:outline-none">
           </div>
         </div>
 
@@ -835,17 +835,17 @@
 
           <div>
             <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Chave PIX (CPF, CNPJ, Celular ou E-mail) *</label>
-            <input type="text" id="setupPixKeyInput" required placeholder="Ex: 11987654321 ou loja@pix.com.br" style="width: 36ch; max-width: 100%;" class="font-mono rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
+            <input type="text" id="setupPixKeyInput" required placeholder="Ex: 11987654321 ou loja@pix.com.br" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 36ch; max-width: 100%;" class="font-mono rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Nome do Titular da Conta PIX *</label>
-              <input type="text" id="setupMerchantNameInput" required placeholder="Ex: CARLOS ALBERTO SILVA" style="width: 40ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
+              <input type="text" id="setupMerchantNameInput" required placeholder="Ex: CARLOS ALBERTO SILVA" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 40ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
             </div>
             <div>
               <label class="block font-semibold text-slate-700 mb-1 text-[11px]">Cidade da Conta Bancária *</label>
-              <input type="text" id="setupMerchantCityInput" required placeholder="Ex: SAO PAULO" style="width: 28ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
+              <input type="text" id="setupMerchantCityInput" required placeholder="Ex: SAO PAULO" autocomplete="off" autocorrect="off" spellcheck="false" style="width: 28ch; max-width: 100%;" class="uppercase rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
             </div>
           </div>
 
@@ -855,7 +855,7 @@
               <i class="fa-solid fa-key text-emerald-700"></i>
               Criar PIN de Segurança do Dono (Opcional - 4 a 6 dígitos numéricos):
             </label>
-            <input type="password" id="setupOwnerPinInput" maxlength="6" placeholder="Ex: 1234" style="width: 18ch; max-width: 100%;" class="font-mono text-center rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
+            <input type="password" id="setupOwnerPinInput" maxlength="6" placeholder="Ex: 1234" autocomplete="new-password" style="width: 18ch; max-width: 100%;" class="font-mono text-center rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-slate-900 focus:border-emerald-500 focus:outline-none transition-all">
             <p class="text-[10px] text-slate-500 mt-0.5">Use este PIN no caixa caso deseje proteger a chave PIX de alterações futuras por funcionários.</p>
           </div>
         </div>
@@ -1586,24 +1586,28 @@
       const pinInput = document.getElementById('setupOwnerPinInput');
 
       if (nameInput) {
-        // Já entra com o nome padrão configurado para gerar o link fixo
-        nameInput.value = nameInput.value.trim() || 'Fast Delivery Express';
+        nameInput.value = '';
         nameInput.oninput = () => {
           const val = nameInput.value.trim();
           const slug = val.toLowerCase()
             .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '') || 'fast-delivery-express';
+            .replace(/^-+|-+$/g, '');
           const preview = document.getElementById('setupSlugPreview');
           if (preview) {
-            preview.textContent = `${window.location.origin}/loja/${slug}`;
+            preview.textContent = slug 
+              ? `${window.location.origin}/loja/${slug}` 
+              : `${window.location.origin}/loja/...`;
           }
         };
-        nameInput.dispatchEvent(new Event('input'));
+        const preview = document.getElementById('setupSlugPreview');
+        if (preview) {
+          preview.textContent = `${window.location.origin}/loja/...`;
+        }
       }
 
-      if (phoneInput) phoneInput.value = phoneInput.value.trim() || '(11) 99999-8888';
-      if (feeInput) feeInput.value = feeInput.value || 5.00;
+      if (phoneInput) phoneInput.value = '';
+      if (feeInput) feeInput.value = '';
       if (pinInput) pinInput.value = '';
 
       // No cadastro inicial, os campos PIX são SEMPRE destravados para o novo lojista preencher
@@ -1613,17 +1617,17 @@
         pixInput.value = '';
         pixInput.classList.remove('bg-slate-100', 'text-slate-700');
         pixInput.classList.add('bg-white', 'text-slate-900');
-        setTimeout(() => pixInput.focus(), 150);
+        setTimeout(() => nameInput?.focus() || pixInput.focus(), 150);
       }
       if (merchantInput) {
         merchantInput.readOnly = false;
-        merchantInput.value = (session && session.name ? session.name.toUpperCase() : 'FAST DELIVERY');
+        merchantInput.value = '';
         merchantInput.classList.remove('bg-slate-100', 'text-slate-700');
         merchantInput.classList.add('bg-white', 'text-slate-900');
       }
       if (cityInput) {
         cityInput.readOnly = false;
-        cityInput.value = 'BRASIL';
+        cityInput.value = '';
         cityInput.classList.remove('bg-slate-100', 'text-slate-700');
         cityInput.classList.add('bg-white', 'text-slate-900');
       }
